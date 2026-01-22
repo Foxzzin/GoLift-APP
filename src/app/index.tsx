@@ -1,9 +1,23 @@
-import { Text, View } from "react-native";
+import { useEffect } from "react";
+import { View, ActivityIndicator } from "react-native";
+import { Redirect } from "expo-router";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function Index() {
-  return (
-    <View className="w-full h-full flex items-center justify-center">
-      <Text className="text-red-500"> Hello World </Text>
-    </View>
-  );
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <View className="flex-1 bg-[#0d1b2a] items-center justify-center">
+        <ActivityIndicator size="large" color="#3b82f6" />
+      </View>
+    );
+  }
+
+  // Redireciona baseado no estado de autenticação
+  if (isAuthenticated) {
+    return <Redirect href="/(tabs)" />;
+  }
+
+  return <Redirect href="/login" />;
 }
