@@ -4,6 +4,7 @@ export interface User {
   id: number;
   nome: string;
   email: string;
+  tipo?: number; // 1 = admin, 2 = user normal
   idade?: number;
   peso?: number;
   altura?: number;

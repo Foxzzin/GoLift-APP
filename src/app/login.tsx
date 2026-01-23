@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
 import { useAuth } from "../contexts/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -104,7 +104,10 @@ export default function Login() {
             </View>
 
             {/* Esqueceu password */}
-            <TouchableOpacity className="mb-6">
+            <TouchableOpacity 
+              className="mb-6"
+              onPress={() => router.push("/forgot-password")}
+            >
               <Text className="text-blue-500 text-right text-sm">
                 Esqueceste a password?
               </Text>

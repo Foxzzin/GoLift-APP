@@ -6,12 +6,18 @@ import {
   RefreshControl,
   ActivityIndicator,
   Dimensions,
+  TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../contexts/AuthContext";
 import { metricsApi } from "../../services/api";
 
 const { width } = Dimensions.get("window");
+const DAYS = ["D", "S", "T", "Q", "Q", "S", "S"];
+const MONTHS = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+];
 
 export default function Metrics() {
   const { user } = useAuth();
@@ -25,6 +31,10 @@ export default function Metrics() {
     avgDuration: 0,
     thisMonth: 0,
   });
+  
+  // Estado do calendário
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [workoutDates, setWorkoutDates] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (user?.id) {
@@ -42,7 +52,21 @@ export default function Metrics() {
       ]);
 
       setRecords(recordsData || []);
-      setHistory(historyData?.treinos || []);
+      
+      // Processar histórico e datas para calendário
+      const historyItems = historyData?.treinos || historyData || [];
+      setHistory(Array.isArray(historyItems) ? historyItems : []);
+      
+      // Extrair datas dos treinos para o calendário
+      const dates = new Set<string>();
+      (Array.isArray(historyItems) ? historyItems : []).forEach((item: any) => {
+        const dateStr = item.data_inicio || item.data;
+        if (dateStr) {
+          dates.add(new Date(dateStr).toISOString().split('T')[0]);
+        }
+      });
+      setWorkoutDates(dates);
+      
       if (statsData) {
         setStats(statsData);
       }
@@ -72,6 +96,47 @@ export default function Metrics() {
       day: "2-digit",
       month: "short",
     });
+  }
+  
+  // Funções do calendário
+  function getDaysInMonth(date: Date) {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDayOfWeek = new Date(year, month, 1).getDay();
+    
+    const days: (number | null)[] = [];
+    // Dias vazios no início
+    for (let i = 0; i < firstDayOfWeek; i++) {
+      days.push(null);
+    }
+    // Dias do mês
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push(i);
+    }
+    return days;
+  }
+  
+  function isWorkoutDay(day: number | null) {
+    if (!day) return false;
+    const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return workoutDates.has(dateStr);
+  }
+  
+  function isToday(day: number | null) {
+    if (!day) return false;
+    const today = new Date();
+    return day === today.getDate() && 
+           currentMonth.getMonth() === today.getMonth() && 
+           currentMonth.getFullYear() === today.getFullYear();
+  }
+  
+  function previousMonth() {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+  }
+  
+  function nextMonth() {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
   }
 
   if (loading) {
@@ -166,16 +231,16 @@ export default function Metrics() {
                 </View>
                 <View className="flex-1">
                   <Text className="text-white font-semibold">
-                    {record.exercicio}
+                    {record.nome_exercicio || record.exercicio || record.exercise}
                   </Text>
-                  {record.data && (
+                  {(record.data_serie || record.data) && (
                     <Text className="text-gray-400 text-sm">
-                      {formatDate(record.data)}
+                      {formatDate(record.data_serie || record.data)}
                     </Text>
                   )}
                 </View>
                 <Text className="text-yellow-400 font-bold text-lg">
-                  {record.weight} kg
+                  {record.peso || record.weight} kg
                 </Text>
               </View>
             ))}
@@ -183,50 +248,78 @@ export default function Metrics() {
         )}
       </View>
 
-      {/* Histórico */}
-      <View className="px-6">
+      {/* Calendário de Treinos */}
+      <View className="px-6 mb-6">
         <Text className="text-white text-lg font-bold mb-4">
-          📅 Histórico de Treinos
+          📅 Calendário de Treinos
         </Text>
-
-        {history.length === 0 ? (
-          <View className="bg-white/5 rounded-2xl p-6 items-center border border-dashed border-white/20">
-            <Ionicons name="calendar-outline" size={40} color="#6b7280" />
-            <Text className="text-gray-400 mt-3 text-center">
-              Sem treinos no histórico
+        
+        <View className="bg-white/5 rounded-2xl p-4 border border-white/10">
+          {/* Navegação do mês */}
+          <View className="flex-row justify-between items-center mb-4">
+            <TouchableOpacity onPress={previousMonth} className="p-2">
+              <Ionicons name="chevron-back" size={24} color="#6b7280" />
+            </TouchableOpacity>
+            <Text className="text-white font-semibold text-lg">
+              {MONTHS[currentMonth.getMonth()]} {currentMonth.getFullYear()}
             </Text>
+            <TouchableOpacity onPress={nextMonth} className="p-2">
+              <Ionicons name="chevron-forward" size={24} color="#6b7280" />
+            </TouchableOpacity>
           </View>
-        ) : (
-          <View className="gap-3">
-            {history.slice(0, 10).map((workout, index) => (
-              <View
-                key={index}
-                className="bg-white/5 rounded-2xl p-4 border border-white/10 flex-row items-center"
-              >
-                <View className="bg-blue-500/20 w-12 h-12 rounded-xl items-center justify-center mr-4">
-                  <Text className="text-blue-400 font-bold text-sm">
-                    {formatDate(workout.data)}
-                  </Text>
-                </View>
-                <View className="flex-1">
-                  <Text className="text-white font-semibold">
-                    {workout.nome || "Treino"}
-                  </Text>
-                  <View className="flex-row gap-4 mt-1">
-                    <Text className="text-gray-400 text-sm">
-                      {workout.exercicios?.length || 0} exercícios
-                    </Text>
-                    {workout.duracao_segundos && (
-                      <Text className="text-gray-400 text-sm">
-                        ⏱️ {formatTime(workout.duracao_segundos)}
-                      </Text>
-                    )}
-                  </View>
-                </View>
+          
+          {/* Dias da semana */}
+          <View className="flex-row mb-2">
+            {DAYS.map((day, index) => (
+              <View key={index} className="flex-1 items-center py-2">
+                <Text className="text-gray-400 text-sm font-medium">{day}</Text>
               </View>
             ))}
           </View>
-        )}
+          
+          {/* Grid do calendário */}
+          <View className="flex-row flex-wrap">
+            {getDaysInMonth(currentMonth).map((day, index) => (
+              <View 
+                key={index} 
+                className="items-center justify-center"
+                style={{ width: (width - 80) / 7, height: 40 }}
+              >
+                {day && (
+                  <View 
+                    className={`w-8 h-8 rounded-full items-center justify-center ${
+                      isToday(day) 
+                        ? 'bg-blue-600' 
+                        : isWorkoutDay(day) 
+                          ? 'bg-green-500' 
+                          : ''
+                    }`}
+                  >
+                    <Text className={`text-sm ${
+                      isToday(day) || isWorkoutDay(day) 
+                        ? 'text-white font-bold' 
+                        : 'text-gray-300'
+                    }`}>
+                      {day}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            ))}
+          </View>
+          
+          {/* Legenda */}
+          <View className="flex-row justify-center gap-6 mt-4 pt-3 border-t border-white/10">
+            <View className="flex-row items-center gap-2">
+              <View className="w-3 h-3 rounded-full bg-blue-600" />
+              <Text className="text-gray-400 text-sm">Hoje</Text>
+            </View>
+            <View className="flex-row items-center gap-2">
+              <View className="w-3 h-3 rounded-full bg-green-500" />
+              <Text className="text-gray-400 text-sm">Treino</Text>
+            </View>
+          </View>
+        </View>
       </View>
     </ScrollView>
   );

@@ -35,6 +35,7 @@ export default function WorkoutActive() {
   const [exercicios, setExercicios] = useState<ExercicioAtivo[]>([]);
   const [tempoDecorrido, setTempoDecorrido] = useState(0);
   const [timerPaused, setTimerPaused] = useState(false);
+  const [sessaoId, setSessaoId] = useState<number | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -58,13 +59,20 @@ export default function WorkoutActive() {
 
   async function loadWorkout() {
     try {
+      // Carregar detalhes do treino
       const data = await workoutApi.getWorkoutDetails(user!.id, Number(id));
       setWorkout(data);
+
+      // Iniciar sessão de treino
+      const sessaoResponse = await workoutApi.startSession(user!.id, Number(id));
+      if (sessaoResponse.sucesso && sessaoResponse.id_sessao) {
+        setSessaoId(sessaoResponse.id_sessao);
+      }
 
       // Transformar exercícios para o formato ativo
       const exerciciosAtivos: ExercicioAtivo[] = (data.exercicios || []).map(
         (ex: any) => ({
-          id: ex.id,
+          id: ex.id || ex.id_exercicio,
           nome: ex.nome,
           expandido: false,
           series: [
@@ -189,27 +197,33 @@ export default function WorkoutActive() {
       return;
     }
 
+    if (!sessaoId) {
+      Alert.alert("Erro", "Sessão não iniciada corretamente");
+      return;
+    }
+
     Alert.alert("Concluir Treino", "Queres terminar este treino?", [
       { text: "Cancelar", style: "cancel" },
       {
         text: "Concluir",
         onPress: async () => {
           try {
-            const dados = {
-              duracao_segundos: tempoDecorrido,
-              exercicios: exercicios.map((ex) => ({
-                id_exercicio: ex.id,
-                series: ex.series
-                  .filter((s) => s.concluida)
-                  .map((s) => ({
-                    numero_serie: s.numero,
-                    repeticoes: parseInt(s.repeticoes) || 0,
-                    peso: parseFloat(s.peso) || 0,
-                  })),
-              })),
-            };
+            // Guardar todas as séries concluídas
+            for (const exercicio of exercicios) {
+              const seriesConcluidas = exercicio.series.filter((s) => s.concluida);
+              for (const serie of seriesConcluidas) {
+                await workoutApi.addSerie(sessaoId, {
+                  id_exercicio: exercicio.id,
+                  numero_serie: serie.numero,
+                  repeticoes: parseInt(serie.repeticoes) || 0,
+                  peso: parseFloat(serie.peso) || 0,
+                });
+              }
+            }
 
-            await workoutApi.completeWorkout(Number(id), dados);
+            // Finalizar a sessão
+            await workoutApi.finishSession(sessaoId, tempoDecorrido);
+            
             Alert.alert("Parabéns! 🎉", "Treino concluído com sucesso!", [
               { text: "OK", onPress: () => router.back() },
             ]);

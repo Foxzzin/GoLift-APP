@@ -8,6 +8,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
+import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../contexts/AuthContext";
 import { userApi, metricsApi } from "../../services/api";
@@ -216,13 +217,32 @@ export default function Profile() {
                 <View className="bg-yellow-500/20 w-10 h-10 rounded-xl items-center justify-center mr-4">
                   <Ionicons name="trophy" size={20} color="#eab308" />
                 </View>
-                <Text className="text-gray-300 flex-1">{record.exercicio}</Text>
+                <Text className="text-gray-300 flex-1">{record.nome_exercicio || record.exercicio || record.exercise}</Text>
                 <Text className="text-yellow-400 font-bold">
-                  {record.weight} kg
+                  {record.peso || record.weight} kg
                 </Text>
               </View>
             ))}
           </View>
+        </View>
+      )}
+
+      {/* Painel Admin - apenas para admins */}
+      {user?.tipo === 1 && (
+        <View className="px-6 mb-6">
+          <TouchableOpacity
+            onPress={() => router.push("/admin")}
+            className="bg-purple-600/20 border border-purple-500/40 rounded-2xl p-4 flex-row items-center"
+          >
+            <View className="bg-purple-500/30 w-12 h-12 rounded-xl items-center justify-center mr-4">
+              <Ionicons name="shield-checkmark" size={24} color="#a855f7" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-white font-bold text-lg">Painel de Admin</Text>
+              <Text className="text-purple-300 text-sm">Gerir utilizadores, exercícios e treinos</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="#a855f7" />
+          </TouchableOpacity>
         </View>
       )}
 
