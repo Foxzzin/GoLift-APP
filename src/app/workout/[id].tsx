@@ -1,0 +1,420 @@
+import { useState, useEffect, useRef } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "../../contexts/AuthContext";
+import { useTheme } from "../../styles/theme";
+import { workoutApi } from "../../services/api";
+
+interface Serie {
+  numero: number;
+  repeticoes: string;
+  peso: string;
+  concluida: boolean;
+}
+
+interface ExercicioAtivo {
+  id: number;
+  nome: string;
+  series: Serie[];
+  expandido: boolean;
+}
+
+export default function WorkoutActive() {
+  const theme = useTheme();
+  const { id } = useLocalSearchParams();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [workout, setWorkout] = useState<any>(null);
+  const [exercicios, setExercicios] = useState<ExercicioAtivo[]>([]);
+  const [tempoDecorrido, setTempoDecorrido] = useState(0);
+  const [timerPaused, setTimerPaused] = useState(false);
+  const [sessaoId, setSessaoId] = useState<number | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    loadWorkout();
+    startTimer();
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
+
+  function startTimer() {
+    timerRef.current = setInterval(() => {
+      if (!timerPaused) {
+        setTempoDecorrido((prev) => prev + 1);
+      }
+    }, 1000);
+  }
+
+  async function loadWorkout() {
+    try {
+      // Carregar detalhes do treino
+      const data = await workoutApi.getWorkoutDetails(user!.id, Number(id));
+      setWorkout(data);
+
+      // Iniciar sessão de treino
+      const sessaoResponse = await workoutApi.startSession(user!.id, Number(id));
+      if (sessaoResponse.sucesso && sessaoResponse.id_sessao) {
+        setSessaoId(sessaoResponse.id_sessao);
+      }
+
+      // Transformar exercícios para o formato ativo
+      const exerciciosAtivos: ExercicioAtivo[] = (data.exercicios || []).map(
+        (ex: any) => ({
+          id: ex.id || ex.id_exercicio,
+          nome: ex.nome,
+          expandido: false,
+          series: [
+            { numero: 1, repeticoes: "", peso: "", concluida: false },
+            { numero: 2, repeticoes: "", peso: "", concluida: false },
+            { numero: 3, repeticoes: "", peso: "", concluida: false },
+          ],
+        })
+      );
+      setExercicios(exerciciosAtivos);
+    } catch (error) {
+      console.error("Erro ao carregar treino:", error);
+      Alert.alert("Erro", "Não foi possível carregar o treino");
+      router.back();
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function formatarTempo(segundos: number) {
+    const horas = Math.floor(segundos / 3600);
+    const minutos = Math.floor((segundos % 3600) / 60);
+    const segs = segundos % 60;
+
+    if (horas > 0) {
+      return `${horas}:${minutos.toString().padStart(2, "0")}:${segs
+        .toString()
+        .padStart(2, "0")}`;
+    }
+    return `${minutos.toString().padStart(2, "0")}:${segs
+      .toString()
+      .padStart(2, "0")}`;
+  }
+
+  function toggleExpandir(exercicioId: number) {
+    setExercicios(
+      exercicios.map((ex) =>
+        ex.id === exercicioId ? { ...ex, expandido: !ex.expandido } : ex
+      )
+    );
+  }
+
+  function atualizarSerie(
+    exercicioId: number,
+    serieIndex: number,
+    campo: "repeticoes" | "peso",
+    valor: string
+  ) {
+    setExercicios(
+      exercicios.map((ex) =>
+        ex.id === exercicioId
+          ? {
+              ...ex,
+              series: ex.series.map((s, i) =>
+                i === serieIndex ? { ...s, [campo]: valor } : s
+              ),
+            }
+          : ex
+      )
+    );
+  }
+
+  function toggleSerieConcluida(exercicioId: number, serieIndex: number) {
+    setExercicios(
+      exercicios.map((ex) =>
+        ex.id === exercicioId
+          ? {
+              ...ex,
+              series: ex.series.map((s, i) =>
+                i === serieIndex ? { ...s, concluida: !s.concluida } : s
+              ),
+            }
+          : ex
+      )
+    );
+  }
+
+  function adicionarSerie(exercicioId: number) {
+    setExercicios(
+      exercicios.map((ex) =>
+        ex.id === exercicioId
+          ? {
+              ...ex,
+              series: [
+                ...ex.series,
+                {
+                  numero: ex.series.length + 1,
+                  repeticoes: "",
+                  peso: "",
+                  concluida: false,
+                },
+              ],
+            }
+          : ex
+      )
+    );
+  }
+
+  function cancelarTreino() {
+    Alert.alert(
+      "Cancelar Treino",
+      "Tens a certeza? Todo o progresso será perdido.",
+      [
+        { text: "Continuar Treino", style: "cancel" },
+        {
+          text: "Cancelar",
+          style: "destructive",
+          onPress: () => router.back(),
+        },
+      ]
+    );
+  }
+
+  async function concluirTreino() {
+    // Verificar se há pelo menos uma série concluída
+    const temSeriesConcluidas = exercicios.some((ex) =>
+      ex.series.some((s) => s.concluida)
+    );
+
+    if (!temSeriesConcluidas) {
+      Alert.alert("Atenção", "Completa pelo menos uma série antes de terminar.");
+      return;
+    }
+
+    if (!sessaoId) {
+      Alert.alert("Erro", "Sessão não iniciada corretamente");
+      return;
+    }
+
+    Alert.alert("Concluir Treino", "Queres terminar este treino?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Concluir",
+        onPress: async () => {
+          try {
+            // Guardar todas as séries concluídas
+            for (const exercicio of exercicios) {
+              const seriesConcluidas = exercicio.series.filter((s) => s.concluida);
+              for (const serie of seriesConcluidas) {
+                await workoutApi.addSerie(sessaoId, {
+                  id_exercicio: exercicio.id,
+                  numero_serie: serie.numero,
+                  repeticoes: parseInt(serie.repeticoes) || 0,
+                  peso: parseFloat(serie.peso) || 0,
+                });
+              }
+            }
+
+            // Finalizar a sessão
+            await workoutApi.finishSession(sessaoId, tempoDecorrido);
+            
+            Alert.alert("Parabéns! 🎉", "Treino concluído com sucesso!", [
+              { text: "OK", onPress: () => router.back() },
+            ]);
+          } catch (error) {
+            console.error("Erro ao concluir treino:", error);
+            Alert.alert("Erro", "Não foi possível guardar o treino");
+          }
+        },
+      },
+    ]);
+  }
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.background, alignItems: "center", justifyContent: "center" }}>
+        <ActivityIndicator size="large" color={theme.text} />
+        <Text style={{ color: theme.textSecondary, marginTop: 16 }}>A carregar treino...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      {/* Header */}
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 24, paddingTop: 56, paddingBottom: 16, backgroundColor: theme.backgroundSecondary, borderBottomColor: theme.border, borderBottomWidth: 1 }}>
+        <TouchableOpacity onPress={cancelarTreino} style={{ padding: 8 }}>
+          <Ionicons name="close" size={28} color={theme.text} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => setTimerPaused(!timerPaused)}
+          style={{ backgroundColor: theme.backgroundTertiary, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 }}
+        >
+          <Text style={{ color: theme.text, fontSize: 20, fontWeight: "bold" }}>
+            {formatarTempo(tempoDecorrido)}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={concluirTreino}
+          style={{ backgroundColor: theme.text, paddingHorizontal: 12, paddingVertical: 12, borderRadius: 12 }}
+        >
+          <Ionicons name="checkmark" size={24} color={theme.background} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Título do treino */}
+      <View style={{ paddingHorizontal: 24, paddingVertical: 16 }}>
+        <Text style={{ color: theme.text, fontSize: 20, fontWeight: "bold" }}>
+          {workout?.nome || "Treino"}
+        </Text>
+        <Text style={{ color: theme.textSecondary }}>
+          {exercicios.length} exercícios
+        </Text>
+      </View>
+
+      {/* Lista de exercícios */}
+      <ScrollView style={{ flex: 1, paddingHorizontal: 24 }} contentContainerStyle={{ paddingBottom: 100 }}>
+        {exercicios.map((exercicio, index) => (
+          <View
+            key={exercicio.id}
+            style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 16, marginBottom: 16, borderColor: theme.border, borderWidth: 1, overflow: "hidden" }}
+          >
+            {/* Header do exercício */}
+            <TouchableOpacity
+              onPress={() => toggleExpandir(exercicio.id)}
+              style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 16 }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+                <View style={{ backgroundColor: theme.backgroundTertiary, width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center", marginRight: 16 }}>
+                  <Text style={{ color: theme.text, fontWeight: "bold" }}>{index + 1}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: theme.text, fontWeight: "600" }}>{exercicio.nome}</Text>
+                  <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
+                    {exercicio.series.filter((s) => s.concluida).length}/{exercicio.series.length} séries
+                  </Text>
+                </View>
+              </View>
+              <Ionicons
+                name={exercicio.expandido ? "chevron-up" : "chevron-down"}
+                size={20}
+                color={theme.textSecondary}
+              />
+            </TouchableOpacity>
+
+            {/* Séries (expandido) */}
+            {exercicio.expandido && (
+              <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+                {/* Header da tabela */}
+                <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderBottomColor: theme.border, borderBottomWidth: 1 }}>
+                  <Text style={{ color: theme.textSecondary, fontSize: 12, width: 64 }}>Série</Text>
+                  <Text style={{ color: theme.textSecondary, fontSize: 12, flex: 1, textAlign: "center" }}>
+                    Peso (kg)
+                  </Text>
+                  <Text style={{ color: theme.textSecondary, fontSize: 12, flex: 1, textAlign: "center" }}>
+                    Reps
+                  </Text>
+                  <View style={{ width: 48 }} />
+                </View>
+
+                {/* Séries */}
+                {exercicio.series.map((serie, serieIndex) => (
+                  <View
+                    key={serieIndex}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      paddingVertical: 12,
+                      borderBottomColor: theme.border,
+                      borderBottomWidth: 1,
+                      opacity: serie.concluida ? 0.6 : 1,
+                    }}
+                  >
+                    <Text style={{ color: theme.text, fontSize: 14, fontWeight: "500", width: 64 }}>
+                      {serie.numero}
+                    </Text>
+                    <View style={{ flex: 1, paddingHorizontal: 8 }}>
+                      <TextInput
+                        style={{ backgroundColor: theme.backgroundTertiary, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, color: theme.text, textAlign: "center" }}
+                        placeholder="-"
+                        placeholderTextColor={theme.textSecondary}
+                        keyboardType="decimal-pad"
+                        value={serie.peso}
+                        onChangeText={(v) =>
+                          atualizarSerie(exercicio.id, serieIndex, "peso", v)
+                        }
+                        editable={!serie.concluida}
+                      />
+                    </View>
+                    <View style={{ flex: 1, paddingHorizontal: 8 }}>
+                      <TextInput
+                        style={{ backgroundColor: theme.backgroundTertiary, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, color: theme.text, textAlign: "center" }}
+                        placeholder="-"
+                        placeholderTextColor={theme.textSecondary}
+                        keyboardType="number-pad"
+                        value={serie.repeticoes}
+                        onChangeText={(v) =>
+                          atualizarSerie(exercicio.id, serieIndex, "repeticoes", v)
+                        }
+                        editable={!serie.concluida}
+                      />
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => toggleSerieConcluida(exercicio.id, serieIndex)}
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 12,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: serie.concluida ? theme.text : theme.backgroundTertiary
+                      }}
+                    >
+                      <Ionicons
+                        name="checkmark"
+                        size={20}
+                        color={serie.concluida ? theme.background : theme.textSecondary}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+
+                {/* Adicionar série */}
+                <TouchableOpacity
+                  onPress={() => adicionarSerie(exercicio.id)}
+                  style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 12, marginTop: 8, borderColor: theme.border, borderWidth: 1, borderStyle: "dashed", borderRadius: 12 }}
+                >
+                  <Ionicons name="add" size={20} color={theme.text} />
+                  <Text style={{ color: theme.text, marginLeft: 8 }}>Adicionar Série</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        ))}
+      </ScrollView>
+
+      {/* Botão flutuante concluir */}
+      <View style={{ position: "absolute", bottom: 32, left: 24, right: 24 }}>
+        <TouchableOpacity
+          onPress={concluirTreino}
+          style={{ backgroundColor: theme.text, paddingVertical: 16, borderRadius: 16, alignItems: "center", flexDirection: "row", justifyContent: "center" }}
+        >
+          <Ionicons name="checkmark-circle" size={24} color={theme.background} />
+          <Text style={{ color: theme.background, fontWeight: "bold", fontSize: 16, marginLeft: 8 }}>
+            Concluir Treino
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
