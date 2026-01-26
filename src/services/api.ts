@@ -48,10 +48,21 @@ export const authApi = {
     idade?: number;
     peso?: number;
     altura?: number;
+    objetivo?: string;
+    pesoAlvo?: number;
   }) =>
     request<{ sucesso: boolean; message: string }>("/api/register", {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        nome: data.nome,
+        email: data.email,
+        password: data.password,
+        idade: data.idade,
+        peso: data.peso,
+        altura: data.altura,
+        objetivo: data.objetivo,
+        peso_alvo: data.pesoAlvo,
+      }),
     }),
 
   // Recuperação de senha

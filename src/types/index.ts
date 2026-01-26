@@ -62,4 +62,6 @@ export interface RegisterData {
   idade?: number;
   peso?: number;
   altura?: number;
+  objetivo?: string;
+  pesoAlvo?: number;
 }

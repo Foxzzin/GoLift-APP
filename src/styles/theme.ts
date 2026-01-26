@@ -17,7 +17,7 @@ export const lightTheme = {
   
   // Accent colors (motivação)
   primary: '#000000', // Botão principal
-  accent: '#ef4444', // Vermelho para ações importantes
+  accent: '#687C88', // Steel Blue para ações importantes
   accentGreen: '#10b981', // Verde para sucesso
   accentBlue: '#3b82f6', // Azul para info
   
@@ -42,7 +42,7 @@ export const darkTheme = {
   
   // Accent colors (motivação)
   primary: '#ffffff', // Botão principal
-  accent: '#ff4444', // Vermelho mais brilhante para dark
+  accent: '#687C88', // Steel Blue
   accentGreen: '#10b981', // Verde
   accentBlue: '#3b82f6', // Azul
   

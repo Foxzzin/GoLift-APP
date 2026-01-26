@@ -20,6 +20,8 @@ interface RegisterData {
   idade?: number;
   peso?: number;
   altura?: number;
+  objetivo?: string;
+  pesoAlvo?: number;
 }
 
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
