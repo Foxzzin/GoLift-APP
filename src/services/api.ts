@@ -15,6 +15,8 @@ async function request<T>(
 ): Promise<T> {
   const url = `${getAPI_URL()}${endpoint}`;
   
+  console.log(`📤 [API] ${options?.method || "GET"} ${url}`);
+  
   const config: RequestInit = {
     headers: {
       "Content-Type": "application/json",
@@ -23,14 +25,21 @@ async function request<T>(
     ...options,
   };
 
-  const response = await fetch(url, config);
-  
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(error.erro || error.message || "Erro na requisição");
+  try {
+    const response = await fetch(url, config);
+    
+    console.log(`📥 [API] Resposta: Status ${response.status}`);
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.erro || error.message || "Erro na requisição");
+    }
+    
+    return response.json();
+  } catch (error: any) {
+    console.error(`❌ [API] Erro ao conectar a ${url}:`, error.message);
+    throw error;
   }
-  
-  return response.json();
 }
 
 // Autenticação
@@ -64,6 +73,20 @@ export const authApi = {
         peso_alvo: data.pesoAlvo,
       }),
     }),
+
+  // Teste de conexão com o servidor
+  testConnection: async () => {
+    try {
+      const result = await request<any>("/api/health");
+      return { sucesso: true, mensagem: "Servidor está online", resultado: result };
+    } catch (error: any) {
+      return { sucesso: false, mensagem: error.message, resultado: null };
+    }
+  },
+
+  // Diagnostico da conexão
+  getDebugInfo: () =>
+    request<any>("/api/debug"),
 
   // Recuperação de senha
   requestPasswordReset: (email: string) =>

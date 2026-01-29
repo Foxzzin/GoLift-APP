@@ -13,7 +13,7 @@ import {
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../contexts/AuthContext";
-import { workoutApi, exerciseApi } from "../../services/api";
+import { workoutApi, exerciseApi, metricsApi } from "../../services/api";
 import { useTheme } from "../../styles/theme";
 
 export default function Workouts() {
@@ -23,6 +23,7 @@ export default function Workouts() {
   const [myWorkouts, setMyWorkouts] = useState<any[]>([]);
   const [adminWorkouts, setAdminWorkouts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [bodyPartFilter, setBodyPartFilter] = useState<string | null>(null);
 
   // Modal criar treino
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -31,6 +32,7 @@ export default function Workouts() {
   const [selectedExercises, setSelectedExercises] = useState<any[]>([]);
   const [savingWorkout, setSavingWorkout] = useState(false);
   const [loadingExercises, setLoadingExercises] = useState(false);
+  const [modalFilterBodyPart, setModalFilterBodyPart] = useState<string | null>(null);
 
   useEffect(() => {
     if (user?.id) {
@@ -45,7 +47,15 @@ export default function Workouts() {
         workoutApi.getUserWorkouts(user!.id).catch(() => []),
         workoutApi.getAdminWorkouts().catch(() => []),
       ]);
-      setMyWorkouts(userWorkouts || []);
+      
+      // Remover duplicatas usando Set com nome do treino como chave
+      const uniqueWorkouts = Array.from(
+        new Map(
+          (userWorkouts || []).map((w) => [w.nome + w.id_treino, w])
+        ).values()
+      );
+      
+      setMyWorkouts(uniqueWorkouts);
       setAdminWorkouts(recommended || []);
     } catch (error) {
       console.error("Erro ao carregar treinos:", error);
@@ -64,9 +74,11 @@ export default function Workouts() {
     setShowCreateModal(true);
     setWorkoutName("");
     setSelectedExercises([]);
+    setModalFilterBodyPart(null);
     setLoadingExercises(true);
     try {
       const exercises = await exerciseApi.getAll();
+      console.log("Exercícios carregados:", exercises);
       setAvailableExercises(exercises || []);
     } catch (error) {
       console.error("Erro ao carregar exercícios:", error);
@@ -93,10 +105,20 @@ export default function Workouts() {
       return;
     }
 
+    // Verificar se treino com este nome já existe
+    const treinoExistente = myWorkouts.find(
+      (w) => w.nome.toLowerCase() === workoutName.trim().toLowerCase()
+    );
+    if (treinoExistente) {
+      Alert.alert("Treino Duplicado", `Já existe um treino chamado "${workoutName}". Escolhe um nome diferente.`);
+      return;
+    }
+
     setSavingWorkout(true);
     try {
       const exerciseIds = selectedExercises.map((e) => e.id);
-      await workoutApi.createWorkout(user!.id, workoutName, exerciseIds);
+      const upperName = workoutName.charAt(0).toUpperCase() + workoutName.slice(1);
+      await workoutApi.createWorkout(user!.id, upperName, exerciseIds);
       Alert.alert("Sucesso", "Treino criado com sucesso!");
       setShowCreateModal(false);
       loadData();
@@ -108,7 +130,29 @@ export default function Workouts() {
   }
 
   async function handleStartWorkout(workout: any) {
-    router.push(`/workout/${workout.id_treino}`);
+    Alert.alert(
+      "Começar Treino",
+      `Deseja começar: ${workout.nome}?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Sim",
+          style: "default",
+          onPress: async () => {
+            try {
+              // Iniciar a sessão de treino
+              const response = await workoutApi.startSession(user!.id, workout.id_treino);
+              if (response.sucesso) {
+                // Redirecionar para o treino
+                router.push(`/workout/${workout.id_treino}`);
+              }
+            } catch (error) {
+              Alert.alert("Erro", "Não foi possível iniciar o treino");
+            }
+          },
+        },
+      ]
+    );
   }
 
   async function handleDeleteWorkout(workout: any) {
@@ -195,8 +239,8 @@ export default function Workouts() {
                   >
                     <Ionicons name="star" size={22} color={theme.accent} />
                   </View>
-                  <Text style={{ fontSize: 16, fontWeight: "bold", color: theme.text, marginBottom: 4 }}>
-                    {workout.nome}
+                    <Text style={{ fontSize: 16, fontWeight: "bold", color: theme.text, marginBottom: 4 }}>
+                      {workout.nome.charAt(0).toUpperCase() + workout.nome.slice(1)}
                   </Text>
                   <Text style={{ fontSize: 13, color: theme.textSecondary, marginBottom: 16 }}>
                     {workout.exercicios?.length || 0} exercícios
@@ -308,7 +352,7 @@ export default function Workouts() {
                         {workout.nome}
                       </Text>
                       <Text style={{ fontSize: 13, color: theme.textSecondary, marginTop: 2 }}>
-                        {workout.exercicios?.length || 0} exercícios
+                        {workout.num_exercicios ?? 0} exercícios
                       </Text>
                     </View>
                     <TouchableOpacity
@@ -480,64 +524,175 @@ export default function Workouts() {
               <Text style={{ color: theme.text, marginBottom: 12, fontWeight: "500", fontSize: 14 }}>
                 Adicionar Exercícios
               </Text>
+
+              {/* Carrossel de Filtro de Body Parts */}
+              {!loadingExercises && availableExercises.length > 0 && (
+                <View style={{ marginBottom: 16 }}>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ gap: 8 }}
+                  >
+                    <TouchableOpacity
+                      onPress={() => setModalFilterBodyPart(null)}
+                      style={{
+                        paddingHorizontal: 12,
+                        paddingVertical: 8,
+                        borderRadius: 16,
+                        backgroundColor:
+                          modalFilterBodyPart === null ? theme.accent : theme.backgroundSecondary,
+                        borderColor: modalFilterBodyPart === null ? theme.accent : theme.border,
+                        borderWidth: 1,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: modalFilterBodyPart === null ? "white" : theme.textSecondary,
+                          fontWeight: "600",
+                          fontSize: 11,
+                        }}
+                      >
+                        Todos
+                      </Text>
+                    </TouchableOpacity>
+                    {Array.from(
+                      new Set(availableExercises.map((e) => e.category).filter(Boolean))
+                    ).map((bodyPart) => (
+                      <TouchableOpacity
+                        key={bodyPart}
+                        onPress={() => setModalFilterBodyPart(bodyPart)}
+                        style={{
+                          paddingHorizontal: 12,
+                          paddingVertical: 8,
+                          borderRadius: 16,
+                          backgroundColor:
+                            modalFilterBodyPart === bodyPart
+                              ? theme.accent
+                              : theme.backgroundSecondary,
+                          borderColor:
+                            modalFilterBodyPart === bodyPart ? theme.accent : theme.border,
+                          borderWidth: 1,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color:
+                              modalFilterBodyPart === bodyPart
+                                ? "white"
+                                : theme.textSecondary,
+                            fontWeight: "600",
+                            fontSize: 11,
+                            textTransform: "capitalize",
+                          }}
+                        >
+                          {bodyPart === "full body"
+                            ? "Full Body"
+                            : String(bodyPart).charAt(0).toUpperCase() + String(bodyPart).slice(1)}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
               {loadingExercises ? (
                 <ActivityIndicator color={theme.accent} style={{ marginVertical: 24 }} />
               ) : (
                 <View style={{ gap: 8, marginBottom: 24 }}>
-                  {availableExercises.map((exercise) => {
-                    const isSelected = selectedExercises.find(
-                      (e) => e.id === exercise.id
-                    );
-                    return (
-                      <TouchableOpacity
-                        key={exercise.id}
-                        onPress={() => toggleExercise(exercise)}
-                        style={{
-                          backgroundColor: isSelected
-                            ? theme.backgroundTertiary
-                            : theme.backgroundSecondary,
-                          borderColor: isSelected ? theme.accent : theme.border,
-                          borderWidth: 1,
-                          borderRadius: 10,
-                          paddingHorizontal: 16,
-                          paddingVertical: 14,
-                          flexDirection: "row",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                        }}
-                      >
-                        <View>
-                          <Text
-                            style={{
-                              color: theme.text,
-                              fontWeight: "500",
-                              fontSize: 14,
-                            }}
-                          >
-                            {exercise.nome}
-                          </Text>
-                          {exercise.grupo_muscular && (
+                  {availableExercises
+                    .filter((exercise) => {
+                      if (modalFilterBodyPart && exercise.category !== modalFilterBodyPart) {
+                        return false;
+                      }
+                      return true;
+                    })
+                    .map((exercise) => {
+                      const isSelected = selectedExercises.find(
+                        (e) => e.id === exercise.id
+                      );
+                      return (
+                        <TouchableOpacity
+                          key={exercise.id}
+                          onPress={() => toggleExercise(exercise)}
+                          style={{
+                            backgroundColor: isSelected
+                              ? theme.backgroundTertiary
+                              : theme.backgroundSecondary,
+                            borderColor: isSelected ? theme.accent : theme.border,
+                            borderWidth: 1,
+                            borderRadius: 10,
+                            paddingHorizontal: 16,
+                            paddingVertical: 14,
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                          }}
+                        >
+                          <View>
                             <Text
                               style={{
-                                color: theme.textSecondary,
-                                fontSize: 12,
-                                marginTop: 4,
+                                color: theme.text,
+                                fontWeight: "500",
+                                fontSize: 14,
+                                marginBottom: 8,
                               }}
                             >
-                              {exercise.grupo_muscular}
+                              {exercise.nome}
                             </Text>
-                          )}
-                        </View>
-                        <Ionicons
-                          name={
-                            isSelected ? "checkmark-circle" : "add-circle-outline"
-                          }
-                          size={24}
-                          color={isSelected ? theme.accent : theme.textTertiary}
-                        />
-                      </TouchableOpacity>
-                    );
-                  })}
+                            <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
+                              {exercise.category && (
+                                <View
+                                  style={{
+                                    backgroundColor: theme.backgroundTertiary,
+                                    paddingHorizontal: 8,
+                                    paddingVertical: 4,
+                                    borderRadius: 6,
+                                  }}
+                                >
+                                  <Text
+                                    style={{
+                                      color: theme.textSecondary,
+                                      fontSize: 11,
+                                      fontWeight: "500",
+                                      textTransform: "capitalize",
+                                    }}
+                                  >
+                                    {exercise.category}
+                                  </Text>
+                                </View>
+                              )}
+                              {exercise.subType && (
+                                <View
+                                  style={{
+                                    backgroundColor: theme.backgroundTertiary,
+                                    paddingHorizontal: 8,
+                                    paddingVertical: 4,
+                                    borderRadius: 6,
+                                  }}
+                                >
+                                  <Text
+                                    style={{
+                                      color: theme.textSecondary,
+                                      fontSize: 11,
+                                      fontWeight: "500",
+                                      textTransform: "capitalize",
+                                    }}
+                                  >
+                                    {exercise.subType}
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
+                          </View>
+                          <Ionicons
+                            name={
+                              isSelected ? "checkmark-circle" : "add-circle-outline"
+                            }
+                            size={24}
+                            color={isSelected ? theme.accent : theme.textTertiary}
+                          />
+                        </TouchableOpacity>
+                      );
+                    })}
                 </View>
               )}
             </ScrollView>

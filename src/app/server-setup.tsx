@@ -13,7 +13,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "../styles/theme";
-import { SERVER_CONFIG, getDeviceIP } from "../services/server-config";
+import { SERVER_CONFIG, getDeviceIP, discoverServerAutomatically } from "../services/server-config";
 
 interface ServerSetupProps {
   onConfigured?: () => void;
@@ -25,6 +25,7 @@ export default function ServerSetup({ onConfigured }: ServerSetupProps) {
   const [serverIP, setServerIP] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [discovering, setDiscovering] = useState(false);
 
   useEffect(() => {
     loadDeviceIP();
@@ -51,6 +52,29 @@ export default function ServerSetup({ onConfigured }: ServerSetupProps) {
       setServerIP("192.168.1.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleAutoDiscover() {
+    try {
+      setDiscovering(true);
+      Alert.alert("Procurando...", "A procurar servidor na rede...");
+      
+      const foundIP = await discoverServerAutomatically();
+      
+      if (foundIP) {
+        setServerIP(foundIP);
+        Alert.alert("Servidor Encontrado!", `Servidor encontrado em: ${foundIP}`);
+      } else {
+        Alert.alert(
+          "Servidor Não Encontrado",
+          "Não foi possível encontrar o servidor. Tenta:\n1. Certificar-te que o servidor está ligado\n2. Ou introduz o IP manualmente"
+        );
+      }
+    } catch (error) {
+      Alert.alert("Erro", "Erro ao procurar servidor");
+    } finally {
+      setDiscovering(false);
     }
   }
 
@@ -116,10 +140,53 @@ export default function ServerSetup({ onConfigured }: ServerSetupProps) {
             </Text>
           </View>
 
+          {/* Auto Discovery Button */}
+          <TouchableOpacity
+            onPress={handleAutoDiscover}
+            disabled={discovering || saving}
+            style={{
+              backgroundColor: theme.text + "10",
+              borderColor: theme.text,
+              borderWidth: 2,
+              borderRadius: 12,
+              paddingVertical: 12,
+              alignItems: "center",
+              marginBottom: 20,
+              flexDirection: "row",
+              justifyContent: "center",
+              opacity: discovering || saving ? 0.6 : 1,
+            }}
+          >
+            {discovering ? (
+              <>
+                <ActivityIndicator color={theme.text} style={{ marginRight: 8 }} size="small" />
+                <Text style={{ color: theme.text, fontSize: 14, fontWeight: "600" }}>
+                  Procurando servidor...
+                </Text>
+              </>
+            ) : (
+              <>
+                <Ionicons name="search" size={16} color={theme.text} style={{ marginRight: 8 }} />
+                <Text style={{ color: theme.text, fontSize: 14, fontWeight: "600" }}>
+                  Descobrir Automaticamente
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          {/* Divider */}
+          <View style={{ flexDirection: "row", alignItems: "center", marginVertical: 16 }}>
+            <View style={{ flex: 1, height: 1, backgroundColor: theme.border }} />
+            <Text style={{ color: theme.textSecondary, marginHorizontal: 12, fontSize: 12 }}>
+              OU
+            </Text>
+            <View style={{ flex: 1, height: 1, backgroundColor: theme.border }} />
+          </View>
+
           {/* Server IP Input */}
           <View>
             <Text style={{ fontSize: 14, fontWeight: "600", color: theme.text, marginBottom: 8 }}>
-              IP do Servidor
+              IP do Servidor (Manual)
             </Text>
             <TextInput
               style={{
@@ -139,7 +206,7 @@ export default function ServerSetup({ onConfigured }: ServerSetupProps) {
               value={serverIP}
               onChangeText={setServerIP}
               keyboardType="decimal-pad"
-              editable={!saving}
+              editable={!saving && !discovering}
             />
             <Text style={{ color: theme.textSecondary, fontSize: 11 }}>
               Qual é o IP do computador onde o servidor está a correr?
@@ -163,14 +230,14 @@ export default function ServerSetup({ onConfigured }: ServerSetupProps) {
         {/* Continue Button */}
         <TouchableOpacity
           onPress={handleContinue}
-          disabled={saving}
+          disabled={saving || discovering}
           style={{
             backgroundColor: theme.text,
             borderRadius: 12,
             paddingVertical: 14,
             alignItems: "center",
             marginTop: 24,
-            opacity: saving ? 0.6 : 1,
+            opacity: saving || discovering ? 0.6 : 1,
           }}
         >
           {saving ? (

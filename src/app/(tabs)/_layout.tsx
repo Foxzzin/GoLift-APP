@@ -1,5 +1,6 @@
 import { Tabs } from "expo-router";
 import { View, TouchableOpacity, StyleSheet, Pressable, Animated } from "react-native";
+import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useRef } from "react";
@@ -38,8 +39,8 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
   return (
     <View style={[styles.tabBarContainer]}>
-      <View style={[styles.blurContainer, { borderColor: theme.border, backgroundColor: 'rgba(0,0,0,0.3)' }]}>
-        <View style={[styles.tabBar, { backgroundColor: 'transparent' }]}>
+      <BlurView intensity={35} style={[styles.blurContainer, { borderColor: theme.border }]}>
+        <View style={[styles.tabBar, { backgroundColor: 'rgba(0,0,0,0.1)' }]}>
           {state.routes.map((route: any, index: number) => {
             const { options } = descriptors[route.key];
             const isFocused = state.index === index;
@@ -122,7 +123,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
             );
           })}
         </View>
-      </View>
+      </BlurView>
     </View>
   );
 }
@@ -180,6 +181,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
-  },
+  },  
 });
 

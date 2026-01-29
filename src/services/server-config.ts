@@ -13,10 +13,13 @@ export async function loadSavedServerIP(): Promise<string | null> {
   try {
     const savedIP = await AsyncStorage.getItem("@server_ip");
     if (savedIP) {
-      SERVER_IP = savedIP;
+      // Sanitizar o IP - remover vírgulas e espaços
+      const cleanedIP = savedIP.replace(/,/g, ".").trim();
+      SERVER_IP = cleanedIP;
       IS_SERVER_CONFIGURED = true;
-      console.log("IP do servidor carregado do storage:", savedIP);
-      return savedIP;
+      console.log("IP do servidor carregado do storage:", cleanedIP);
+      console.log(`✓ Conectando a: http://${cleanedIP}:${SERVER_PORT}`);
+      return cleanedIP;
     }
     return null;
   } catch (error) {
@@ -34,6 +37,75 @@ export async function getDeviceIP(): Promise<string> {
   } catch (error) {
     console.error("Erro ao obter IP do dispositivo:", error);
     return "Desconhecido";
+  }
+}
+
+// Função para testar conexão com servidor
+async function testServerConnection(ip: string, port: string = "5000"): Promise<boolean> {
+  try {
+    const url = `http://${ip}:${port}/api/health`;
+    const response = await fetch(url, {
+      method: "GET",
+      timeout: 3000,
+    });
+    console.log(`Teste de conexão com ${ip}:${port} - Status: ${response.status}`);
+    return response.ok;
+  } catch (error) {
+    console.log(`Erro ao testar conexão com ${ip}:${port}:`, error);
+    return false;
+  }
+}
+
+// Função para descobrir o servidor automaticamente
+export async function discoverServerAutomatically(): Promise<string | null> {
+  try {
+    console.log("Iniciando descoberta automática do servidor...");
+    const deviceIP = await getDeviceIP();
+    
+    if (deviceIP === "Desconhecido") {
+      console.log("Não foi possível obter IP do dispositivo");
+      return null;
+    }
+
+    // Extrai a subnet (ex: 192.168.1. de 192.168.1.100)
+    const subnet = deviceIP.substring(0, deviceIP.lastIndexOf(".") + 1);
+    console.log(`Subnet detectada: ${subnet}`);
+
+    // Testa IPs de 1 a 254 na mesma subnet
+    // Começa do 1 até 254 para encontrar o servidor
+    const promises = [];
+    for (let i = 1; i <= 254; i++) {
+      const testIP = `${subnet}${i}`;
+      // Ignora o próprio dispositivo
+      if (testIP !== deviceIP) {
+        promises.push(
+          testServerConnection(testIP, SERVER_PORT).then(success => ({
+            ip: testIP,
+            success,
+          }))
+        );
+      }
+    }
+
+    // Aguarda até 3 segundos por resposta (não espera por todas)
+    const racePromises = promises.map(
+      p => Promise.race([p, new Promise(resolve => setTimeout(() => resolve({ ip: null, success: false }), 3000))])
+    );
+
+    const results = await Promise.all(racePromises);
+    
+    // Encontra o primeiro servidor disponível
+    const foundServer = results.find(r => r.success && r.ip);
+    if (foundServer && foundServer.ip) {
+      console.log(`Servidor encontrado: ${foundServer.ip}`);
+      return foundServer.ip;
+    }
+
+    console.log("Nenhum servidor encontrado na rede");
+    return null;
+  } catch (error) {
+    console.error("Erro ao descobrir servidor:", error);
+    return null;
   }
 }
 

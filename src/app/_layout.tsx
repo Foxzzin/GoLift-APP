@@ -3,7 +3,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { AuthProvider } from "../contexts/AuthContext";
 import { useTheme } from "../styles/theme";
-import { loadSavedServerIP } from "../services/server-config";
+import { loadSavedServerIP, discoverServerAutomatically, SERVER_CONFIG } from "../services/server-config";
 import ServerSetup from "./server-setup";
 import "../styles/global.css";
 
@@ -15,7 +15,20 @@ export default function RootLayout() {
   useEffect(() => {
     async function checkServerConfig() {
       try {
-        const savedIP = await loadSavedServerIP();
+        // Primeiro, tenta carregar IP guardado
+        let savedIP = await loadSavedServerIP();
+        
+        if (!savedIP) {
+          // Se não há IP guardado, tenta descobrir automaticamente
+          console.log("Nenhum IP guardado. Tentando descobrir servidor...");
+          savedIP = await discoverServerAutomatically();
+          
+          if (savedIP) {
+            // Se encontrou, guarda para próximas vezes
+            SERVER_CONFIG.setIP(savedIP);
+          }
+        }
+        
         setHasServerIP(!!savedIP);
       } catch (error) {
         console.error("Erro ao verificar configuração do servidor:", error);

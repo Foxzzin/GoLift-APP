@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  Alert,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -33,12 +34,26 @@ export default function Home() {
   async function loadData() {
     try {
       const [workouts, statsData, streakData] = await Promise.all([
-        workoutApi.getUserWorkouts(user!.id),
+        workoutApi.getUserWorkouts(user!.id).catch(() => []),
         metricsApi.getStats(user!.id).catch(() => null),
         metricsApi.getStreak(user!.id).catch(() => null),
       ]);
       
-      setRecentWorkouts(workouts?.slice(0, 3) || []);
+      // Pegar os últimos 3 treinos (remover duplicados)
+      let workoutsList = Array.isArray(workouts) ? workouts : [];
+      
+      // Remover duplicados - manter apenas um treino por tipo/nome
+      const seenWorkouts = new Set<string>();
+      const uniqueWorkouts = workoutsList.filter((workout) => {
+        const key = workout.nome || workout.name || workout.id_treino;
+        if (seenWorkouts.has(key)) {
+          return false;
+        }
+        seenWorkouts.add(key);
+        return true;
+      });
+      
+      setRecentWorkouts(uniqueWorkouts.slice(0, 3) || []);
       if (statsData) {
         setStats(statsData);
       }
@@ -54,6 +69,45 @@ export default function Home() {
     setRefreshing(true);
     await loadData();
     setRefreshing(false);
+  }
+
+  async function handleStartWorkout(workout: any) {
+    const workoutName = workout.nome || workout.name || "Treino";
+    
+    Alert.alert(
+      "Começar Treino",
+      `Deseja começar: ${workoutName}?`,
+      [
+        {
+          text: "Cancelar",
+          onPress: () => {},
+          style: "cancel",
+        },
+        {
+          text: "Sim, começar",
+          onPress: async () => {
+            try {
+              // Iniciar a sessão de treino
+              const response = await workoutApi.startSession(user!.id, workout.id_treino);
+              if (response.sucesso) {
+                // Redirecionar para a página de treino
+                router.push({
+                  pathname: "/workout/[id]",
+                  params: { 
+                    id: workout.id_treino,
+                    sessionId: response.id_sessao
+                  }
+                });
+              }
+            } catch (error) {
+              Alert.alert("Erro", "Erro ao iniciar treino");
+              console.error("Erro ao iniciar treino:", error);
+            }
+          },
+          style: "default",
+        },
+      ]
+    );
   }
 
   function getStreakColor(streak: number): string {
@@ -100,7 +154,9 @@ export default function Home() {
               Bem-vindo,
             </Text>
             <Text style={{ color: theme.text, fontSize: 28, fontWeight: "bold" }}>
-              {user?.nome || "Atleta"}
+              {user?.nome
+                ? user.nome.charAt(0).toUpperCase() + user.nome.slice(1)
+                : "Atleta"}
             </Text>
           </View>
           
@@ -200,18 +256,20 @@ export default function Home() {
           <View style={{ gap: 12 }}>
             {recentWorkouts.map((workout, index) => (
               <TouchableOpacity
-                key={workout.id_treino || index}
+                key={workout.id_sessao || workout.id_treino || index}
+                onPress={() => handleStartWorkout(workout)}
                 style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 12, padding: 16, flexDirection: "row", alignItems: "center", borderColor: theme.border, borderWidth: 1 }}
+                activeOpacity={0.7}
               >
                 <View style={{ backgroundColor: theme.backgroundTertiary, width: 44, height: 44, borderRadius: 10, alignItems: "center", justifyContent: "center", marginRight: 12 }}>
                   <Ionicons name="barbell" size={22} color={theme.text} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: theme.text, fontWeight: "600", fontSize: 14 }}>
-                    {workout.nome || "Treino"}
+                    {workout.nome || workout.name || "Treino"}
                   </Text>
                   <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>
-                    {workout.exercicios?.length || 0} exercícios
+                    {workout.num_exercicios ?? 0} exercícios • {formatTime(workout.duracao_segundos || 0)}
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={theme.textTertiary} />

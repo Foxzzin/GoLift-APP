@@ -500,6 +500,7 @@ export default function Profile() {
 
           {/* Definições */}
           <TouchableOpacity
+            onPress={() => router.push("/settings")}
             style={{
               flexDirection: "row",
               alignItems: "center",
@@ -560,24 +561,6 @@ export default function Profile() {
 
       {/* Logout */}
       <View style={{ paddingHorizontal: 24, gap: 12 }}>
-        <TouchableOpacity
-          onPress={() => router.push("/settings")}
-          style={{
-            backgroundColor: theme.backgroundSecondary,
-            borderColor: theme.border,
-            borderWidth: 1,
-            borderRadius: 16,
-            paddingVertical: 16,
-            flexDirection: "row",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <Ionicons name="settings" size={20} color={theme.text} style={{ marginRight: 8 }} />
-          <Text style={{ color: theme.text, fontWeight: "600", fontSize: 14 }}>
-            Definições
-          </Text>
-        </TouchableOpacity>
 
         <TouchableOpacity
           onPress={handleLogout}

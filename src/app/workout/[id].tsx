@@ -12,7 +12,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../styles/theme";
-import { workoutApi } from "../../services/api";
+import { workoutApi, metricsApi } from "../../services/api";
 
 interface Serie {
   numero: number;
@@ -26,6 +26,7 @@ interface ExercicioAtivo {
   nome: string;
   series: Serie[];
   expandido: boolean;
+  previousSeries?: Serie[]; // Dados do treino anterior
 }
 
 export default function WorkoutActive() {
@@ -38,6 +39,7 @@ export default function WorkoutActive() {
   const [tempoDecorrido, setTempoDecorrido] = useState(0);
   const [timerPaused, setTimerPaused] = useState(false);
   const [sessaoId, setSessaoId] = useState<number | null>(null);
+  const [focusedField, setFocusedField] = useState<string | null>(null); // Rastrear qual campo tem foco
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -56,7 +58,7 @@ export default function WorkoutActive() {
       if (!timerPaused) {
         setTempoDecorrido((prev) => prev + 1);
       }
-    }, 1000);
+    }, 1000) as NodeJS.Timeout;
   }
 
   async function loadWorkout() {
@@ -71,19 +73,55 @@ export default function WorkoutActive() {
         setSessaoId(sessaoResponse.id_sessao);
       }
 
+      // Carregar histórico do treino anterior (mesmos exercícios)
+      let previousWorkoutData: any = null;
+      try {
+        const history = await metricsApi.getHistory(user!.id);
+        // Encontrar o treino anterior com os mesmos exercícios
+        if (Array.isArray(history) && history.length > 0) {
+          previousWorkoutData = history[0]; // O primeiro é o mais recente
+        }
+      } catch (e) {
+        // Se não conseguir carregar histórico, continua sem dados anteriores
+      }
+
+      // Garantir que temos exercícios (pode vir em diferentes formatos)
+      const exerciciosList = data.exercicios || data.exercises || [];
+      
       // Transformar exercícios para o formato ativo
-      const exerciciosAtivos: ExercicioAtivo[] = (data.exercicios || []).map(
-        (ex: any) => ({
-          id: ex.id || ex.id_exercicio,
-          nome: ex.nome,
-          expandido: false,
-          series: [
-            { numero: 1, repeticoes: "", peso: "", concluida: false },
-            { numero: 2, repeticoes: "", peso: "", concluida: false },
-            { numero: 3, repeticoes: "", peso: "", concluida: false },
-          ],
-        })
+      const exerciciosAtivos: ExercicioAtivo[] = exerciciosList.map(
+        (ex: any) => {
+          // Tentar encontrar dados do exercício no treino anterior
+          let previousSeries: Serie[] | undefined = undefined;
+          if (previousWorkoutData?.exercicios) {
+            const previousEx = previousWorkoutData.exercicios.find(
+              (pex: any) => pex.id === ex.id || pex.id_exercicio === ex.id_exercicio
+            );
+            if (previousEx?.series) {
+              previousSeries = previousEx.series.map((s: any) => ({
+                numero: s.numero || s.numero_serie,
+                repeticoes: String(s.repeticoes),
+                peso: String(s.peso),
+                concluida: false,
+              }));
+            }
+          }
+
+          return {
+            id: ex.id || ex.id_exercicio,
+            nome: ex.nome,
+            expandido: false,
+            previousSeries,
+            series: [
+              { numero: 1, repeticoes: "", peso: "", concluida: false },
+              { numero: 2, repeticoes: "", peso: "", concluida: false },
+              { numero: 3, repeticoes: "", peso: "", concluida: false },
+            ],
+          };
+        }
       );
+      
+      console.log("Exercícios carregados:", exerciciosAtivos.length);
       setExercicios(exerciciosAtivos);
     } catch (error) {
       console.error("Erro ao carregar treino:", error);
@@ -107,6 +145,31 @@ export default function WorkoutActive() {
     return `${minutos.toString().padStart(2, "0")}:${segs
       .toString()
       .padStart(2, "0")}`;
+  }
+
+  // Obter placeholder/sugestão do treino anterior
+  function getPlaceholder(exercicioId: number, serieIndex: number, campo: "peso" | "repeticoes"): string {
+    const exercicio = exercicios.find((ex) => ex.id === exercicioId);
+    if (!exercicio?.previousSeries || !exercicio.previousSeries[serieIndex]) {
+      return "-";
+    }
+    return campo === "peso" ? exercicio.previousSeries[serieIndex].peso : exercicio.previousSeries[serieIndex].repeticoes;
+  }
+
+  // Auto-preencher com dados anteriores quando clica no check
+  function autoFillFromPrevious(exercicioId: number, serieIndex: number) {
+    const exercicio = exercicios.find((ex) => ex.id === exercicioId);
+    if (!exercicio?.previousSeries || !exercicio.previousSeries[serieIndex]) {
+      return;
+    }
+
+    const previousSerie = exercicio.previousSeries[serieIndex];
+    if (!exercicio.series[serieIndex].peso) {
+      atualizarSerie(exercicioId, serieIndex, "peso", previousSerie.peso);
+    }
+    if (!exercicio.series[serieIndex].repeticoes) {
+      atualizarSerie(exercicioId, serieIndex, "repeticoes", previousSerie.repeticoes);
+    }
   }
 
   function toggleExpandir(exercicioId: number) {
@@ -343,34 +406,43 @@ export default function WorkoutActive() {
                     <Text style={{ color: theme.text, fontSize: 14, fontWeight: "500", width: 64 }}>
                       {serie.numero}
                     </Text>
-                    <View style={{ flex: 1, paddingHorizontal: 8 }}>
+                    <View style={{ flex: 1, paddingHorizontal: 8, position: "relative" }}>
                       <TextInput
                         style={{ backgroundColor: theme.backgroundTertiary, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, color: theme.text, textAlign: "center" }}
-                        placeholder="-"
+                        placeholder={getPlaceholder(exercicio.id, serieIndex, "peso")}
                         placeholderTextColor={theme.textSecondary}
                         keyboardType="decimal-pad"
                         value={serie.peso}
-                        onChangeText={(v) =>
-                          atualizarSerie(exercicio.id, serieIndex, "peso", v)
-                        }
+                        onChangeText={(v) => {
+                          atualizarSerie(exercicio.id, serieIndex, "peso", v);
+                          if (v.length > 0) setFocusedField(null); // Limpar dados anteriores quando começa a digitar
+                        }}
+                        onFocus={() => setFocusedField(`peso-${exercicio.id}-${serieIndex}`)}
+                        onBlur={() => setFocusedField(null)}
                         editable={!serie.concluida}
                       />
                     </View>
                     <View style={{ flex: 1, paddingHorizontal: 8 }}>
                       <TextInput
                         style={{ backgroundColor: theme.backgroundTertiary, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, color: theme.text, textAlign: "center" }}
-                        placeholder="-"
+                        placeholder={getPlaceholder(exercicio.id, serieIndex, "repeticoes")}
                         placeholderTextColor={theme.textSecondary}
                         keyboardType="number-pad"
                         value={serie.repeticoes}
-                        onChangeText={(v) =>
-                          atualizarSerie(exercicio.id, serieIndex, "repeticoes", v)
-                        }
+                        onChangeText={(v) => {
+                          atualizarSerie(exercicio.id, serieIndex, "repeticoes", v);
+                          if (v.length > 0) setFocusedField(null); // Limpar dados anteriores quando começa a digitar
+                        }}
+                        onFocus={() => setFocusedField(`reps-${exercicio.id}-${serieIndex}`)}
+                        onBlur={() => setFocusedField(null)}
                         editable={!serie.concluida}
                       />
                     </View>
                     <TouchableOpacity
-                      onPress={() => toggleSerieConcluida(exercicio.id, serieIndex)}
+                      onPress={() => {
+                        autoFillFromPrevious(exercicio.id, serieIndex); // Auto-preencher se não tiver valores
+                        toggleSerieConcluida(exercicio.id, serieIndex);
+                      }}
                       style={{
                         width: 40,
                         height: 40,
