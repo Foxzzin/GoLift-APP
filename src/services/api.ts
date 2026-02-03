@@ -15,8 +15,6 @@ async function request<T>(
 ): Promise<T> {
   const url = `${getAPI_URL()}${endpoint}`;
   
-  console.log(`📤 [API] ${options?.method || "GET"} ${url}`);
-  
   const config: RequestInit = {
     headers: {
       "Content-Type": "application/json",
@@ -28,8 +26,6 @@ async function request<T>(
   try {
     const response = await fetch(url, config);
     
-    console.log(`📥 [API] Resposta: Status ${response.status}`);
-    
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
       throw new Error(error.erro || error.message || "Erro na requisição");
@@ -37,7 +33,7 @@ async function request<T>(
     
     return response.json();
   } catch (error: any) {
-    console.error(`❌ [API] Erro ao conectar a ${url}:`, error.message);
+    console.error(`Erro ao conectar a ${url}:`, error.message);
     throw error;
   }
 }
@@ -83,29 +79,6 @@ export const authApi = {
       return { sucesso: false, mensagem: error.message, resultado: null };
     }
   },
-
-  // Diagnostico da conexão
-  getDebugInfo: () =>
-    request<any>("/api/debug"),
-
-  // Recuperação de senha
-  requestPasswordReset: (email: string) =>
-    request<{ sucesso: boolean; mensagem: string; codigo_teste?: string }>("/api/recuperar-senha", {
-      method: "POST",
-      body: JSON.stringify({ email }),
-    }),
-
-  verifyResetCode: (email: string, codigo: string) =>
-    request<{ sucesso: boolean; mensagem: string }>("/api/verificar-codigo", {
-      method: "POST",
-      body: JSON.stringify({ email, codigo }),
-    }),
-
-  resetPassword: (email: string, codigo: string, novaSenha: string) =>
-    request<{ sucesso: boolean; mensagem: string }>("/api/redefinir-senha", {
-      method: "POST",
-      body: JSON.stringify({ email, codigo, novaSenha }),
-    }),
 };
 
 // Utilizador
@@ -131,27 +104,14 @@ export const exerciseApi = {
 
 // Treinos
 export const workoutApi = {
-  // Treinos do utilizador
   getUserWorkouts: (userId: number) =>
     request<any[]>(`/api/treino/${userId}`),
-
-  getWorkoutDetails: (userId: number, workoutId: number) =>
-    request<any>(`/api/treino/${userId}/${workoutId}`),
 
   createWorkout: (userId: number, nome: string, exercicios: number[]) =>
     request<{ sucesso: boolean; id_treino: number }>("/api/treino", {
       method: "POST",
       body: JSON.stringify({ userId, nome, exercicios }),
     }),
-
-  deleteWorkout: (userId: number, workoutId: number) =>
-    request<any>(`/api/treino/${userId}/${workoutId}`, {
-      method: "DELETE",
-    }),
-
-  // Treinos recomendados (admin)
-  getAdminWorkouts: () =>
-    request<any[]>("/api/treinos-admin"),
 
   // Iniciar sessão de treino
   startSession: (userId: number, treinoId: number) =>
@@ -172,6 +132,16 @@ export const workoutApi = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+
+  // Obter exercícios de um treino específico
+  getWorkoutExercises: async (treinoId: number) => {
+    try {
+      return await request<any>(`/api/treino-user/${treinoId}/exercicios`);
+    } catch (err: any) {
+      // Em caso de erro, retornar array vazio em vez de falhar
+      return { sucesso: false, exercicios: [] };
+    }
+  },
 };
 
 // Métricas
@@ -184,6 +154,10 @@ export const metricsApi = {
 
   getStreak: (userId: number) =>
     request<{ sucesso: boolean; streak: number; maxStreak: number; totalDays: number }>(`/api/streak/${userId}`),
+
+  // Get full workout session details with exercises and series
+  getSessionDetails: (sessaoId: number) =>
+    request<any>(`/api/treino-sessao-detalhes/${sessaoId}`),
 
   // Stats não existe no backend, vamos calcular a partir das sessões
   getStats: (userId: number) =>

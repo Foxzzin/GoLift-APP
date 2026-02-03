@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -43,10 +43,7 @@ export default function Workouts() {
   async function loadData() {
     setLoading(true);
     try {
-      const [userWorkouts, recommended] = await Promise.all([
-        workoutApi.getUserWorkouts(user!.id).catch(() => []),
-        workoutApi.getAdminWorkouts().catch(() => []),
-      ]);
+      const userWorkouts = await workoutApi.getUserWorkouts(user!.id).catch(() => []);
       
       // Remover duplicatas usando Set com nome do treino como chave
       const uniqueWorkouts = Array.from(
@@ -56,7 +53,7 @@ export default function Workouts() {
       );
       
       setMyWorkouts(uniqueWorkouts);
-      setAdminWorkouts(recommended || []);
+      setAdminWorkouts([]);
     } catch (error) {
       console.error("Erro ao carregar treinos:", error);
     } finally {
@@ -88,8 +85,8 @@ export default function Workouts() {
   }
 
   function toggleExercise(exercise: any) {
-    if (selectedExercises.find((e) => e.id === exercise.id)) {
-      setSelectedExercises(selectedExercises.filter((e) => e.id !== exercise.id));
+    if (selectedExercises.find((e: any) => e.id === exercise.id)) {
+      setSelectedExercises(selectedExercises.filter((e: any) => e.id !== exercise.id));
     } else {
       setSelectedExercises([...selectedExercises, exercise]);
     }
@@ -107,7 +104,7 @@ export default function Workouts() {
 
     // Verificar se treino com este nome já existe
     const treinoExistente = myWorkouts.find(
-      (w) => w.nome.toLowerCase() === workoutName.trim().toLowerCase()
+      (w: any) => w.nome.toLowerCase() === workoutName.trim().toLowerCase()
     );
     if (treinoExistente) {
       Alert.alert("Treino Duplicado", `Já existe um treino chamado "${workoutName}". Escolhe um nome diferente.`);
@@ -116,7 +113,7 @@ export default function Workouts() {
 
     setSavingWorkout(true);
     try {
-      const exerciseIds = selectedExercises.map((e) => e.id);
+      const exerciseIds = selectedExercises.map((e: any) => e.id);
       const upperName = workoutName.charAt(0).toUpperCase() + workoutName.slice(1);
       await workoutApi.createWorkout(user!.id, upperName, exerciseIds);
       Alert.alert("Sucesso", "Treino criado com sucesso!");
@@ -165,12 +162,7 @@ export default function Workouts() {
           text: "Apagar",
           style: "destructive",
           onPress: async () => {
-            try {
-              await workoutApi.deleteWorkout(user!.id, workout.id_treino);
-              loadData();
-            } catch (error) {
-              Alert.alert("Erro", "Não foi possível apagar o treino");
-            }
+            Alert.alert("Aviso", "Apagar treino não é suportado no momento");
           },
         },
       ]
@@ -188,7 +180,7 @@ export default function Workouts() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 120 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -213,7 +205,7 @@ export default function Workouts() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingHorizontal: 24, gap: 12 }}
             >
-              {adminWorkouts.map((workout, index) => (
+              {adminWorkouts.map((workout: any, index: number) => (
                 <TouchableOpacity
                   key={workout.id_treino_admin || index}
                   onPress={() => handleStartWorkout(workout)}
@@ -322,7 +314,7 @@ export default function Workouts() {
             </View>
           ) : (
             <View style={{ gap: 12 }}>
-              {myWorkouts.map((workout, index) => (
+              {myWorkouts.map((workout: any, index: number) => (
                 <View
                   key={workout.id_treino || index}
                   style={{
@@ -496,7 +488,7 @@ export default function Workouts() {
                       marginBottom: 16,
                     }}
                   >
-                    {selectedExercises.map((ex, i) => (
+                    {selectedExercises.map((ex: any, i: number) => (
                       <View
                         key={ex.id}
                         style={{
@@ -556,8 +548,8 @@ export default function Workouts() {
                       </Text>
                     </TouchableOpacity>
                     {Array.from(
-                      new Set(availableExercises.map((e) => e.category).filter(Boolean))
-                    ).map((bodyPart) => (
+                      new Set(availableExercises.map((e: any) => e.category).filter(Boolean))
+                    ).map((bodyPart: any) => (
                       <TouchableOpacity
                         key={bodyPart}
                         onPress={() => setModalFilterBodyPart(bodyPart)}
@@ -599,15 +591,15 @@ export default function Workouts() {
               ) : (
                 <View style={{ gap: 8, marginBottom: 24 }}>
                   {availableExercises
-                    .filter((exercise) => {
+                    .filter((exercise: any) => {
                       if (modalFilterBodyPart && exercise.category !== modalFilterBodyPart) {
                         return false;
                       }
                       return true;
                     })
-                    .map((exercise) => {
+                    .map((exercise: any) => {
                       const isSelected = selectedExercises.find(
-                        (e) => e.id === exercise.id
+                        (e: any) => e.id === exercise.id
                       );
                       return (
                         <TouchableOpacity

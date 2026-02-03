@@ -40,7 +40,7 @@ export default function WorkoutActive() {
   const [timerPaused, setTimerPaused] = useState(false);
   const [sessaoId, setSessaoId] = useState<number | null>(null);
   const [focusedField, setFocusedField] = useState<string | null>(null); // Rastrear qual campo tem foco
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<number | null>(null);
 
   useEffect(() => {
     loadWorkout();
@@ -56,72 +56,72 @@ export default function WorkoutActive() {
   function startTimer() {
     timerRef.current = setInterval(() => {
       if (!timerPaused) {
-        setTempoDecorrido((prev) => prev + 1);
+        setTempoDecorrido((prev: number) => prev + 1);
       }
-    }, 1000) as NodeJS.Timeout;
+    }, 1000) as unknown as number;
   }
 
   async function loadWorkout() {
     try {
-      // Carregar detalhes do treino
-      const data = await workoutApi.getWorkoutDetails(user!.id, Number(id));
-      setWorkout(data);
-
       // Iniciar sessão de treino
       const sessaoResponse = await workoutApi.startSession(user!.id, Number(id));
       if (sessaoResponse.sucesso && sessaoResponse.id_sessao) {
         setSessaoId(sessaoResponse.id_sessao);
       }
 
-      // Carregar histórico do treino anterior (mesmos exercícios)
-      let previousWorkoutData: any = null;
-      try {
-        const history = await metricsApi.getHistory(user!.id);
-        // Encontrar o treino anterior com os mesmos exercícios
-        if (Array.isArray(history) && history.length > 0) {
-          previousWorkoutData = history[0]; // O primeiro é o mais recente
-        }
-      } catch (e) {
-        // Se não conseguir carregar histórico, continua sem dados anteriores
+      // Carregar todos os treinos do utilizador
+      const allWorkouts = await workoutApi.getUserWorkouts(user!.id).catch(() => []);
+      
+      // Encontrar o treino atual e extrair os exercícios
+      const currentWorkout = allWorkouts.find((w: any) => w.id_treino === Number(id));
+      let exerciciosDoTreino: any[] = [];
+      
+      if (currentWorkout?.exercicios_nomes) {
+        // Parse dos nomes dos exercícios (vêm em formato STRING separado por vírgula)
+        // Precisamos de carregar os dados completos do endpoint específico
+        const response = await workoutApi.getWorkoutExercises(Number(id)).catch(() => ({ exercicios: [] }));
+        exerciciosDoTreino = response?.exercicios || [];
       }
 
-      // Garantir que temos exercícios (pode vir em diferentes formatos)
-      const exerciciosList = data.exercicios || data.exercises || [];
-      
-      // Transformar exercícios para o formato ativo
-      const exerciciosAtivos: ExercicioAtivo[] = exerciciosList.map(
-        (ex: any) => {
-          // Tentar encontrar dados do exercício no treino anterior
-          let previousSeries: Serie[] | undefined = undefined;
-          if (previousWorkoutData?.exercicios) {
-            const previousEx = previousWorkoutData.exercicios.find(
-              (pex: any) => pex.id === ex.id || pex.id_exercicio === ex.id_exercicio
-            );
-            if (previousEx?.series) {
-              previousSeries = previousEx.series.map((s: any) => ({
-                numero: s.numero || s.numero_serie,
-                repeticoes: String(s.repeticoes),
-                peso: String(s.peso),
-                concluida: false,
-              }));
-            }
-          }
+      // Carregar histórico para comparar séries anteriores
+      let previousWorkoutData: any = null;
+      const history = await metricsApi.getHistory(user!.id).catch(() => []);
+      if (Array.isArray(history) && history.length > 0) {
+        previousWorkoutData = history[0];
+      }
 
-          return {
-            id: ex.id || ex.id_exercicio,
-            nome: ex.nome,
-            expandido: false,
-            previousSeries,
-            series: [
-              { numero: 1, repeticoes: "", peso: "", concluida: false },
-              { numero: 2, repeticoes: "", peso: "", concluida: false },
-              { numero: 3, repeticoes: "", peso: "", concluida: false },
-            ],
-          };
+      // Transformar exercícios para o formato ativo
+      const exerciciosAtivos: ExercicioAtivo[] = exerciciosDoTreino.map((ex: any) => {
+        let previousSeries: Serie[] | undefined = undefined;
+        
+        // Procurar dados do treino anterior
+        if (previousWorkoutData?.exercicios) {
+          const previousEx = previousWorkoutData.exercicios.find(
+            (pex: any) => pex.id === ex.id_exercicio || pex.id_exercicio === ex.id_exercicio
+          );
+          if (previousEx?.series) {
+            previousSeries = previousEx.series.map((s: any) => ({
+              numero: s.numero || s.numero_serie,
+              repeticoes: String(s.repeticoes),
+              peso: String(s.peso),
+              concluida: false,
+            }));
+          }
         }
-      );
+
+        return {
+          id: ex.id_exercicio,
+          nome: ex.nome,
+          expandido: false,
+          previousSeries,
+          series: [
+            { numero: 1, repeticoes: "", peso: "", concluida: false },
+            { numero: 2, repeticoes: "", peso: "", concluida: false },
+            { numero: 3, repeticoes: "", peso: "", concluida: false },
+          ],
+        };
+      });
       
-      console.log("Exercícios carregados:", exerciciosAtivos.length);
       setExercicios(exerciciosAtivos);
     } catch (error) {
       console.error("Erro ao carregar treino:", error);
@@ -149,7 +149,7 @@ export default function WorkoutActive() {
 
   // Obter placeholder/sugestão do treino anterior
   function getPlaceholder(exercicioId: number, serieIndex: number, campo: "peso" | "repeticoes"): string {
-    const exercicio = exercicios.find((ex) => ex.id === exercicioId);
+    const exercicio = exercicios.find((ex: any) => ex.id === exercicioId);
     if (!exercicio?.previousSeries || !exercicio.previousSeries[serieIndex]) {
       return "-";
     }
@@ -158,7 +158,7 @@ export default function WorkoutActive() {
 
   // Auto-preencher com dados anteriores quando clica no check
   function autoFillFromPrevious(exercicioId: number, serieIndex: number) {
-    const exercicio = exercicios.find((ex) => ex.id === exercicioId);
+    const exercicio = exercicios.find((ex: any) => ex.id === exercicioId);
     if (!exercicio?.previousSeries || !exercicio.previousSeries[serieIndex]) {
       return;
     }
@@ -174,7 +174,7 @@ export default function WorkoutActive() {
 
   function toggleExpandir(exercicioId: number) {
     setExercicios(
-      exercicios.map((ex) =>
+      exercicios.map((ex: any) =>
         ex.id === exercicioId ? { ...ex, expandido: !ex.expandido } : ex
       )
     );
@@ -187,11 +187,11 @@ export default function WorkoutActive() {
     valor: string
   ) {
     setExercicios(
-      exercicios.map((ex) =>
+      exercicios.map((ex: any) =>
         ex.id === exercicioId
           ? {
               ...ex,
-              series: ex.series.map((s, i) =>
+              series: ex.series.map((s: any, i: number) =>
                 i === serieIndex ? { ...s, [campo]: valor } : s
               ),
             }
@@ -202,11 +202,11 @@ export default function WorkoutActive() {
 
   function toggleSerieConcluida(exercicioId: number, serieIndex: number) {
     setExercicios(
-      exercicios.map((ex) =>
+      exercicios.map((ex: any) =>
         ex.id === exercicioId
           ? {
               ...ex,
-              series: ex.series.map((s, i) =>
+              series: ex.series.map((s: any, i: number) =>
                 i === serieIndex ? { ...s, concluida: !s.concluida } : s
               ),
             }
@@ -217,7 +217,7 @@ export default function WorkoutActive() {
 
   function adicionarSerie(exercicioId: number) {
     setExercicios(
-      exercicios.map((ex) =>
+      exercicios.map((ex: any) =>
         ex.id === exercicioId
           ? {
               ...ex,
@@ -253,8 +253,8 @@ export default function WorkoutActive() {
 
   async function concluirTreino() {
     // Verificar se há pelo menos uma série concluída
-    const temSeriesConcluidas = exercicios.some((ex) =>
-      ex.series.some((s) => s.concluida)
+    const temSeriesConcluidas = exercicios.some((ex: any) =>
+      ex.series.some((s: any) => s.concluida)
     );
 
     if (!temSeriesConcluidas) {
@@ -275,7 +275,7 @@ export default function WorkoutActive() {
           try {
             // Guardar todas as séries concluídas
             for (const exercicio of exercicios) {
-              const seriesConcluidas = exercicio.series.filter((s) => s.concluida);
+              const seriesConcluidas = exercicio.series.filter((s: any) => s.concluida);
               for (const serie of seriesConcluidas) {
                 await workoutApi.addSerie(sessaoId, {
                   id_exercicio: exercicio.id,
@@ -347,7 +347,7 @@ export default function WorkoutActive() {
 
       {/* Lista de exercícios */}
       <ScrollView style={{ flex: 1, paddingHorizontal: 24 }} contentContainerStyle={{ paddingBottom: 100 }}>
-        {exercicios.map((exercicio, index) => (
+        {exercicios.map((exercicio: any, index: number) => (
           <View
             key={exercicio.id}
             style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 16, marginBottom: 16, borderColor: theme.border, borderWidth: 1, overflow: "hidden" }}
@@ -364,7 +364,7 @@ export default function WorkoutActive() {
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: theme.text, fontWeight: "600" }}>{exercicio.nome}</Text>
                   <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
-                    {exercicio.series.filter((s) => s.concluida).length}/{exercicio.series.length} séries
+                    {exercicio.series.filter((s: any) => s.concluida).length}/{exercicio.series.length} séries
                   </Text>
                 </View>
               </View>
@@ -391,7 +391,7 @@ export default function WorkoutActive() {
                 </View>
 
                 {/* Séries */}
-                {exercicio.series.map((serie, serieIndex) => (
+                {exercicio.series.map((serie: any, serieIndex: number) => (
                   <View
                     key={serieIndex}
                     style={{
@@ -413,7 +413,7 @@ export default function WorkoutActive() {
                         placeholderTextColor={theme.textSecondary}
                         keyboardType="decimal-pad"
                         value={serie.peso}
-                        onChangeText={(v) => {
+                        onChangeText={(v: string) => {
                           atualizarSerie(exercicio.id, serieIndex, "peso", v);
                           if (v.length > 0) setFocusedField(null); // Limpar dados anteriores quando começa a digitar
                         }}
@@ -429,7 +429,7 @@ export default function WorkoutActive() {
                         placeholderTextColor={theme.textSecondary}
                         keyboardType="number-pad"
                         value={serie.repeticoes}
-                        onChangeText={(v) => {
+                        onChangeText={(v: string) => {
                           atualizarSerie(exercicio.id, serieIndex, "repeticoes", v);
                           if (v.length > 0) setFocusedField(null); // Limpar dados anteriores quando começa a digitar
                         }}

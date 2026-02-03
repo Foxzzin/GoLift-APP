@@ -4,7 +4,7 @@ export interface User {
   id: number;
   nome: string;
   email: string;
-  tipo?: number; // 1 = admin, 2 = user normal
+  tipo?: number;
   idade?: number;
   peso?: number;
   altura?: number;
@@ -14,13 +14,8 @@ export interface User {
 export interface Exercise {
   id: number;
   nome: string;
-  grupo_muscular?: string;
-  sub_tipo?: string;
+  grupo_tipo?: string;
   video_url?: string;
-}
-
-export interface WorkoutExercise extends Exercise {
-  series?: Serie[];
 }
 
 export interface Serie {
@@ -33,15 +28,7 @@ export interface Serie {
 export interface Workout {
   id_treino: number;
   nome: string;
-  data_criacao?: string;
-  duracao_segundos?: number;
-  exercicios: WorkoutExercise[];
-}
-
-export interface AdminWorkout {
-  id_treino_admin: number;
-  nome: string;
-  exercicios: Exercise[];
+  exercicios: any[];
 }
 
 export interface Record {
@@ -62,6 +49,4 @@ export interface RegisterData {
   idade?: number;
   peso?: number;
   altura?: number;
-  objetivo?: string;
-  pesoAlvo?: number;
 }

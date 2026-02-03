@@ -2,7 +2,7 @@ import * as Network from 'expo-network';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // IP do servidor local (pode ser alterado dinamicamente)
-let SERVER_IP = "10.0.2.2"; // Padrão para emulador Android
+let SERVER_IP = "192.168.56.1"; // IP correcto do servidor
 let SERVER_PORT = "5000";
 
 // Flag para indicar se o servidor foi configurado
@@ -46,11 +46,10 @@ async function testServerConnection(ip: string, port: string = "5000"): Promise<
     const url = `http://${ip}:${port}/api/health`;
     const response = await fetch(url, {
       method: "GET",
-      timeout: 3000,
     });
     console.log(`Teste de conexão com ${ip}:${port} - Status: ${response.status}`);
     return response.ok;
-  } catch (error) {
+  } catch (error: any) {
     console.log(`Erro ao testar conexão com ${ip}:${port}:`, error);
     return false;
   }
@@ -89,13 +88,13 @@ export async function discoverServerAutomatically(): Promise<string | null> {
 
     // Aguarda até 3 segundos por resposta (não espera por todas)
     const racePromises = promises.map(
-      p => Promise.race([p, new Promise(resolve => setTimeout(() => resolve({ ip: null, success: false }), 3000))])
+      p => Promise.race([p, new Promise((resolve: any) => setTimeout(() => resolve({ ip: null, success: false }), 3000))])
     );
 
     const results = await Promise.all(racePromises);
     
     // Encontra o primeiro servidor disponível
-    const foundServer = results.find(r => r.success && r.ip);
+    const foundServer = results.find((r: any) => r.success && r.ip) as any;
     if (foundServer && foundServer.ip) {
       console.log(`Servidor encontrado: ${foundServer.ip}`);
       return foundServer.ip;
@@ -119,7 +118,7 @@ export function setServerIP(ip: string): void {
   SERVER_IP = ip;
   IS_SERVER_CONFIGURED = true;
   // Guarda no AsyncStorage
-  AsyncStorage.setItem("@server_ip", ip).catch(err => console.error("Erro ao guardar IP:", err));
+  AsyncStorage.setItem("@server_ip", ip).catch((err: any) => console.error("Erro ao guardar IP:", err));
   console.log("IP do servidor atualizado para:", ip);
 }
 

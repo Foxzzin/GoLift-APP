@@ -77,7 +77,7 @@ export default function AdminUsers() {
   }
 
   const filteredUsers = users.filter(
-    (u) =>
+    (u: any) =>
       u.userName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       u.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -132,7 +132,7 @@ export default function AdminUsers() {
           </View>
         ) : (
           <View style={{ gap: 12 }}>
-            {filteredUsers.map((user, index) => (
+            {filteredUsers.map((user: any, index: number) => (
               <View
                 key={user.id || index}
                 style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 16, padding: 16, borderColor: theme.border, borderWidth: 1 }}

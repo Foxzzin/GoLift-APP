@@ -129,7 +129,7 @@ export default function AdminExercises() {
   }
 
   const filteredExercises = exercises.filter(
-    (e) =>
+    (e: any) =>
       e.nome?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       e.grupo_tipo?.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -187,7 +187,7 @@ export default function AdminExercises() {
           </View>
         ) : (
           <View style={{ gap: 12 }}>
-            {filteredExercises.map((exercise, index) => (
+            {filteredExercises.map((exercise: any, index: number) => (
               <View
                 key={exercise.id || index}
                 style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 16, padding: 16, borderColor: theme.border, borderWidth: 1 }}
@@ -261,7 +261,7 @@ export default function AdminExercises() {
                   placeholder="Ex: Supino Reto"
                   placeholderTextColor={theme.textSecondary}
                   value={form.nome}
-                  onChangeText={(text) => setForm({ ...form, nome: text })}
+                  onChangeText={(text: string) => setForm({ ...form, nome: text })}
                 />
               </View>
 
@@ -272,7 +272,7 @@ export default function AdminExercises() {
                   placeholder="Descrição do exercício..."
                   placeholderTextColor={theme.textSecondary}
                   value={form.descricao}
-                  onChangeText={(text) => setForm({ ...form, descricao: text })}
+                  onChangeText={(text: string) => setForm({ ...form, descricao: text })}
                   multiline
                   numberOfLines={3}
                 />
@@ -313,7 +313,7 @@ export default function AdminExercises() {
                   placeholder="Ex: Barbell, Dumbbell, Machine..."
                   placeholderTextColor={theme.textSecondary}
                   value={form.sub_tipo}
-                  onChangeText={(text) => setForm({ ...form, sub_tipo: text })}
+                  onChangeText={(text: string) => setForm({ ...form, sub_tipo: text })}
                 />
               </View>
 
