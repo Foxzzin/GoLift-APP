@@ -27,6 +27,12 @@ export default function AdminDashboard() {
       icon: "fitness",
       route: "/admin/workouts",
     },
+    {
+      title: "Comunidades",
+      description: "Verificar e gerir comunidades",
+      icon: "people-circle",
+      route: "/admin/communities",
+    },
   ];
 
   return (

@@ -2,7 +2,8 @@ import * as Network from 'expo-network';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // IP do servidor local (pode ser alterado dinamicamente)
-let SERVER_IP = "192.168.56.1"; // IP correcto do servidor
+// Tentar usar IP da rede se disponível, caso contrário usar localhost
+let SERVER_IP = "localhost"; // Começar com localhost (funciona em desenvolvimento)
 let SERVER_PORT = "5000";
 
 // Flag para indicar se o servidor foi configurado
@@ -11,17 +12,36 @@ let IS_SERVER_CONFIGURED = false;
 // Função para carregar o IP guardado do AsyncStorage
 export async function loadSavedServerIP(): Promise<string | null> {
   try {
+    // Tentar carregar IP do AsyncStorage (guardado anteriormente)
     const savedIP = await AsyncStorage.getItem("@server_ip");
     if (savedIP) {
       // Sanitizar o IP - remover vírgulas e espaços
       const cleanedIP = savedIP.replace(/,/g, ".").trim();
       SERVER_IP = cleanedIP;
       IS_SERVER_CONFIGURED = true;
-      console.log("IP do servidor carregado do storage:", cleanedIP);
+      console.log("✓ IP do servidor carregado do storage:", cleanedIP);
       console.log(`✓ Conectando a: http://${cleanedIP}:${SERVER_PORT}`);
       return cleanedIP;
     }
-    return null;
+    
+    // Se não houver IP guardado, tentar descoberta automática
+    console.log("Nenhum IP guardado, tentando descoberta automática...");
+    const discoveredIP = await discoverServerAutomatically();
+    if (discoveredIP) {
+      SERVER_IP = discoveredIP;
+      IS_SERVER_CONFIGURED = true;
+      console.log(`✓ Servidor descoberto: ${discoveredIP}`);
+      // Guardar para próxima vez
+      await AsyncStorage.setItem("@server_ip", discoveredIP).catch((err: any) => 
+        console.error("Erro ao guardar IP descoberto:", err)
+      );
+      return discoveredIP;
+    }
+    
+    // Fallback para localhost se nada funcionar
+    console.log("Usando fallback: localhost");
+    SERVER_IP = "localhost";
+    return "localhost";
   } catch (error) {
     console.error("Erro ao carregar IP do storage:", error);
     return null;

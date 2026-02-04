@@ -23,8 +23,14 @@ async function request<T>(
     ...options,
   };
 
+  // Criar AbortController com timeout de 30 segundos
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+  config.signal = controller.signal;
+
   try {
     const response = await fetch(url, config);
+    clearTimeout(timeoutId);
     
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
@@ -33,6 +39,7 @@ async function request<T>(
     
     return response.json();
   } catch (error: any) {
+    clearTimeout(timeoutId);
     console.error(`Erro ao conectar a ${url}:`, error.message);
     throw error;
   }
@@ -185,10 +192,74 @@ export const metricsApi = {
     }),
 };
 
+// Comunidades
+export const communitiesApi = {
+  // Obter todas as comunidades verificadas
+  getCommunities: () =>
+    request<any[]>("/api/comunidades"),
+
+  // Obter comunidades do utilizador
+  getUserCommunities: (userId: number) =>
+    request<any[]>(`/api/comunidades/user/${userId}`),
+
+  // Criar comunidade
+  createCommunity: (data: { nome: string; descricao: string; criador_id: number }) =>
+    request<any>("/api/comunidades", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  // Entrar numa comunidade
+  joinCommunity: (comunidadeId: number, userId: number) =>
+    request<any>(`/api/comunidades/${comunidadeId}/join`, {
+      method: "POST",
+      body: JSON.stringify({ userId }),
+    }),
+
+  // Sair de uma comunidade
+  leaveCommunity: (comunidadeId: number, userId: number) =>
+    request<any>(`/api/comunidades/${comunidadeId}/leave`, {
+      method: "POST",
+      body: JSON.stringify({ userId }),
+    }),
+
+  // Enviar mensagem
+  sendMessage: (comunidadeId: number, userId: number, mensagem: string) =>
+    request<any>(`/api/comunidades/${comunidadeId}/mensagens`, {
+      method: "POST",
+      body: JSON.stringify({ userId, mensagem }),
+    }),
+
+  // Obter mensagens de uma comunidade
+  getCommunityMessages: (comunidadeId: number) =>
+    request<any[]>(`/api/comunidades/${comunidadeId}/mensagens`),
+
+  // Obter membros de uma comunidade
+  getCommunityMembers: (comunidadeId: number) =>
+    request<any[]>(`/api/comunidades/${comunidadeId}/membros`),
+
+  // Admin: obter comunidades não verificadas
+  getPendingCommunities: () =>
+    request<any[]>("/api/admin/comunidades/pendentes"),
+
+  // Admin: verificar comunidade
+  verifyCommunity: (comunidadeId: number) =>
+    request<any>(`/api/admin/comunidades/${comunidadeId}/verificar`, {
+      method: "POST",
+    }),
+
+  // Admin: rejeitar comunidade
+  rejectCommunity: (comunidadeId: number) =>
+    request<any>(`/api/admin/comunidades/${comunidadeId}/rejeitar`, {
+      method: "POST",
+    }),
+};
+
 export default {
   auth: authApi,
   user: userApi,
   exercise: exerciseApi,
   workout: workoutApi,
   metrics: metricsApi,
+  communities: communitiesApi,
 };

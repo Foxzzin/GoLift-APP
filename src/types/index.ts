@@ -50,3 +50,36 @@ export interface RegisterData {
   peso?: number;
   altura?: number;
 }
+
+export interface Community {
+  id: number;
+  nome: string;
+  descricao: string;
+  criador_id: number;
+  criador_nome: string;
+  membros: number;
+  verificada: boolean;
+  criada_em: string;
+  imagem_url?: string;
+  pais?: string;
+  linguas?: string;
+  categoria?: string;
+  privada?: boolean;
+}
+
+export interface CommunityMember {
+  id: number;
+  comunidade_id: number;
+  user_id: number;
+  user_nome: string;
+  juntou_em: string;
+}
+
+export interface CommunityMessage {
+  id: number;
+  comunidade_id: number;
+  user_id: number;
+  user_nome: string;
+  mensagem: string;
+  criada_em: string;
+}

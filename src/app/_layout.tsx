@@ -2,6 +2,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { AuthProvider } from "../contexts/AuthContext";
+import { CommunitiesProvider } from "../contexts/CommunitiesContext";
 import { useTheme } from "../styles/theme";
 import { loadSavedServerIP, discoverServerAutomatically, SERVER_CONFIG } from "../services/server-config";
 import ServerSetup from "./server-setup";
@@ -51,36 +52,38 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <StatusBar style="light" />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: theme.background },
-        }}
-      >
-        <Stack.Screen name="server-setup" />
-        <Stack.Screen name="index" />
-        <Stack.Screen name="login" />
-        <Stack.Screen name="register" />
-        <Stack.Screen name="forgot-password" />
-        <Stack.Screen name="edit-profile" />
-        <Stack.Screen name="settings" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen 
-          name="admin/_layout"
-          options={{
-            presentation: "modal",
-            animation: "slide_from_right"
+      <CommunitiesProvider>
+        <StatusBar style="light" />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: theme.background },
           }}
-        />
-        <Stack.Screen 
-          name="workout/[id]" 
-          options={{ 
-            presentation: "fullScreenModal",
-            animation: "slide_from_bottom"
-          }} 
-        />
-      </Stack>
+        >
+          <Stack.Screen name="server-setup" />
+          <Stack.Screen name="index" />
+          <Stack.Screen name="login" />
+          <Stack.Screen name="register" />
+          <Stack.Screen name="forgot-password" />
+          <Stack.Screen name="edit-profile" />
+          <Stack.Screen name="settings" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen 
+            name="admin/_layout"
+            options={{
+              presentation: "modal",
+              animation: "slide_from_right"
+            }}
+          />
+          <Stack.Screen 
+            name="workout/[id]" 
+            options={{ 
+              presentation: "fullScreenModal",
+              animation: "slide_from_bottom"
+            }} 
+          />
+        </Stack>
+      </CommunitiesProvider>
     </AuthProvider>
   );
 }
