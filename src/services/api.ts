@@ -120,6 +120,18 @@ export const workoutApi = {
       body: JSON.stringify({ userId, nome, exercicios }),
     }),
 
+  copyWorkout: (userId: number, nome: string, exercicios: number[]) =>
+    request<{ sucesso: boolean; id_treino: number }>("/api/treino/copiar", {
+      method: "POST",
+      body: JSON.stringify({ userId, nome, exercicios }),
+    }),
+
+  updateWorkout: (userId: number, treinoId: number, nome: string, exercicios: number[]) =>
+    request<{ sucesso: boolean }>(`/api/treino/${userId}/${treinoId}`, {
+      method: "PUT",
+      body: JSON.stringify({ nome, exercicios }),
+    }),
+
   // Iniciar sessão de treino
   startSession: (userId: number, treinoId: number) =>
     request<{ sucesso: boolean; id_sessao: number }>(`/api/treino/${userId}/${treinoId}/iniciar`, {
@@ -203,9 +215,16 @@ export const communitiesApi = {
     request<any[]>(`/api/comunidades/user/${userId}`),
 
   // Criar comunidade
-  createCommunity: (data: { nome: string; descricao: string; criador_id: number }) =>
+  createCommunity: (data: { nome: string; descricao: string; criador_id: number; pais?: string; privada?: boolean }) =>
     request<any>("/api/comunidades", {
       method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  // Editar comunidade (apenas o criador)
+  updateCommunity: (comunidadeId: number, data: { criador_id: number; nome?: string; descricao?: string; pais?: string; privada?: boolean }) =>
+    request<any>(`/api/comunidades/${comunidadeId}`, {
+      method: "PUT",
       body: JSON.stringify(data),
     }),
 
@@ -238,6 +257,10 @@ export const communitiesApi = {
   getCommunityMembers: (comunidadeId: number) =>
     request<any[]>(`/api/comunidades/${comunidadeId}/membros`),
 
+  // Admin: obter todas as comunidades (verificadas + pendentes)
+  getAllCommunitiesAdmin: () =>
+    request<any[]>("/api/admin/comunidades"),
+
   // Admin: obter comunidades não verificadas
   getPendingCommunities: () =>
     request<any[]>("/api/admin/comunidades/pendentes"),
@@ -246,6 +269,13 @@ export const communitiesApi = {
   verifyCommunity: (comunidadeId: number) =>
     request<any>(`/api/admin/comunidades/${comunidadeId}/verificar`, {
       method: "POST",
+    }),
+
+  // Admin: toggle verificação
+  toggleVerification: (comunidadeId: number, verificada: boolean) =>
+    request<any>(`/api/admin/comunidades/${comunidadeId}/toggle`, {
+      method: "POST",
+      body: JSON.stringify({ verificada }),
     }),
 
   // Admin: rejeitar comunidade

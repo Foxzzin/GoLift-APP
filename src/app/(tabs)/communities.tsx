@@ -11,7 +11,6 @@ import {
   RefreshControl,
   Switch,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useCommunities } from "../../contexts/CommunitiesContext";
@@ -35,13 +34,188 @@ export default function Communities() {
   const [communityName, setCommunityName] = useState("");
   const [communityDesc, setCommunityDesc] = useState("");
   const [communityPais, setCommunityPais] = useState("");
-  const [communityLinguas, setCommunityLinguas] = useState("");
   const [communityPrivada, setCommunityPrivada] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
+  const [countrySearch, setCountrySearch] = useState("");
 
-  const PAISES = ["Portugal", "Brasil", "Angola", "Moçambique", "Cabo Verde", "Timor-Leste", "Outros"];
-  const LINGUAS = ["Português", "Inglês", "Espanhol", "Francês", "Alemão", "Italiano"];
+  const PAISES = [
+    { flag: "🌍", name: "Internacional" },
+    { flag: "🇦🇫", name: "Afeganistão" },
+    { flag: "🇦🇱", name: "Albânia" },
+    { flag: "🇩🇿", name: "Argélia" },
+    { flag: "🇦🇩", name: "Andorra" },
+    { flag: "🇦🇴", name: "Angola" },
+    { flag: "🇦🇷", name: "Argentina" },
+    { flag: "🇦🇲", name: "Arménia" },
+    { flag: "🇦🇺", name: "Austrália" },
+    { flag: "🇦🇹", name: "Áustria" },
+    { flag: "🇦🇿", name: "Azerbaijão" },
+    { flag: "🇧🇸", name: "Bahamas" },
+    { flag: "🇧🇭", name: "Barém" },
+    { flag: "🇧🇩", name: "Bangladesh" },
+    { flag: "🇧🇧", name: "Barbados" },
+    { flag: "🇧🇾", name: "Bielorrússia" },
+    { flag: "🇧🇪", name: "Bélgica" },
+    { flag: "🇧🇿", name: "Belize" },
+    { flag: "🇧🇯", name: "Benim" },
+    { flag: "🇧🇹", name: "Butão" },
+    { flag: "🇧🇴", name: "Bolívia" },
+    { flag: "🇧🇦", name: "Bósnia e Herzegovina" },
+    { flag: "🇧🇼", name: "Botsuana" },
+    { flag: "🇧🇷", name: "Brasil" },
+    { flag: "🇧🇳", name: "Brunei" },
+    { flag: "🇧🇬", name: "Bulgária" },
+    { flag: "🇧🇫", name: "Burquina Faso" },
+    { flag: "🇧🇮", name: "Burúndi" },
+    { flag: "🇨🇻", name: "Cabo Verde" },
+    { flag: "🇰🇭", name: "Camboja" },
+    { flag: "🇨🇲", name: "Camarões" },
+    { flag: "🇨🇦", name: "Canadá" },
+    { flag: "🇶🇦", name: "Catar" },
+    { flag: "🇰🇿", name: "Cazaquistão" },
+    { flag: "🇹🇩", name: "Chade" },
+    { flag: "🇨🇱", name: "Chile" },
+    { flag: "🇨🇳", name: "China" },
+    { flag: "🇨🇾", name: "Chipre" },
+    { flag: "🇨🇴", name: "Colômbia" },
+    { flag: "🇰🇲", name: "Comores" },
+    { flag: "🇨🇬", name: "Congo" },
+    { flag: "🇨🇩", name: "Congo (RDC)" },
+    { flag: "🇰🇵", name: "Coreia do Norte" },
+    { flag: "🇰🇷", name: "Coreia do Sul" },
+    { flag: "🇨🇷", name: "Costa Rica" },
+    { flag: "🇨🇮", name: "Costa do Marfim" },
+    { flag: "🇭🇷", name: "Croácia" },
+    { flag: "🇨🇺", name: "Cuba" },
+    { flag: "🇩🇰", name: "Dinamarca" },
+    { flag: "🇩🇯", name: "Djibouti" },
+    { flag: "🇩🇴", name: "República Dominicana" },
+    { flag: "🇪🇨", name: "Equador" },
+    { flag: "🇪🇬", name: "Egito" },
+    { flag: "🇸🇻", name: "El Salvador" },
+    { flag: "🇦🇪", name: "Emirados Árabes" },
+    { flag: "🇪🇷", name: "Eritreia" },
+    { flag: "🇸🇰", name: "Eslováquia" },
+    { flag: "🇸🇮", name: "Eslovénia" },
+    { flag: "🇪🇸", name: "Espanha" },
+    { flag: "🇪🇹", name: "Etiópia" },
+    { flag: "🇫🇯", name: "Fiji" },
+    { flag: "🇵🇭", name: "Filipinas" },
+    { flag: "🇫🇮", name: "Finlândia" },
+    { flag: "🇫🇷", name: "França" },
+    { flag: "🇬🇦", name: "Gabão" },
+    { flag: "🇬🇲", name: "Gâmbia" },
+    { flag: "🇬🇭", name: "Gana" },
+    { flag: "🇬🇪", name: "Geórgia" },
+    { flag: "🇬🇷", name: "Grécia" },
+    { flag: "🇬🇹", name: "Guatemala" },
+    { flag: "🇬🇳", name: "Guiné" },
+    { flag: "🇬🇼", name: "Guiné-Bissau" },
+    { flag: "🇬🇾", name: "Guiana" },
+    { flag: "🇭🇹", name: "Haiti" },
+    { flag: "🇭🇳", name: "Honduras" },
+    { flag: "🇭🇺", name: "Hungria" },
+    { flag: "🇾🇪", name: "Iémen" },
+    { flag: "🇮🇳", name: "Índia" },
+    { flag: "🇮🇩", name: "Indonésia" },
+    { flag: "🇮🇷", name: "Irão" },
+    { flag: "🇮🇶", name: "Iraque" },
+    { flag: "🇮🇪", name: "Irlanda" },
+    { flag: "🇮🇸", name: "Islândia" },
+    { flag: "🇮🇱", name: "Israel" },
+    { flag: "🇮🇹", name: "Itália" },
+    { flag: "🇯🇲", name: "Jamaica" },
+    { flag: "🇯🇵", name: "Japão" },
+    { flag: "🇯🇴", name: "Jordânia" },
+    { flag: "🇰🇪", name: "Quénia" },
+    { flag: "🇰🇬", name: "Quirguistão" },
+    { flag: "🇰🇼", name: "Kuwait" },
+    { flag: "🇱🇦", name: "Laos" },
+    { flag: "🇱🇸", name: "Lesoto" },
+    { flag: "🇱🇻", name: "Letónia" },
+    { flag: "🇱🇧", name: "Líbano" },
+    { flag: "🇱🇷", name: "Libéria" },
+    { flag: "🇱🇾", name: "Líbia" },
+    { flag: "🇱🇮", name: "Liechtenstein" },
+    { flag: "🇱🇹", name: "Lituânia" },
+    { flag: "🇱🇺", name: "Luxemburgo" },
+    { flag: "🇲🇬", name: "Madagáscar" },
+    { flag: "🇲🇼", name: "Malawi" },
+    { flag: "🇲🇾", name: "Malásia" },
+    { flag: "🇲🇻", name: "Maldivas" },
+    { flag: "🇲🇱", name: "Mali" },
+    { flag: "🇲🇹", name: "Malta" },
+    { flag: "🇲🇦", name: "Marrocos" },
+    { flag: "🇲🇷", name: "Mauritânia" },
+    { flag: "🇲🇽", name: "México" },
+    { flag: "🇲🇿", name: "Moçambique" },
+    { flag: "🇲🇩", name: "Moldávia" },
+    { flag: "🇲🇨", name: "Mónaco" },
+    { flag: "🇲🇳", name: "Mongólia" },
+    { flag: "🇲🇪", name: "Montenegro" },
+    { flag: "🇲🇲", name: "Myanmar" },
+    { flag: "🇳🇦", name: "Namíbia" },
+    { flag: "🇳🇵", name: "Nepal" },
+    { flag: "🇳🇮", name: "Nicarágua" },
+    { flag: "🇳🇪", name: "Níger" },
+    { flag: "🇳🇬", name: "Nigéria" },
+    { flag: "🇳🇴", name: "Noruega" },
+    { flag: "🇳🇿", name: "Nova Zelândia" },
+    { flag: "🇴🇲", name: "Omã" },
+    { flag: "🇳🇱", name: "Países Baixos" },
+    { flag: "🇵🇰", name: "Paquistão" },
+    { flag: "🇵🇦", name: "Panamá" },
+    { flag: "🇵🇬", name: "Papua Nova Guiné" },
+    { flag: "🇵🇾", name: "Paraguai" },
+    { flag: "🇵🇪", name: "Peru" },
+    { flag: "🇵🇱", name: "Polónia" },
+    { flag: "🇵🇹", name: "Portugal" },
+    { flag: "🇷🇼", name: "Ruanda" },
+    { flag: "🇷🇴", name: "Roménia" },
+    { flag: "🇷🇺", name: "Rússia" },
+    { flag: "🇸🇲", name: "São Marinho" },
+    { flag: "🇸🇹", name: "São Tomé e Príncipe" },
+    { flag: "🇸🇦", name: "Arábia Saudita" },
+    { flag: "🇸🇳", name: "Senegal" },
+    { flag: "🇷🇸", name: "Sérvia" },
+    { flag: "🇸🇱", name: "Serra Leoa" },
+    { flag: "🇸🇬", name: "Singapura" },
+    { flag: "🇸🇾", name: "Síria" },
+    { flag: "🇸🇴", name: "Somália" },
+    { flag: "🇱🇰", name: "Sri Lanka" },
+    { flag: "🇸🇿", name: "Suazilândia" },
+    { flag: "🇸🇩", name: "Sudão" },
+    { flag: "🇸🇸", name: "Sudão do Sul" },
+    { flag: "🇸🇪", name: "Suécia" },
+    { flag: "🇨🇭", name: "Suíça" },
+    { flag: "🇸🇷", name: "Suriname" },
+    { flag: "🇹🇯", name: "Tajiquistão" },
+    { flag: "🇹🇭", name: "Tailândia" },
+    { flag: "🇹🇿", name: "Tanzânia" },
+    { flag: "🇹🇱", name: "Timor-Leste" },
+    { flag: "🇹🇬", name: "Togo" },
+    { flag: "🇹🇹", name: "Trinidad e Tobago" },
+    { flag: "🇹🇳", name: "Tunísia" },
+    { flag: "🇹🇲", name: "Turquemenistão" },
+    { flag: "🇹🇷", name: "Turquia" },
+    { flag: "🇺🇬", name: "Uganda" },
+    { flag: "🇺🇦", name: "Ucrânia" },
+    { flag: "🇺🇾", name: "Uruguai" },
+    { flag: "🇺🇿", name: "Uzbequistão" },
+    { flag: "🇻🇪", name: "Venezuela" },
+    { flag: "🇻🇳", name: "Vietname" },
+    { flag: "🇿🇲", name: "Zâmbia" },
+    { flag: "🇿🇼", name: "Zimbábue" },
+    { flag: "🇬🇧", name: "Reino Unido" },
+    { flag: "🇺🇸", name: "Estados Unidos" },
+  ].sort((a, b) => a.name.localeCompare(b.name));
+
+  const filteredPaises = PAISES.filter((p) =>
+    p.name.toLowerCase().includes(countrySearch.toLowerCase())
+  );
+  const selectedCountry = PAISES.find((p) => p.name === communityPais);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -64,16 +238,15 @@ export default function Communities() {
       setUploading(true);
       
       // Use the API from CommunitiesContext (which sends JSON, not FormData)
-      await createCommunity(communityName, communityDesc);
+      await createCommunity(communityName, communityDesc, communityPais || undefined, communityPrivada);
       
       // Reset form
       setCommunityName("");
       setCommunityDesc("");
       setCommunityPais("");
-      setCommunityLinguas("");
       setCommunityPrivada(false);
       setShowModal(false);
-      alert("Comunidade criada! Aguarde aprovação do admin.");
+      alert("Comunidade criada com sucesso! Já está visível para todos.");
     } catch (error) {
       console.error("Erro:", error);
       alert(error instanceof Error ? error.message : "Erro ao criar comunidade");
@@ -150,16 +323,20 @@ export default function Communities() {
                 <Ionicons name="people" size={32} color={theme.accent} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text
-                  style={{
-                    color: theme.text,
-                    fontSize: 16,
-                    fontWeight: "bold",
-                    marginBottom: 4,
-                  }}
-                >
-                  {community.nome}
-                </Text>
+                <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4, gap: 4 }}>
+                  <Text
+                    style={{
+                      color: theme.text,
+                      fontSize: 16,
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {community.nome}
+                  </Text>
+                  {!!community.verificada && (
+                    <Ionicons name="checkmark-circle" size={16} color={theme.accent} />
+                  )}
+                </View>
                 <Text
                   style={{
                     color: theme.textSecondary,
@@ -225,16 +402,20 @@ export default function Communities() {
                     <Ionicons name="people" size={40} color={theme.accent} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text
-                      style={{
-                        color: theme.text,
-                        fontSize: 15,
-                        fontWeight: "bold",
-                        marginBottom: 2,
-                      }}
-                    >
-                      {community.nome}
-                    </Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 2, gap: 4 }}>
+                      <Text
+                        style={{
+                          color: theme.text,
+                          fontSize: 15,
+                          fontWeight: "bold",
+                        }}
+                      >
+                        {community.nome}
+                      </Text>
+                      {!!community.verificada && (
+                        <Ionicons name="checkmark-circle" size={15} color={theme.accent} />
+                      )}
+                    </View>
                     <Text
                       style={{
                         color: theme.textSecondary,
@@ -376,174 +557,221 @@ export default function Communities() {
         visible={showModal}
         transparent={true}
         animationType="slide"
-        onRequestClose={() => setShowModal(false)}
+        onRequestClose={() => { setShowModal(false); setShowCountryPicker(false); }}
       >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            justifyContent: "flex-end",
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: theme.background,
-              borderTopLeftRadius: 20,
-              borderTopRightRadius: 20,
-              maxHeight: "90%",
-            }}
-          >
-            {/* Header do Modal */}
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                paddingHorizontal: 16,
-                paddingVertical: 14,
-                borderBottomWidth: 1,
-                borderBottomColor: theme.border,
-              }}
-            >
-              <Text
-                style={{
-                  color: theme.text,
-                  fontSize: 18,
-                  fontWeight: "bold",
-                }}
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" }}>
+          <View style={{ backgroundColor: theme.background, borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: "92%" }}>
+            {/* Handle */}
+            <View style={{ width: 40, height: 4, backgroundColor: theme.border, borderRadius: 2, alignSelf: "center", marginTop: 12, marginBottom: 4 }} />
+
+            {/* Header */}
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 24, paddingVertical: 16 }}>
+              <View>
+                <Text style={{ color: theme.text, fontSize: 22, fontWeight: "bold" }}>Nova Comunidade</Text>
+                <Text style={{ color: theme.textTertiary, fontSize: 13, marginTop: 2 }}>Cria um espaço para a tua tribo</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => { setShowModal(false); setShowCountryPicker(false); }}
+                style={{ backgroundColor: theme.backgroundTertiary, borderRadius: 20, padding: 8 }}
               >
-                Criar Comunidade
-              </Text>
-              <TouchableOpacity onPress={() => setShowModal(false)}>
-                <Ionicons name="close" size={26} color={theme.text} />
+                <Ionicons name="close" size={20} color={theme.text} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView
-              style={{
-                paddingHorizontal: 16,
-                paddingVertical: 16,
-              }}
-              showsVerticalScrollIndicator={false}
-            >
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}>
 
-            {/* Nome */}
-            <Text style={{ color: theme.text, fontWeight: "bold", marginBottom: 6, fontSize: 13 }}>
-              Nome
-            </Text>
-            <TextInput
-              placeholder="Nome da comunidade"
-              placeholderTextColor={theme.textTertiary}
-              value={communityName}
-              onChangeText={setCommunityName}
-              style={{
-                backgroundColor: theme.backgroundSecondary,
-                color: theme.text,
-                borderRadius: 8,
-                padding: 10,
-                marginBottom: 14,
-                borderWidth: 1,
-                borderColor: theme.border,
-                fontSize: 13,
-              }}
-            />
-
-            {/* Descrição */}
-            <Text style={{ color: theme.text, fontWeight: "bold", marginBottom: 6, fontSize: 13 }}>
-              Descrição
-            </Text>
-            <TextInput
-              placeholder="Descrição breve..."
-              placeholderTextColor={theme.textTertiary}
-              value={communityDesc}
-              onChangeText={setCommunityDesc}
-              multiline={true}
-              numberOfLines={3}
-              style={{
-                backgroundColor: theme.backgroundSecondary,
-                color: theme.text,
-                borderRadius: 8,
-                padding: 10,
-                marginBottom: 14,
-                borderWidth: 1,
-                borderColor: theme.border,
-                textAlignVertical: "top",
-                fontSize: 13,
-              }}
-            />
-
-            {/* País */}
-            <Text style={{ color: theme.text, fontWeight: "bold", marginBottom: 6, fontSize: 13 }}>
-              País
-            </Text>
-            <View
-              style={{
-                backgroundColor: theme.backgroundSecondary,
-                borderRadius: 8,
-                borderWidth: 1,
-                borderColor: theme.border,
-                marginBottom: 14,
-              }}
-            >
-              <Picker
-                selectedValue={communityPais}
-                onValueChange={(itemValue: string) => setCommunityPais(itemValue)}
-                style={{ color: theme.text }}
-              >
-                <Picker.Item label="Selecionar país..." value="" />
-                {PAISES.map((pais) => (
-                  <Picker.Item key={pais} label={pais} value={pais} />
-                ))}
-              </Picker>
-            </View>
-
-            {/* Privada */}
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                backgroundColor: theme.backgroundSecondary,
-                borderRadius: 8,
-                paddingHorizontal: 12,
-                paddingVertical: 10,
-                marginBottom: 14,
-                borderWidth: 1,
-                borderColor: theme.border,
-              }}
-            >
-              <Text style={{ color: theme.text, fontWeight: "600", fontSize: 13 }}>
-                Privada
+              {/* Nome */}
+              <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>
+                Nome da Comunidade
               </Text>
-              <Switch
-                value={communityPrivada}
-                onValueChange={setCommunityPrivada}
-                trackColor={{ false: theme.border, true: theme.accent }}
-              />
-            </View>
+              <View style={{
+                flexDirection: "row", alignItems: "center",
+                backgroundColor: theme.backgroundSecondary,
+                borderRadius: 14, borderWidth: 1, borderColor: theme.border,
+                paddingHorizontal: 14, marginBottom: 20,
+              }}>
+                <Ionicons name="people-outline" size={18} color={theme.textTertiary} style={{ marginRight: 10 }} />
+                <TextInput
+                  placeholder="Ex: Athletes Portugal"
+                  placeholderTextColor={theme.textTertiary}
+                  value={communityName}
+                  onChangeText={setCommunityName}
+                  style={{ flex: 1, color: theme.text, fontSize: 15, paddingVertical: 14 }}
+                />
+              </View>
 
-            {/* Botão Criar */}
-            <TouchableOpacity
-              onPress={handleCreateCommunity}
-              disabled={uploading}
-              style={{
-                backgroundColor: theme.accent,
-                paddingVertical: 12,
-                borderRadius: 8,
-                alignItems: "center",
-                marginBottom: 8,
-                opacity: uploading ? 0.6 : 1,
-              }}
-            >
-              {uploading ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text style={{ color: "white", fontWeight: "bold", fontSize: 14 }}>
-                  Criar Comunidade
+              {/* Descrição */}
+              <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>
+                Descrição
+              </Text>
+              <View style={{
+                backgroundColor: theme.backgroundSecondary,
+                borderRadius: 14, borderWidth: 1, borderColor: theme.border,
+                paddingHorizontal: 14, paddingTop: 14, paddingBottom: 10,
+                marginBottom: 20,
+              }}>
+                <TextInput
+                  placeholder="Descreve o tema e objetivos da comunidade..."
+                  placeholderTextColor={theme.textTertiary}
+                  value={communityDesc}
+                  onChangeText={setCommunityDesc}
+                  multiline={true}
+                  numberOfLines={3}
+                  style={{ color: theme.text, fontSize: 15, lineHeight: 22, textAlignVertical: "top", minHeight: 72 }}
+                />
+              </View>
+
+              {/* País */}
+              <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>
+                País
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowCountryPicker(true)}
+                style={{
+                  flexDirection: "row", alignItems: "center",
+                  backgroundColor: theme.backgroundSecondary,
+                  borderRadius: 14, borderWidth: 1, borderColor: showCountryPicker ? theme.accent : theme.border,
+                  paddingHorizontal: 14, paddingVertical: 14,
+                  marginBottom: 20,
+                }}
+              >
+                <Text style={{ fontSize: 20, marginRight: 10 }}>
+                  {selectedCountry ? selectedCountry.flag : "🌍"}
                 </Text>
-              )}
-            </TouchableOpacity>
-          </ScrollView>
+                <Text style={{ flex: 1, color: communityPais ? theme.text : theme.textTertiary, fontSize: 15 }}>
+                  {communityPais || "Selecionar país..."}
+                </Text>
+                <Ionicons name="chevron-down" size={18} color={theme.textTertiary} />
+              </TouchableOpacity>
+
+              {/* Privada */}
+              <View style={{
+                flexDirection: "row", alignItems: "center",
+                backgroundColor: theme.backgroundSecondary,
+                borderRadius: 14, borderWidth: 1, borderColor: theme.border,
+                paddingHorizontal: 14, paddingVertical: 14,
+                marginBottom: 28,
+              }}>
+                <View style={{ backgroundColor: theme.backgroundTertiary, borderRadius: 10, padding: 8, marginRight: 12 }}>
+                  <Ionicons name={communityPrivada ? "lock-closed" : "lock-open-outline"} size={18} color={theme.accent} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: theme.text, fontSize: 15, fontWeight: "600" }}>Comunidade Privada</Text>
+                  <Text style={{ color: theme.textTertiary, fontSize: 12, marginTop: 1 }}>Apenas por convite</Text>
+                </View>
+                <Switch
+                  value={communityPrivada}
+                  onValueChange={setCommunityPrivada}
+                  trackColor={{ false: theme.border, true: theme.accent }}
+                  thumbColor="white"
+                />
+              </View>
+
+              {/* Botão Criar */}
+              <TouchableOpacity
+                onPress={handleCreateCommunity}
+                disabled={uploading}
+                style={{
+                  backgroundColor: theme.accent,
+                  paddingVertical: 16,
+                  borderRadius: 14,
+                  alignItems: "center",
+                  flexDirection: "row",
+                  justifyContent: "center",
+                  gap: 8,
+                  opacity: uploading ? 0.7 : 1,
+                }}
+              >
+                {uploading ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <>
+                    <Ionicons name="add-circle-outline" size={20} color="white" />
+                    <Text style={{ color: "white", fontWeight: "bold", fontSize: 16 }}>Criar Comunidade</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+
+              <Text style={{ color: theme.textTertiary, fontSize: 12, textAlign: "center", marginTop: 12 }}>
+                A comunidade ficará imediatamente visível para todos os utilizadores
+              </Text>
+            </ScrollView>
+
+            {/* Country picker overlay — rendered INSIDE the modal sheet to avoid nested-Modal iOS bug */}
+            {showCountryPicker && (
+              <View style={{
+                position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+                backgroundColor: theme.background,
+                borderTopLeftRadius: 28, borderTopRightRadius: 28,
+              }}>
+                <View style={{ width: 40, height: 4, backgroundColor: theme.border, borderRadius: 2, alignSelf: "center", marginTop: 12, marginBottom: 4 }} />
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 24, paddingVertical: 14 }}>
+                  <TouchableOpacity
+                    onPress={() => { setShowCountryPicker(false); setCountrySearch(""); }}
+                    style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+                  >
+                    <Ionicons name="chevron-back" size={22} color={theme.text} />
+                    <Text style={{ color: theme.text, fontSize: 16 }}>Voltar</Text>
+                  </TouchableOpacity>
+                  <Text style={{ color: theme.text, fontSize: 18, fontWeight: "bold" }}>Selecionar País</Text>
+                  <TouchableOpacity onPress={() => { setShowCountryPicker(false); setCountrySearch(""); }}>
+                    <Ionicons name="close" size={22} color={theme.textTertiary} />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Search */}
+                <View style={{
+                  flexDirection: "row", alignItems: "center",
+                  backgroundColor: theme.backgroundSecondary,
+                  borderRadius: 12, marginHorizontal: 24, marginBottom: 8,
+                  paddingHorizontal: 12, borderWidth: 1, borderColor: theme.border,
+                }}>
+                  <Ionicons name="search" size={16} color={theme.textTertiary} style={{ marginRight: 8 }} />
+                  <TextInput
+                    autoFocus
+                    placeholder="Pesquisar país..."
+                    placeholderTextColor={theme.textTertiary}
+                    value={countrySearch}
+                    onChangeText={setCountrySearch}
+                    style={{ flex: 1, color: theme.text, fontSize: 14, paddingVertical: 10 }}
+                  />
+                  {countrySearch.length > 0 && (
+                    <TouchableOpacity onPress={() => setCountrySearch("")}>
+                      <Ionicons name="close-circle" size={16} color={theme.textTertiary} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                <FlatList
+                  data={filteredPaises}
+                  keyExtractor={(item) => item.name}
+                  keyboardShouldPersistTaps="handled"
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setCommunityPais(item.name);
+                        setShowCountryPicker(false);
+                        setCountrySearch("");
+                      }}
+                      style={{
+                        flexDirection: "row", alignItems: "center",
+                        paddingVertical: 12, paddingHorizontal: 12,
+                        borderRadius: 10, marginBottom: 2,
+                        backgroundColor: communityPais === item.name ? theme.backgroundTertiary : "transparent",
+                      }}
+                    >
+                      <Text style={{ fontSize: 22, marginRight: 12 }}>{item.flag}</Text>
+                      <Text style={{ color: theme.text, fontSize: 15, flex: 1 }}>{item.name}</Text>
+                      {communityPais === item.name && (
+                        <Ionicons name="checkmark-circle" size={18} color={theme.accent} />
+                      )}
+                    </TouchableOpacity>
+                  )}
+                />
+              </View>
+            )}
           </View>
         </View>
       </Modal>

@@ -374,7 +374,7 @@ export default function Profile() {
               overflow: "hidden",
             }}
           >
-            {records.slice(0, 5).map((record, index) => (
+            {records.slice(0, 3).map((record, index) => (
               <View
                 key={index}
                 style={{
@@ -382,8 +382,8 @@ export default function Profile() {
                   alignItems: "center",
                   paddingHorizontal: 16,
                   paddingVertical: 14,
-                  borderBottomColor: index < records.length - 1 ? theme.border : "transparent",
-                  borderBottomWidth: index < records.length - 1 ? 1 : 0,
+                  borderBottomColor: index < 2 ? theme.border : "transparent",
+                  borderBottomWidth: index < 2 ? 1 : 0,
                 }}
               >
                 <View

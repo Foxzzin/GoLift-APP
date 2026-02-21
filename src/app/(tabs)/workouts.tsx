@@ -9,24 +9,34 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  FlatList,
+  StyleSheet,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../contexts/AuthContext";
+import { useCommunities } from "../../contexts/CommunitiesContext";
 import { workoutApi, exerciseApi, metricsApi } from "../../services/api";
 import { useTheme } from "../../styles/theme";
 
 export default function Workouts() {
   const { user } = useAuth();
   const theme = useTheme();
+  const { userCommunities, sendMessage } = useCommunities();
   const [refreshing, setRefreshing] = useState(false);
   const [myWorkouts, setMyWorkouts] = useState<any[]>([]);
   const [adminWorkouts, setAdminWorkouts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [bodyPartFilter, setBodyPartFilter] = useState<string | null>(null);
 
-  // Modal criar treino
+  // Partilha de treino
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareWorkoutData, setShareWorkoutData] = useState<any>(null);
+  const [sharingToComm, setSharingToComm] = useState(false);
+
+  // Modal criar / editar treino
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingWorkout, setEditingWorkout] = useState<any>(null); // null = criar, objeto = editar
   const [workoutName, setWorkoutName] = useState("");
   const [availableExercises, setAvailableExercises] = useState<any[]>([]);
   const [selectedExercises, setSelectedExercises] = useState<any[]>([]);
@@ -68,6 +78,7 @@ export default function Workouts() {
   }
 
   async function openCreateModal() {
+    setEditingWorkout(null);
     setShowCreateModal(true);
     setWorkoutName("");
     setSelectedExercises([]);
@@ -75,8 +86,32 @@ export default function Workouts() {
     setLoadingExercises(true);
     try {
       const exercises = await exerciseApi.getAll();
-      console.log("Exercícios carregados:", exercises);
       setAvailableExercises(exercises || []);
+    } catch (error) {
+      console.error("Erro ao carregar exercícios:", error);
+    } finally {
+      setLoadingExercises(false);
+    }
+  }
+
+  async function openEditModal(workout: any) {
+    setEditingWorkout(workout);
+    setShowCreateModal(true);
+    setWorkoutName(workout.nome);
+    setSelectedExercises([]);
+    setModalFilterBodyPart(null);
+    setLoadingExercises(true);
+    try {
+      const [exercises, workoutExs] = await Promise.all([
+        exerciseApi.getAll(),
+        workoutApi.getWorkoutExercises(workout.id_treino).catch(() => ({ exercicios: [] })),
+      ]);
+      const allExs = exercises || [];
+      setAvailableExercises(allExs);
+      // Pré-selecionar os exercícios atuais do treino
+      const currentIds = new Set((workoutExs?.exercicios || []).map((e: any) => e.id_exercicio));
+      const preSelected = allExs.filter((e: any) => currentIds.has(e.id));
+      setSelectedExercises(preSelected);
     } catch (error) {
       console.error("Erro ao carregar exercícios:", error);
     } finally {
@@ -126,6 +161,31 @@ export default function Workouts() {
     }
   }
 
+  async function handleUpdateWorkout() {
+    if (!workoutName.trim()) {
+      Alert.alert("Erro", "Insere um nome para o treino");
+      return;
+    }
+    if (selectedExercises.length === 0) {
+      Alert.alert("Erro", "Seleciona pelo menos um exercício");
+      return;
+    }
+    setSavingWorkout(true);
+    try {
+      const exerciseIds = selectedExercises.map((e: any) => e.id);
+      const upperName = workoutName.charAt(0).toUpperCase() + workoutName.slice(1);
+      await workoutApi.updateWorkout(user!.id, editingWorkout.id_treino, upperName, exerciseIds);
+      Alert.alert("Guardado! ✅", "Treino atualizado com sucesso.");
+      setShowCreateModal(false);
+      setEditingWorkout(null);
+      loadData();
+    } catch (error: any) {
+      Alert.alert("Erro", error.message || "Erro ao atualizar treino");
+    } finally {
+      setSavingWorkout(false);
+    }
+  }
+
   async function handleStartWorkout(workout: any) {
     Alert.alert(
       "Começar Treino",
@@ -167,6 +227,41 @@ export default function Workouts() {
         },
       ]
     );
+  }
+
+  function handleShareTemplate(workout: any) {
+    if (userCommunities.length === 0) {
+      Alert.alert("Sem comunidades", "Entra numa comunidade para poderes partilhar treinos.");
+      return;
+    }
+    setShareWorkoutData(workout);
+    setShowShareModal(true);
+  }
+
+  async function sendShareToCommunity(community: any) {
+    if (!shareWorkoutData || sharingToComm) return;
+    setSharingToComm(true);
+    try {
+      // Carregar exercícios com IDs do servidor
+      const resp = await workoutApi.getWorkoutExercises(shareWorkoutData.id_treino).catch(() => ({ exercicios: [] }));
+      const exercicios = (resp?.exercicios || []).map((ex: any) => ({
+        id: ex.id_exercicio,
+        nome: ex.nome,
+        grupo_tipo: ex.grupo_tipo || null,
+      }));
+      const payload = JSON.stringify({
+        tipo: "template",
+        nome: shareWorkoutData.nome,
+        exercicios,
+      });
+      await sendMessage(community.id, `🏋️__SHARE__${payload}`);
+      setShowShareModal(false);
+      Alert.alert("Partilhado! 💪", `Treino enviado para ${community.nome}`);
+    } catch {
+      Alert.alert("Erro", "Não foi possível partilhar o treino");
+    } finally {
+      setSharingToComm(false);
+    }
   }
 
   if (loading) {
@@ -348,6 +443,18 @@ export default function Workouts() {
                       </Text>
                     </View>
                     <TouchableOpacity
+                      onPress={() => handleShareTemplate(workout)}
+                      style={{ padding: 8, marginRight: 4 }}
+                    >
+                      <Ionicons name="share-social-outline" size={20} color={theme.accent} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => openEditModal(workout)}
+                      style={{ padding: 8, marginRight: 4 }}
+                    >
+                      <Ionicons name="create-outline" size={20} color={theme.accent} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
                       onPress={() => handleDeleteWorkout(workout)}
                       style={{ padding: 8 }}
                     >
@@ -416,7 +523,7 @@ export default function Workouts() {
         visible={showCreateModal}
         animationType="slide"
         transparent
-        onRequestClose={() => setShowCreateModal(false)}
+        onRequestClose={() => { setShowCreateModal(false); setEditingWorkout(null); }}
       >
         <View style={{ flex: 1, backgroundColor: "rgba(0, 0, 0, 0.7)", justifyContent: "flex-end" }}>
           <View
@@ -440,9 +547,9 @@ export default function Workouts() {
               }}
             >
               <Text style={{ fontSize: 20, fontWeight: "bold", color: theme.text }}>
-                Criar Treino
+                {editingWorkout ? "Editar Treino" : "Criar Treino"}
               </Text>
-              <TouchableOpacity onPress={() => setShowCreateModal(false)}>
+              <TouchableOpacity onPress={() => { setShowCreateModal(false); setEditingWorkout(null); }}>
                 <Ionicons name="close" size={24} color={theme.textSecondary} />
               </TouchableOpacity>
             </View>
@@ -699,7 +806,7 @@ export default function Workouts() {
               }}
             >
               <TouchableOpacity
-                onPress={handleCreateWorkout}
+                onPress={editingWorkout ? handleUpdateWorkout : handleCreateWorkout}
                 disabled={savingWorkout}
                 style={{
                   backgroundColor: theme.accent,
@@ -713,11 +820,81 @@ export default function Workouts() {
                   <ActivityIndicator color="white" />
                 ) : (
                   <Text style={{ color: "white", fontWeight: "bold", fontSize: 16 }}>
-                    Criar Treino
+                    {editingWorkout ? "Guardar Alterações" : "Criar Treino"}
                   </Text>
                 )}
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal: Partilhar Template de Treino */}
+      <Modal
+        visible={showShareModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowShareModal(false)}
+      >
+        <View style={{ flex: 1, justifyContent: "flex-end" }}>
+          <TouchableOpacity
+            style={{ ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.6)" }}
+            activeOpacity={1}
+            onPress={() => setShowShareModal(false)}
+          />
+          <View style={{ backgroundColor: theme.backgroundSecondary, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: "70%" }}>
+              <View style={{ width: 40, height: 4, backgroundColor: theme.border, borderRadius: 2, alignSelf: "center", marginTop: 12, marginBottom: 16 }} />
+
+              <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 24, marginBottom: 16 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: theme.text, fontSize: 20, fontWeight: "700" }}>Partilhar Treino</Text>
+                  <Text style={{ color: theme.textSecondary, fontSize: 13, marginTop: 4 }}>
+                    🏋️‍♂️ {shareWorkoutData?.nome} — Escolhe uma comunidade
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setShowShareModal(false)}
+                  style={{ backgroundColor: theme.backgroundTertiary, borderRadius: 20, padding: 8 }}
+                >
+                  <Ionicons name="close" size={20} color={theme.text} />
+                </TouchableOpacity>
+              </View>
+
+              <FlatList
+                data={userCommunities}
+                keyExtractor={(item) => String(item.id)}
+                style={{ flexShrink: 1 }}
+                contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}
+                ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    onPress={() => sendShareToCommunity(item)}
+                    disabled={sharingToComm}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      backgroundColor: theme.backgroundTertiary,
+                      borderRadius: 14,
+                      padding: 14,
+                      borderWidth: 1,
+                      borderColor: theme.border,
+                    }}
+                  >
+                    <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: theme.background, justifyContent: "center", alignItems: "center", marginRight: 12 }}>
+                      <Ionicons name="people" size={20} color={theme.accent} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: theme.text, fontWeight: "600", fontSize: 14 }}>{item.nome}</Text>
+                      <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>{item.membros} membros</Text>
+                    </View>
+                    {sharingToComm ? (
+                      <ActivityIndicator size="small" color={theme.accent} />
+                    ) : (
+                      <Ionicons name="send" size={18} color={theme.accent} />
+                    )}
+                  </TouchableOpacity>
+                )}
+              />
           </View>
         </View>
       </Modal>

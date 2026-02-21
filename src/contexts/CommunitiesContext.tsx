@@ -9,7 +9,8 @@ interface CommunitiesContextData {
   userCommunities: Community[];
   messages: { [communityId: number]: CommunityMessage[] };
   isLoading: boolean;
-  createCommunity: (nome: string, descricao: string) => Promise<void>;
+  createCommunity: (nome: string, descricao: string, pais?: string, privada?: boolean) => Promise<void>;
+  updateCommunity: (comunidadeId: number, data: { nome?: string; descricao?: string; pais?: string; privada?: boolean }) => Promise<void>;
   joinCommunity: (comunidadeId: number) => Promise<void>;
   leaveCommunity: (comunidadeId: number) => Promise<void>;
   sendMessage: (comunidadeId: number, mensagem: string) => Promise<void>;
@@ -48,17 +49,32 @@ export function CommunitiesProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function createCommunity(nome: string, descricao: string) {
+  async function createCommunity(nome: string, descricao: string, pais?: string, privada?: boolean) {
     try {
       const newCommunity = await communitiesApi.createCommunity({
         nome,
         descricao,
         criador_id: user?.id || 0,
+        pais,
+        privada,
       });
       setCommunities([...communities, newCommunity]);
       setUserCommunities([...userCommunities, newCommunity]);
     } catch (error) {
       console.error("Erro ao criar comunidade:", error);
+      throw error;
+    }
+  }
+
+  async function updateCommunity(comunidadeId: number, data: { nome?: string; descricao?: string; pais?: string; privada?: boolean }) {
+    try {
+      await communitiesApi.updateCommunity(comunidadeId, { criador_id: user?.id || 0, ...data });
+      const update = (list: Community[]) =>
+        list.map((c) => c.id === comunidadeId ? { ...c, ...data } : c);
+      setCommunities((prev) => update(prev));
+      setUserCommunities((prev) => update(prev));
+    } catch (error) {
+      console.error("Erro ao atualizar comunidade:", error);
       throw error;
     }
   }
@@ -88,11 +104,19 @@ export function CommunitiesProvider({ children }: { children: ReactNode }) {
 
   async function sendMessage(comunidadeId: number, mensagem: string) {
     try {
-      const newMessage = await communitiesApi.sendMessage(comunidadeId, user?.id || 0, mensagem);
-      setMessages({
-        ...messages,
-        [comunidadeId]: [...(messages[comunidadeId] || []), newMessage],
-      });
+      const response = await communitiesApi.sendMessage(comunidadeId, user?.id || 0, mensagem);
+      // Garante que a mensagem adicionada ao estado tem sempre o formato correto
+      const messageToAdd = {
+        id: response?.id || response?.mensagem?.id || Date.now(),
+        user_id: user?.id || 0,
+        user_nome: user?.nome || "",
+        mensagem: mensagem,
+        criada_em: response?.criada_em || response?.mensagem?.criada_em || new Date().toISOString(),
+      };
+      setMessages((prev) => ({
+        ...prev,
+        [comunidadeId]: [...(prev[comunidadeId] || []), messageToAdd as CommunityMessage],
+      }));
     } catch (error) {
       console.error("Erro ao enviar mensagem:", error);
       throw error;
@@ -128,6 +152,7 @@ export function CommunitiesProvider({ children }: { children: ReactNode }) {
         messages,
         isLoading,
         createCommunity,
+        updateCommunity,
         joinCommunity,
         leaveCommunity,
         sendMessage,

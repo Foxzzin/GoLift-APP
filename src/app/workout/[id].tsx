@@ -7,10 +7,13 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  Modal,
+  FlatList,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../contexts/AuthContext";
+import { useCommunities } from "../../contexts/CommunitiesContext";
 import { useTheme } from "../../styles/theme";
 import { workoutApi, metricsApi } from "../../services/api";
 
@@ -33,14 +36,20 @@ export default function WorkoutActive() {
   const theme = useTheme();
   const { id } = useLocalSearchParams();
   const { user } = useAuth();
+  const { userCommunities, sendMessage } = useCommunities();
   const [loading, setLoading] = useState(true);
   const [workout, setWorkout] = useState<any>(null);
   const [exercicios, setExercicios] = useState<ExercicioAtivo[]>([]);
   const [tempoDecorrido, setTempoDecorrido] = useState(0);
   const [timerPaused, setTimerPaused] = useState(false);
   const [sessaoId, setSessaoId] = useState<number | null>(null);
-  const [focusedField, setFocusedField] = useState<string | null>(null); // Rastrear qual campo tem foco
+  const [focusedField, setFocusedField] = useState<string | null>(null);
   const timerRef = useRef<number | null>(null);
+
+  // Partilha de resultados
+  const [showShareResultsModal, setShowShareResultsModal] = useState(false);
+  const [shareResultsData, setShareResultsData] = useState<any>(null);
+  const [sharingToComm, setSharingToComm] = useState(false);
 
   useEffect(() => {
     loadWorkout();
@@ -288,10 +297,29 @@ export default function WorkoutActive() {
 
             // Finalizar a sessão
             await workoutApi.finishSession(sessaoId, tempoDecorrido);
-            
-            Alert.alert("Parabéns! 🎉", "Treino concluído com sucesso!", [
-              { text: "OK", onPress: () => router.back() },
-            ]);
+
+            // Parar timer
+            if (timerRef.current) clearInterval(timerRef.current);
+
+            // Mostrar opção de partilha se houver comunidades
+            if (userCommunities.length > 0) {
+              const resultsPayload = {
+                nome: workout?.nome || "Treino",
+                duracao: tempoDecorrido,
+                exercicios: exercicios.map((ex) => ({
+                  nome: ex.nome,
+                  series: ex.series
+                    .filter((s) => s.concluida)
+                    .map((s) => ({ reps: parseInt(s.repeticoes) || 0, peso: parseFloat(s.peso) || 0 })),
+                })).filter((ex) => ex.series.length > 0),
+              };
+              setShareResultsData(resultsPayload);
+              setShowShareResultsModal(true);
+            } else {
+              Alert.alert("Parabéns! 🎉", "Treino concluído com sucesso!", [
+                { text: "OK", onPress: () => router.back() },
+              ]);
+            }
           } catch (error) {
             console.error("Erro ao concluir treino:", error);
             Alert.alert("Erro", "Não foi possível guardar o treino");
@@ -299,6 +327,25 @@ export default function WorkoutActive() {
         },
       },
     ]);
+  }
+
+  async function sendShareResultsToCommunity(community: any) {
+    if (!shareResultsData || sharingToComm) return;
+    setSharingToComm(true);
+    try {
+      const payload = JSON.stringify({ tipo: "resultado", ...shareResultsData });
+      await sendMessage(community.id, `\u{1F3CB}\uFE0F__SHARE__${payload}`);
+      setShowShareResultsModal(false);
+      Alert.alert("Partilhado! 💪", `Resultados enviados para ${community.nome}`, [
+        { text: "OK", onPress: () => router.back() },
+      ]);
+    } catch {
+      Alert.alert("Erro", "Não foi possível partilhar");
+      setShowShareResultsModal(false);
+      router.back();
+    } finally {
+      setSharingToComm(false);
+    }
   }
 
   if (loading) {
@@ -487,6 +534,91 @@ export default function WorkoutActive() {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Modal: Partilhar Resultados */}
+      <Modal
+        visible={showShareResultsModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => { setShowShareResultsModal(false); router.back(); }}
+      >
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" }}>
+          <View style={{ backgroundColor: theme.backgroundSecondary, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: "75%" }}>
+            <View style={{ width: 40, height: 4, backgroundColor: theme.border, borderRadius: 2, alignSelf: "center", marginTop: 12, marginBottom: 16 }} />
+
+            <View style={{ paddingHorizontal: 24, marginBottom: 8 }}>
+              <Text style={{ color: theme.text, fontSize: 22, fontWeight: "700" }}>Parabéns! 🎉</Text>
+              <Text style={{ color: theme.textSecondary, fontSize: 13, marginTop: 4 }}>
+                Treino concluído! Queres partilhar os resultados numa comunidade?
+              </Text>
+            </View>
+
+            {/* Preview do treino */}
+            {shareResultsData && (
+              <View style={{ marginHorizontal: 24, marginBottom: 16, backgroundColor: theme.backgroundTertiary, borderRadius: 14, padding: 14 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+                  <Text style={{ color: theme.text, fontWeight: "700", fontSize: 15, flex: 1 }}>{shareResultsData.nome}</Text>
+                  <Text style={{ color: theme.accent, fontSize: 13, fontWeight: "600" }}>
+                    ⏱ {Math.floor(shareResultsData.duracao / 60)} min
+                  </Text>
+                </View>
+                {shareResultsData.exercicios?.slice(0, 3).map((ex: any, i: number) => (
+                  <Text key={i} style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>
+                    • {ex.nome} — {ex.series.length} série{ex.series.length !== 1 ? "s" : ""}
+                  </Text>
+                ))}
+              </View>
+            )}
+
+            <FlatList
+              data={userCommunities}
+              keyExtractor={(item) => String(item.id)}
+              contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}
+              ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+              ListHeaderComponent={
+                <Text style={{ color: theme.textSecondary, fontSize: 12, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>
+                  Escolhe uma comunidade
+                </Text>
+              }
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => sendShareResultsToCommunity(item)}
+                  disabled={sharingToComm}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    backgroundColor: theme.backgroundTertiary,
+                    borderRadius: 14,
+                    padding: 14,
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                  }}
+                >
+                  <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: theme.background, justifyContent: "center", alignItems: "center", marginRight: 12 }}>
+                    <Ionicons name="people" size={20} color={theme.accent} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: theme.text, fontWeight: "600", fontSize: 14 }}>{item.nome}</Text>
+                    <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>{item.membros} membros</Text>
+                  </View>
+                  {sharingToComm ? (
+                    <ActivityIndicator size="small" color={theme.accent} />
+                  ) : (
+                    <Ionicons name="send" size={18} color={theme.accent} />
+                  )}
+                </TouchableOpacity>
+              )}
+            />
+
+            <TouchableOpacity
+              onPress={() => { setShowShareResultsModal(false); router.back(); }}
+              style={{ marginHorizontal: 24, marginBottom: 32, paddingVertical: 14, borderRadius: 14, alignItems: "center", borderWidth: 1, borderColor: theme.border }}
+            >
+              <Text style={{ color: theme.textSecondary, fontWeight: "600" }}>Não partilhar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

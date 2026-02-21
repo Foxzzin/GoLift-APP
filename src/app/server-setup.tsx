@@ -11,7 +11,6 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "../styles/theme";
 import { SERVER_CONFIG, getDeviceIP, discoverServerAutomatically } from "../services/server-config";
 
@@ -36,17 +35,10 @@ export default function ServerSetup({ onConfigured }: ServerSetupProps) {
       const ip = await getDeviceIP();
       setDeviceIP(ip);
       
-      // Tenta carregar IP guardado
-      const savedIP = await AsyncStorage.getItem("@server_ip");
-      if (savedIP) {
-        setServerIP(savedIP);
-        SERVER_CONFIG.setIP(savedIP);
-      } else {
-        // Se não houver IP guardado, sugere o IP do dispositivo (sem o último octeto)
-        // ex: se device é 192.168.1.100, sugere 192.168.1.
-        const suggestedIP = ip.substring(0, ip.lastIndexOf(".") + 1);
-        setServerIP(suggestedIP);
-      }
+      // Sugere o IP do dispositivo (sem o último octeto) como ponto de partida
+      // ex: se device é 192.168.1.100, sugere 192.168.1.
+      const suggestedIP = ip.substring(0, ip.lastIndexOf(".") + 1);
+      setServerIP(suggestedIP);
     } catch (error) {
       console.error("Erro ao carregar IP:", error);
       setServerIP("192.168.1.");
@@ -86,8 +78,7 @@ export default function ServerSetup({ onConfigured }: ServerSetupProps) {
 
     try {
       setSaving(true);
-      // Guarda o IP
-      await AsyncStorage.setItem("@server_ip", serverIP);
+      // Atualiza o IP apenas em memória (sem persistência)
       SERVER_CONFIG.setIP(serverIP);
       
       // Chama callback se foi passado
