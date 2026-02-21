@@ -23,6 +23,7 @@ export default function AdminLayout() {
       <Stack.Screen name="users" />
       <Stack.Screen name="exercises" />
       <Stack.Screen name="workouts" />
+      <Stack.Screen name="communities" />
     </Stack>
   );
 }

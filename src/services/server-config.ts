@@ -1,30 +1,32 @@
 import * as Network from 'expo-network';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// IP do servidor local (pode ser alterado dinamicamente)
-let SERVER_IP = "192.168.56.1"; // IP correcto do servidor
+// IP do servidor local (pode ser alterado dinamicamente via setServerIP)
+let SERVER_IP = "localhost";
 let SERVER_PORT = "5000";
 
-// Flag para indicar se o servidor foi configurado
+// Flag para indicar se o IP foi sobrescrito manualmente nesta sessão
 let IS_SERVER_CONFIGURED = false;
 
-// Função para carregar o IP guardado do AsyncStorage
+// Descobre sempre o servidor automaticamente (sem cache)
 export async function loadSavedServerIP(): Promise<string | null> {
   try {
-    const savedIP = await AsyncStorage.getItem("@server_ip");
-    if (savedIP) {
-      // Sanitizar o IP - remover vírgulas e espaços
-      const cleanedIP = savedIP.replace(/,/g, ".").trim();
-      SERVER_IP = cleanedIP;
+    console.log("A descobrir servidor na rede...");
+    const discoveredIP = await discoverServerAutomatically();
+    if (discoveredIP) {
+      SERVER_IP = discoveredIP;
       IS_SERVER_CONFIGURED = true;
-      console.log("IP do servidor carregado do storage:", cleanedIP);
-      console.log(`✓ Conectando a: http://${cleanedIP}:${SERVER_PORT}`);
-      return cleanedIP;
+      console.log(`✓ Servidor descoberto: ${discoveredIP}`);
+      return discoveredIP;
     }
-    return null;
+
+    // Fallback para localhost se nada funcionar
+    console.log("Nenhum servidor encontrado, usando fallback: localhost");
+    SERVER_IP = "localhost";
+    return "localhost";
   } catch (error) {
-    console.error("Erro ao carregar IP do storage:", error);
-    return null;
+    console.error("Erro ao descobrir servidor:", error);
+    SERVER_IP = "localhost";
+    return "localhost";
   }
 }
 
@@ -113,12 +115,10 @@ export function getAPIUrl(): string {
   return `http://${SERVER_IP}:${SERVER_PORT}`;
 }
 
-// Função para atualizar o IP do servidor (útil para testar em vários dispositivos)
+// Função para sobrescrever o IP do servidor manualmente nesta sessão
 export function setServerIP(ip: string): void {
   SERVER_IP = ip;
   IS_SERVER_CONFIGURED = true;
-  // Guarda no AsyncStorage
-  AsyncStorage.setItem("@server_ip", ip).catch((err: any) => console.error("Erro ao guardar IP:", err));
   console.log("IP do servidor atualizado para:", ip);
 }
 

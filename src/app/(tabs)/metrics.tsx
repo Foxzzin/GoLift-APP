@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   View,
   Text,
@@ -45,6 +46,14 @@ export default function Metrics() {
   const [workoutDetails, setWorkoutDetails] = useState<any>(null); // Detalhes completos do treino
   const [showWorkoutModal, setShowWorkoutModal] = useState(false);
   const [loadingDetails, setLoadingDetails] = useState(false); // Loading para detalhes
+
+  // Meta semanal
+  const [weeklyGoal, setWeeklyGoal] = useState(4);
+  const [goalMode, setGoalMode] = useState<'permanent' | 'weekly'>('permanent');
+  const [showGoalModal, setShowGoalModal] = useState(false);
+  const [goalDraft, setGoalDraft] = useState(4);
+  const [goalModeDraft, setGoalModeDraft] = useState<'permanent' | 'weekly'>('permanent');
+  const [goalModalIsNew, setGoalModalIsNew] = useState(false); // true = prompted auto on new week
   
   // Draggable modal state
   const panResponder = useRef(
@@ -65,8 +74,65 @@ export default function Metrics() {
   useEffect(() => {
     if (user?.id) {
       loadData();
+      loadGoalSettings();
     }
   }, [user]);
+
+  function getCurrentWeekKey() {
+    const now = new Date();
+    const day = now.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diff);
+    return monday.toISOString().split('T')[0];
+  }
+
+  async function loadGoalSettings() {
+    const stored = await AsyncStorage.getItem('@golift:weekly_goal');
+    if (stored) {
+      const { target, mode, lastSetWeek } = JSON.parse(stored);
+      setWeeklyGoal(target);
+      setGoalMode(mode);
+      setGoalDraft(target);
+      setGoalModeDraft(mode);
+      if (mode === 'weekly' && lastSetWeek !== getCurrentWeekKey()) {
+        setGoalModalIsNew(true);
+        setShowGoalModal(true);
+      }
+    } else {
+      // Primeira vez — pedir ao user para definir a meta
+      setGoalModalIsNew(true);
+      setShowGoalModal(true);
+    }
+  }
+
+  async function saveGoalSettings() {
+    await AsyncStorage.setItem('@golift:weekly_goal', JSON.stringify({
+      target: goalDraft,
+      mode: goalModeDraft,
+      lastSetWeek: getCurrentWeekKey(),
+    }));
+    setWeeklyGoal(goalDraft);
+    setGoalMode(goalModeDraft);
+    setShowGoalModal(false);
+    setGoalModalIsNew(false);
+  }
+
+  async function openGoalEdit() {
+    const stored = await AsyncStorage.getItem('@golift:weekly_goal');
+    if (stored) {
+      const { target, mode } = JSON.parse(stored);
+      setGoalDraft(target);
+      setGoalModeDraft(mode);
+    } else {
+      setGoalDraft(weeklyGoal);
+      setGoalModeDraft(goalMode);
+    }
+    setGoalModalIsNew(false);
+    setShowGoalModal(true);
+  }
+
+
 
   async function loadData() {
     setLoading(true);
@@ -243,9 +309,9 @@ export default function Metrics() {
     });
   }
 
-  // Calcular meta semanal de treinos (exemplo: 4 treinos por semana)
+  // Calcular meta semanal de treinos
   function getWeeklyProgress() {
-    const targetWorkouts = 4;
+    const targetWorkouts = weeklyGoal;
     const weekStart = new Date();
     weekStart.setDate(weekStart.getDate() - weekStart.getDay());
     
@@ -408,9 +474,23 @@ export default function Metrics() {
                 Meta Semanal
               </Text>
               <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
-                Objetivo: 4 treinos por semana
+                Objetivo: {weeklyGoal} treino{weeklyGoal !== 1 ? "s" : ""} por semana
+                {"  "}
+                <Text style={{ color: goalMode === "weekly" ? theme.accent : theme.accentGreen }}>
+                  {goalMode === "weekly" ? "· Semanal" : "· Permanente"}
+                </Text>
               </Text>
             </View>
+            <TouchableOpacity
+              onPress={openGoalEdit}
+              style={{
+                backgroundColor: theme.backgroundTertiary,
+                borderRadius: 20,
+                padding: 8,
+              }}
+            >
+              <Ionicons name="pencil" size={16} color={theme.textSecondary} />
+            </TouchableOpacity>
           </View>
 
           {/* Barra de progresso semanal */}
@@ -600,7 +680,7 @@ export default function Metrics() {
           </View>
         ) : (
           <View style={{ gap: 12 }}>
-            {records.map((record, index) => (
+            {records.slice(0, 3).map((record, index) => (
               <View
                 key={index}
                 style={{
@@ -756,76 +836,87 @@ export default function Metrics() {
       animationType="none"
       onRequestClose={() => setShowWorkoutModal(false)}
     >
-      <TouchableOpacity 
+      <View
         style={{
           flex: 1,
-          backgroundColor: "rgba(0, 0, 0, 0.15)",
           justifyContent: "flex-end",
         }}
-        activeOpacity={1}
-        onPress={() => setShowWorkoutModal(false)}
       >
-        <TouchableOpacity 
+        {/* Backdrop */}
+        <TouchableOpacity
+          style={{
+            position: "absolute",
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.15)",
+          }}
           activeOpacity={1}
-          onPress={(e) => e.stopPropagation()}
-          {...panResponder.panHandlers}
+          onPress={() => setShowWorkoutModal(false)}
+        />
+
+        {/* Sheet */}
+        <View
           style={{
             backgroundColor: theme.backgroundSecondary,
             borderTopLeftRadius: 24,
             borderTopRightRadius: 24,
-            padding: 24,
-            maxHeight: "85%",
+            maxHeight: "90%",
             borderColor: theme.border,
             borderTopWidth: 1,
             borderLeftWidth: 1,
             borderRightWidth: 1,
           }}
         >
-          {/* Barra deslizável no topo */}
-          <TouchableOpacity
+          {/* Drag handle */}
+          <View
+            {...panResponder.panHandlers}
             style={{
               width: 40,
               height: 4,
               backgroundColor: theme.textSecondary,
               borderRadius: 2,
               alignSelf: "center",
-              marginBottom: 20,
+              marginTop: 16,
+              marginBottom: 4,
               opacity: 0.3,
             }}
           />
 
-          {/* Header minimalista */}
-          <View
-            style={{
-              marginBottom: 24,
-            }}
-          >
-            <View style={{ flexDirection: "row", justifyContent: "flex-start", alignItems: "flex-start" }}>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 28, fontWeight: "700", color: theme.text, marginBottom: 8 }}>
-                  {workoutDetails?.nome_treino ||
-                    selectedDayWorkout?.nome_treino ||
-                    selectedDayWorkout?.nome ||
-                    "Treino"}
+          {/* Fixed header — outside ScrollView */}
+          <View style={{ paddingHorizontal: 24, paddingTop: 12, paddingBottom: 16, flexDirection: "row", alignItems: "flex-start" }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 24, fontWeight: "700", color: theme.text, marginBottom: 4 }}>
+                {workoutDetails?.nome_treino ||
+                  selectedDayWorkout?.nome_treino ||
+                  selectedDayWorkout?.nome ||
+                  "Treino"}
+              </Text>
+              {(workoutDetails?.data_inicio ||
+                selectedDayWorkout?.data_inicio ||
+                selectedDayWorkout?.data) && (
+                <Text style={{ fontSize: 13, color: theme.textSecondary }}>
+                  {formatDateTime(
+                    workoutDetails?.data_inicio ||
+                      selectedDayWorkout?.data_inicio ||
+                      selectedDayWorkout?.data
+                  )}
                 </Text>
-                
-                {(workoutDetails?.data_inicio ||
-                  selectedDayWorkout?.data_inicio ||
-                  selectedDayWorkout?.data) && (
-                  <Text style={{ fontSize: 13, color: theme.textSecondary }}>
-                    {formatDateTime(
-                      workoutDetails?.data_inicio ||
-                        selectedDayWorkout?.data_inicio ||
-                        selectedDayWorkout?.data
-                    )}
-                  </Text>
-                )}
-              </View>
+              )}
             </View>
+            <TouchableOpacity
+              onPress={() => setShowWorkoutModal(false)}
+              style={{ backgroundColor: theme.backgroundTertiary, borderRadius: 20, padding: 8, marginLeft: 12 }}
+            >
+              <Ionicons name="close" size={18} color={theme.text} />
+            </TouchableOpacity>
           </View>
 
+          {/* Scrollable content */}
           {selectedDayWorkout ? (
-            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: "100%" }}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              style={{ flexShrink: 1 }}
+              contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}
+            >
               {/* Duração em destaque */}
               {(workoutDetails?.duracao_segundos ||
                 selectedDayWorkout?.duracao_segundos) && (
@@ -965,13 +1056,164 @@ export default function Metrics() {
               <View style={{ height: 20 }} />
             </ScrollView>
           ) : (
-            <Text style={{ color: theme.textSecondary, textAlign: "center", fontSize: 14 }}>
-              Nenhum dado disponível
-            </Text>
+            <View style={{ paddingHorizontal: 24, paddingBottom: 40 }}>
+              <Text style={{ color: theme.textSecondary, textAlign: "center", fontSize: 14 }}>
+                Nenhum dado disponível
+              </Text>
+            </View>
           )}
-        </TouchableOpacity>
-      </TouchableOpacity>
+        </View>
+      </View>
     </Modal>
+
+    {/* Modal de Meta Semanal */}
+    <Modal
+      visible={showGoalModal}
+      transparent
+      animationType="fade"
+      onRequestClose={() => !goalModalIsNew && setShowGoalModal(false)}
+    >
+      <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center", paddingHorizontal: 24 }}>
+        <View style={{
+          backgroundColor: theme.backgroundSecondary,
+          borderRadius: 24,
+          padding: 24,
+          width: "100%",
+          borderColor: theme.border,
+          borderWidth: 1,
+        }}>
+          {/* Título */}
+          <Text style={{ fontSize: 20, fontWeight: "700", color: theme.text, marginBottom: 4 }}>
+            {goalModalIsNew ? "🎯 Nova semana!" : "Meta Semanal"}
+          </Text>
+          <Text style={{ fontSize: 14, color: theme.textSecondary, marginBottom: 24 }}>
+            {goalModalIsNew
+              ? "Define quantos treinos queres fazer esta semana."
+              : "Altera a tua meta de treinos por semana."}
+          </Text>
+
+          {/* Seletor de número */}
+          <Text style={{ fontSize: 13, color: theme.textSecondary, marginBottom: 10 }}>
+            Número de treinos
+          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", marginBottom: 24, gap: 20 }}>
+            <TouchableOpacity
+              onPress={() => setGoalDraft(Math.max(1, goalDraft - 1))}
+              style={{
+                width: 44, height: 44, borderRadius: 22,
+                backgroundColor: theme.backgroundTertiary,
+                justifyContent: "center", alignItems: "center",
+              }}
+            >
+              <Ionicons name="remove" size={22} color={theme.text} />
+            </TouchableOpacity>
+            <Text style={{ fontSize: 40, fontWeight: "700", color: theme.text, minWidth: 60, textAlign: "center" }}>
+              {goalDraft}
+            </Text>
+            <TouchableOpacity
+              onPress={() => setGoalDraft(Math.min(7, goalDraft + 1))}
+              style={{
+                width: 44, height: 44, borderRadius: 22,
+                backgroundColor: theme.backgroundTertiary,
+                justifyContent: "center", alignItems: "center",
+              }}
+            >
+              <Ionicons name="add" size={22} color={theme.text} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Pontos rápidos */}
+          <View style={{ flexDirection: "row", justifyContent: "center", gap: 8, marginBottom: 28 }}>
+            {[1,2,3,4,5,6,7].map(n => (
+              <TouchableOpacity
+                key={n}
+                onPress={() => setGoalDraft(n)}
+                style={{
+                  width: 36, height: 36, borderRadius: 18,
+                  backgroundColor: goalDraft === n ? theme.accent : theme.backgroundTertiary,
+                  justifyContent: "center", alignItems: "center",
+                  borderWidth: goalDraft === n ? 0 : 1,
+                  borderColor: theme.border,
+                }}
+              >
+                <Text style={{ fontSize: 14, fontWeight: "600", color: goalDraft === n ? "#fff" : theme.textSecondary }}>
+                  {n}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Modo: Semanal vs Permanente */}
+          <Text style={{ fontSize: 13, color: theme.textSecondary, marginBottom: 10 }}>
+            Repetição
+          </Text>
+          <View style={{ flexDirection: "row", gap: 10, marginBottom: 28 }}>
+            <TouchableOpacity
+              onPress={() => setGoalModeDraft("weekly")}
+              style={{
+                flex: 1, padding: 14, borderRadius: 14,
+                backgroundColor: goalModeDraft === "weekly" ? theme.accent : theme.backgroundTertiary,
+                alignItems: "center",
+                borderWidth: goalModeDraft === "weekly" ? 0 : 1,
+                borderColor: theme.border,
+              }}
+            >
+              <Text style={{ fontSize: 13, fontWeight: "600", color: goalModeDraft === "weekly" ? "#fff" : theme.textSecondary }}>
+                🔄  Todas as semanas
+              </Text>
+              <Text style={{ fontSize: 11, color: goalModeDraft === "weekly" ? "rgba(255,255,255,0.7)" : theme.textTertiary, marginTop: 2 }}>
+                Pergunta no início de cada semana
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setGoalModeDraft("permanent")}
+              style={{
+                flex: 1, padding: 14, borderRadius: 14,
+                backgroundColor: goalModeDraft === "permanent" ? theme.accent : theme.backgroundTertiary,
+                alignItems: "center",
+                borderWidth: goalModeDraft === "permanent" ? 0 : 1,
+                borderColor: theme.border,
+              }}
+            >
+              <Text style={{ fontSize: 13, fontWeight: "600", color: goalModeDraft === "permanent" ? "#fff" : theme.textSecondary }}>
+                📌  Permanente
+              </Text>
+              <Text style={{ fontSize: 11, color: goalModeDraft === "permanent" ? "rgba(255,255,255,0.7)" : theme.textTertiary, marginTop: 2 }}>
+                Mantém-se semana a semana
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Botões */}
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            {!goalModalIsNew && (
+              <TouchableOpacity
+                onPress={() => setShowGoalModal(false)}
+                style={{
+                  flex: 1, padding: 14, borderRadius: 14,
+                  backgroundColor: theme.backgroundTertiary,
+                  alignItems: "center",
+                  borderWidth: 1, borderColor: theme.border,
+                }}
+              >
+                <Text style={{ color: theme.textSecondary, fontWeight: "600" }}>Cancelar</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              onPress={saveGoalSettings}
+              style={{
+                flex: 2, padding: 14, borderRadius: 14,
+                backgroundColor: theme.accent,
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>Guardar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+
     </View>
   );
 }

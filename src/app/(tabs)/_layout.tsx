@@ -1,4 +1,4 @@
-import { Tabs } from "expo-router";
+import { Tabs, usePathname } from "expo-router";
 import { View, TouchableOpacity, StyleSheet, Pressable, Animated } from "react-native";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
@@ -6,10 +6,12 @@ import { router } from "expo-router";
 import { useRef } from "react";
 import { useTheme } from "../../styles/theme";
 
-function CustomTabBar({ state, descriptors, navigation }: any) {
+function CustomTabBar({ state, descriptors, navigation, hideTabBar }: any) {
   const theme = useTheme();
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const translateYAnim = useRef(new Animated.Value(0)).current;
+
+  if (hideTabBar) return null;
 
   const handlePressIn = () => {
     Animated.parallel([
@@ -37,91 +39,88 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     ]).start();
   };
 
+  const iconNameMap = {
+    index: "home" as const,
+    communities: "people" as const,
+    metrics: "stats-chart" as const,
+    profile: "person" as const,
+  };
+
+  const getTabComponent = (route: any, index: number, isFocused: boolean) => {
+    const iconName = (iconNameMap[route.name as keyof typeof iconNameMap] || "home") as keyof typeof Ionicons.glyphMap;
+    const onPress = () => {
+      const event = navigation.emit({
+        type: "tabPress",
+        target: route.key,
+        canPreventDefault: true,
+      });
+
+      if (!isFocused && !event.defaultPrevented) {
+        navigation.navigate(route.name);
+      }
+    };
+
+    return (
+      <TouchableOpacity key={route.key} onPress={onPress} style={styles.tab}>
+        <Ionicons name={iconName as any} size={24} color={isFocused ? theme.text : theme.textTertiary} />
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <View style={[styles.tabBarContainer]}>
       <BlurView intensity={35} style={[styles.blurContainer, { borderColor: theme.border }]}>
-        <View style={[styles.tabBar, { backgroundColor: 'rgba(0,0,0,0.1)' }]}>
-          {state.routes.map((route: any, index: number) => {
-            const { options } = descriptors[route.key];
-            const isFocused = state.index === index;
+        <View style={[styles.tabBar, { backgroundColor: "rgba(0,0,0,0.1)" }]}>
+      {/* Esquerda: Home */}
+          <View style={styles.tabGroup}>
+            {state.routes.slice(0, 1).map((route: any, index: number) => {
+              const isFocused = state.index === index;
+              return getTabComponent(route, index, isFocused);
+            })}
+          </View>
 
-            const iconNameMap = {
-              index: "home" as const,
-              workouts: "barbell" as const,
-              metrics: "stats-chart" as const,
-              profile: "person" as const,
-            };
+          {/* Centro-Esquerda: Communities */}
+          <View style={styles.tabGroup}>
+            {state.routes.slice(1, 2).map((route: any, index: number) => {
+              const isFocused = state.index === index + 1;
+              return getTabComponent(route, index + 1, isFocused);
+            })}
+          </View>
 
-            const iconName = (iconNameMap[route.name as keyof typeof iconNameMap] || "home") as keyof typeof Ionicons.glyphMap;
+          {/* Centro: Play Button */}
+          <Pressable
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            onPress={() => router.push("/(tabs)/workouts")}
+          >
+            <Animated.View
+              style={[
+                styles.centerButton,
+                { backgroundColor: theme.accent },
+                {
+                  transform: [{ scale: scaleAnim }, { translateY: translateYAnim }],
+                },
+              ]}
+            >
+              <Ionicons name="play" size={24} color="white" />
+            </Animated.View>
+          </Pressable>
 
-            const onPress = () => {
-              const event = navigation.emit({
-                type: "tabPress",
-                target: route.key,
-                canPreventDefault: true,
-              });
+          {/* Centro-Direita: Metrics */}
+          <View style={styles.tabGroup}>
+            {state.routes.slice(3, 4).map((route: any, index: number) => {
+              const isFocused = state.index === 3;
+              return getTabComponent(route, 3, isFocused);
+            })}
+          </View>
 
-              if (!isFocused && !event.defaultPrevented) {
-                navigation.navigate(route.name);
-              }
-            };
-
-            // Botão central de começar treino (após os 2 primeiros itens)
-            if (index === 2) {
-              return (
-                <View key="center-button" style={styles.centerButtonWrapper}>
-                  {/* Botão Começar Treino */}
-                  <Pressable
-                    onPressIn={handlePressIn}
-                    onPressOut={handlePressOut}
-                    onPress={() => router.push("/(tabs)/workouts")}
-                  >
-                    <Animated.View
-                      style={[
-                        styles.centerButton,
-                        { backgroundColor: theme.accent },
-                        {
-                          transform: [
-                            { scale: scaleAnim },
-                            { translateY: translateYAnim },
-                          ],
-                        },
-                      ]}
-                    >
-                      <Ionicons name="play" size={24} color="white" />
-                    </Animated.View>
-                  </Pressable>
-
-                  {/* Tab atual (metrics) */}
-                  <TouchableOpacity
-                    key={route.key}
-                    onPress={onPress}
-                    style={styles.tab}
-                  >
-                    <Ionicons
-                      name={iconName as any}
-                      size={24}
-                      color={isFocused ? theme.text : theme.textTertiary}
-                    />
-                  </TouchableOpacity>
-                </View>
-              );
-            }
-
-            return (
-              <TouchableOpacity
-                key={route.key}
-                onPress={onPress}
-                style={styles.tab}
-              >
-                <Ionicons
-                  name={iconName as any}
-                  size={24}
-                  color={isFocused ? theme.text : theme.textTertiary}
-                />
-              </TouchableOpacity>
-            );
-          })}
+          {/* Direita: Profile */}
+          <View style={styles.tabGroup}>
+            {state.routes.slice(4, 5).map((route: any, index: number) => {
+              const isFocused = state.index === 4;
+              return getTabComponent(route, 4, isFocused);
+            })}
+          </View>
         </View>
       </BlurView>
     </View>
@@ -129,17 +128,36 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 }
 
 export default function TabsLayout() {
+  const pathname = usePathname();
+  const hideTabBar = pathname.includes("community/");
+
   return (
     <Tabs
-      tabBar={(props: any) => <CustomTabBar {...props} />}
+      tabBar={(props: any) => <CustomTabBar {...props} hideTabBar={hideTabBar} />}
       screenOptions={{
         headerShown: false,
       }}
     >
-      <Tabs.Screen name="index" />
-      <Tabs.Screen name="workouts" />
-      <Tabs.Screen name="metrics" />
-      <Tabs.Screen name="profile" />
+      <Tabs.Screen 
+        name="index" 
+        options={{}}
+      />
+      <Tabs.Screen 
+        name="communities" 
+        options={{}}
+      />
+      <Tabs.Screen 
+        name="workouts" 
+        options={{}}
+      />
+      <Tabs.Screen 
+        name="metrics" 
+        options={{}}
+      />
+      <Tabs.Screen 
+        name="profile" 
+        options={{}}
+      />
     </Tabs>
   );
 }
@@ -161,26 +179,27 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 10,
     alignItems: "center",
-    justifyContent: "space-around",
+    justifyContent: "space-between",
+  },
+  tabGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
   },
   tab: {
-    flex: 1,
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 8,
-  },
-  centerButtonWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 2,
-    justifyContent: "space-around",
+    paddingHorizontal: 12,
   },
   centerButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: "center",
     justifyContent: "center",
-  },  
+    marginHorizontal: 8,
+  },
 });
 
