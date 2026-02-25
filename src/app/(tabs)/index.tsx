@@ -151,18 +151,10 @@ export default function Home() {
           text: "Sim, começar",
           onPress: async () => {
             try {
-              // Iniciar a sessão de treino
-              const response = await workoutApi.startSession(user!.id, workout.id_treino);
-              if (response.sucesso) {
-                // Redirecionar para a página de treino
-                router.push({
-                  pathname: "/workout/[id]",
-                  params: { 
-                    id: workout.id_treino,
-                    sessionId: response.id_sessao
-                  }
-                });
-              }
+              router.push({
+                pathname: "/workout/[id]",
+                params: { id: workout.id_treino }
+              });
             } catch (error) {
               Alert.alert("Erro", "Erro ao iniciar treino");
               console.error("Erro ao iniciar treino:", error);

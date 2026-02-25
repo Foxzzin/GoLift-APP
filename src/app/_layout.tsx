@@ -84,6 +84,27 @@ export default function RootLayout() {
               animation: "slide_from_right"
             }}
           />
+          <Stack.Screen
+            name="upgrade"
+            options={{
+              presentation: "card",
+              animation: "slide_from_bottom"
+            }}
+          />
+          <Stack.Screen
+            name="ai-report"
+            options={{
+              presentation: "card",
+              animation: "slide_from_right"
+            }}
+          />
+          <Stack.Screen
+            name="ai-plan"
+            options={{
+              presentation: "card",
+              animation: "slide_from_right"
+            }}
+          />
         </Stack>
       </CommunitiesProvider>
     </AuthProvider>

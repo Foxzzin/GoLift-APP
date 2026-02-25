@@ -10,6 +10,7 @@ import { useLocalSearchParams, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { userApi, metricsApi } from "../../services/api";
 import { useTheme } from "../../styles/theme";
+import { getIMCCategory } from "../../utils/imc";
 
 export default function UserProfile() {
   const theme = useTheme();
@@ -51,13 +52,6 @@ export default function UserProfile() {
   function calculateIMC(peso: number, altura: number) {
     if (!peso || !altura) return null;
     return (peso / Math.pow(altura / 100, 2)).toFixed(1);
-  }
-
-  function getIMCCategory(imc: number) {
-    if (imc < 18.5) return { label: "Abaixo do peso", color: "#6b7280" };
-    if (imc < 25) return { label: "Peso normal", color: "#10b981" };
-    if (imc < 30) return { label: "Sobrepeso", color: "#f59e0b" };
-    return { label: "Obesidade", color: "#6b7280" };
   }
 
   const imc = calculateIMC(profile?.peso, profile?.altura);

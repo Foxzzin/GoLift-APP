@@ -13,9 +13,7 @@ import {
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../styles/theme";
-import { SERVER_CONFIG } from "../../services/server-config";
-
-const getAPI_URL = () => SERVER_CONFIG.getFullURL();
+import { adminApi, exerciseApi } from "../../services/api";
 
 export default function AdminWorkouts() {
   const theme = useTheme();
@@ -36,12 +34,10 @@ export default function AdminWorkouts() {
 
   async function loadData() {
     try {
-      const [workoutsRes, exercisesRes] = await Promise.all([
-        fetch(`${getAPI_URL()}/api/treino-admin`),
-        fetch(`${getAPI_URL()}/api/exercicios`),
+      const [workoutsData, exercisesData] = await Promise.all([
+        adminApi.getWorkouts(),
+        exerciseApi.getAll(),
       ]);
-      const workoutsData = await workoutsRes.json();
-      const exercisesData = await exercisesRes.json();
       setWorkouts(Array.isArray(workoutsData) ? workoutsData : []);
       setExercises(Array.isArray(exercisesData) ? exercisesData : []);
     } catch (error) {
@@ -77,15 +73,7 @@ export default function AdminWorkouts() {
 
     setSaving(true);
     try {
-      const response = await fetch(`${getAPI_URL()}/api/treino-admin`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nome: workoutName,
-          exercicios: selectedExercises.map((e) => e.id),
-        }),
-      });
-      const data = await response.json();
+      const data = await adminApi.createWorkout(workoutName, selectedExercises.map((e) => e.id));
       if (data.sucesso) {
         Alert.alert("Sucesso", "Treino recomendado criado!");
         setShowModal(false);
@@ -93,7 +81,7 @@ export default function AdminWorkouts() {
         setSelectedExercises([]);
         loadData();
       } else {
-        Alert.alert("Erro", data.erro || "Erro ao criar treino");
+        Alert.alert("Erro", "Erro ao criar treino");
       }
     } catch (error) {
       Alert.alert("Erro", "Erro ao criar treino");
@@ -113,15 +101,11 @@ export default function AdminWorkouts() {
           style: "destructive",
           onPress: async () => {
             try {
-              const response = await fetch(
-                `${getAPI_URL()}/api/treino-admin/${workout.id_treino_admin}`,
-                { method: "DELETE" }
-              );
-              const data = await response.json();
+              const data = await adminApi.deleteWorkout(workout.id_treino_admin);
               if (data.sucesso) {
                 loadData();
               } else {
-                Alert.alert("Erro", data.erro || "Erro ao apagar treino");
+                Alert.alert("Erro", "Erro ao apagar treino");
               }
             } catch (error) {
               Alert.alert("Erro", "Erro ao apagar treino");

@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../contexts/AuthContext";
 import { userApi, metricsApi } from "../../services/api";
 import { useTheme } from "../../styles/theme";
+import { getIMCCategory } from "../../utils/imc";
 
 export default function Profile() {
   const { user, logout } = useAuth();
@@ -75,13 +76,6 @@ export default function Profile() {
     const alturaM = altura / 100;
     const imc = peso / (alturaM * alturaM);
     return imc.toFixed(1);
-  }
-
-  function getIMCCategory(imc: number) {
-    if (imc < 18.5) return { label: "Abaixo do peso", color: "#6b7280" };
-    if (imc < 25) return { label: "Peso normal", color: "#10b981" };
-    if (imc < 30) return { label: "Sobrepeso", color: "#f59e0b" };
-    return { label: "Obesidade", color: "#6b7280" };
   }
 
   function formatTime(seconds: number) {
@@ -467,6 +461,38 @@ export default function Profile() {
             overflow: "hidden",
           }}
         >
+          {/* GoLift Pro */}
+          <TouchableOpacity
+            onPress={() => router.push("/upgrade")}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              paddingHorizontal: 16,
+              paddingVertical: 14,
+              borderBottomColor: theme.border,
+              borderBottomWidth: 1,
+              backgroundColor: theme.accent + "12",
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: theme.accent + "30",
+                width: 40,
+                height: 40,
+                borderRadius: 10,
+                justifyContent: "center",
+                alignItems: "center",
+                marginRight: 12,
+              }}
+            >
+              <Ionicons name="star" size={20} color={theme.accent} />
+            </View>
+            <Text style={{ color: theme.text, flex: 1, fontSize: 14, fontWeight: "600" }}>
+              GoLift Pro
+            </Text>
+            <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
+          </TouchableOpacity>
+
           {/* Editar Perfil */}
           <TouchableOpacity
             onPress={() => router.push("/edit-profile")}

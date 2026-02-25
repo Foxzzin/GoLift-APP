@@ -519,7 +519,7 @@ export default function Metrics() {
         </View>
 
         {/* Card de Objetivo de Peso (se houver dados) */}
-        {profile?.peso && profile?.pesoAlvo && getWeightProgress() && (
+        {!!profile?.peso && !!profile?.pesoAlvo && !!getWeightProgress() && (
           <View
             style={{
               backgroundColor: theme.backgroundSecondary,

@@ -16,7 +16,7 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../contexts/AuthContext";
 import { useCommunities } from "../../contexts/CommunitiesContext";
-import { workoutApi, exerciseApi, metricsApi } from "../../services/api";
+import { workoutApi, exerciseApi } from "../../services/api";
 import { useTheme } from "../../styles/theme";
 
 export default function Workouts() {
@@ -197,12 +197,7 @@ export default function Workouts() {
           style: "default",
           onPress: async () => {
             try {
-              // Iniciar a sessão de treino
-              const response = await workoutApi.startSession(user!.id, workout.id_treino);
-              if (response.sucesso) {
-                // Redirecionar para o treino
-                router.push(`/workout/${workout.id_treino}`);
-              }
+              router.push(`/workout/${workout.id_treino}`);
             } catch (error) {
               Alert.alert("Erro", "Não foi possível iniciar o treino");
             }
@@ -215,14 +210,19 @@ export default function Workouts() {
   async function handleDeleteWorkout(workout: any) {
     Alert.alert(
       "Apagar Treino",
-      `Tens a certeza que queres apagar "${workout.nome}"?`,
+      `Tens a certeza que queres apagar "${workout.nome}"? O histórico de sessões também será apagado.`,
       [
         { text: "Cancelar", style: "cancel" },
         {
           text: "Apagar",
           style: "destructive",
           onPress: async () => {
-            Alert.alert("Aviso", "Apagar treino não é suportado no momento");
+            try {
+              await workoutApi.deleteWorkout(user!.id, workout.id_treino);
+              loadData();
+            } catch (error: any) {
+              Alert.alert("Erro", error.message || "Não foi possível apagar o treino");
+            }
           },
         },
       ]
