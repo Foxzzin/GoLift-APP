@@ -11,7 +11,7 @@ import {
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../contexts/AuthContext";
-import { metricsApi, workoutApi } from "../../services/api";
+import { metricsApi, workoutApi, planoApi } from "../../services/api";
 import { useTheme } from "../../styles/theme";
 
 export default function Home() {
@@ -27,11 +27,13 @@ export default function Home() {
     totalTime: 0,
   });
   const [recentWorkouts, setRecentWorkouts] = useState<any[]>([]);
+  const [dailyPhrase, setDailyPhrase] = useState<string | null>(null);
 
   useEffect(() => {
     if (user?.id) {
       loadData();
     }
+    planoApi.getDailyPhrase().then(d => setDailyPhrase(d.frase)).catch(() => {});
   }, [user]);
 
   // Gerar histórico de streak da semana (dom-sab)
@@ -250,6 +252,29 @@ export default function Home() {
           </View>
         </View>
 
+      {/* Frase do Dia (IA) */}
+      {dailyPhrase ? (
+        <View style={{ paddingHorizontal: 24, marginBottom: 20 }}>
+          <View style={{
+            backgroundColor: theme.backgroundSecondary,
+            borderRadius: 14,
+            padding: 16,
+            borderLeftWidth: 3,
+            borderLeftColor: theme.accent,
+            borderColor: theme.border,
+            borderWidth: 1,
+            flexDirection: "row",
+            alignItems: "flex-start",
+            gap: 10,
+          }}>
+            <Ionicons name="sparkles" size={18} color={theme.accent} style={{ marginTop: 2 }} />
+            <Text style={{ color: theme.text, fontSize: 13, lineHeight: 20, flex: 1, fontStyle: "italic" }}>
+              {dailyPhrase}
+            </Text>
+          </View>
+        </View>
+      ) : null}
+
       {/* Stats Cards */}
       <View style={{ flexDirection: "row", paddingHorizontal: 24, gap: 12, marginBottom: 24 }}>
         <View style={{ flex: 1, backgroundColor: theme.backgroundSecondary, borderRadius: 12, padding: 16, borderColor: theme.border, borderWidth: 1 }}>
@@ -338,14 +363,6 @@ export default function Home() {
         )}
       </View>
 
-      {/* Motivational Quote */}
-      <View style={{ paddingHorizontal: 24, marginTop: 24, marginBottom: 24 }}>
-        <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 12, padding: 20, borderColor: theme.accent, borderWidth: 1, borderLeftWidth: 4 }}>
-          <Text style={{ color: theme.text, fontSize: 16, fontWeight: "500", textAlign: "center", fontStyle: "italic", lineHeight: 24 }}>
-            "O único treino mau é aquele que não aconteceu."
-          </Text>
-        </View>
-      </View>
     </ScrollView>
 
     {/* Modal da Streak - Mostra a semana */}

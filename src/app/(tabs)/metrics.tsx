@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 import {
   View,
   Text,
@@ -13,7 +14,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../contexts/AuthContext";
-import { metricsApi, userApi } from "../../services/api";
+import { metricsApi, userApi, planoApi } from "../../services/api";
 import { useTheme } from "../../styles/theme";
 
 const { width } = Dimensions.get("window");
@@ -28,6 +29,7 @@ export default function Metrics() {
   const theme = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [planoTipo, setPlanoTipo] = useState<"free" | "pago">("free");
   const [records, setRecords] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
@@ -136,6 +138,7 @@ export default function Metrics() {
 
   async function loadData() {
     setLoading(true);
+    planoApi.getUserPlan(user!.id).then(d => setPlanoTipo(d.plano)).catch(() => {});
     try {
       // Carregar dados em paralelo: métricas, perfil, histórico
       const [recordsData, historyData, statsData, profileData] = await Promise.all([
@@ -436,6 +439,38 @@ export default function Metrics() {
           Acompanha o teu progresso
         </Text>
       </View>
+
+      {/* Banner IA - Relatório Semanal */}
+      {planoTipo === "pago" && (
+        <View style={{ paddingHorizontal: 24, marginBottom: 16 }}>
+          <TouchableOpacity
+            onPress={() => router.push("/ai-report")}
+            style={{
+              backgroundColor: theme.accent + "18",
+              borderColor: theme.accent,
+              borderWidth: 1,
+              borderRadius: 14,
+              paddingHorizontal: 16,
+              paddingVertical: 14,
+              flexDirection: "row",
+              alignItems: "center",
+            }}
+          >
+            <View style={{
+              backgroundColor: theme.accent + "30",
+              width: 40, height: 40, borderRadius: 10,
+              justifyContent: "center", alignItems: "center", marginRight: 12,
+            }}>
+              <Ionicons name="bar-chart" size={20} color={theme.accent} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: theme.text, fontWeight: "700", fontSize: 14 }}>Relatório Semanal IA</Text>
+              <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>Análise personalizada da tua semana</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={theme.accent} />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Stats Overview com Gráficos */}
       <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
@@ -1000,7 +1035,7 @@ export default function Metrics() {
                                 </View>
 
                                 <View style={{ flex: 1, flexDirection: "row", gap: 20 }}>
-                                  {serie.repeticoes && (
+                                  {!!serie.repeticoes && (
                                     <View>
                                       <Text style={{ fontSize: 10, color: theme.textSecondary }}>
                                         REPS
@@ -1010,7 +1045,7 @@ export default function Metrics() {
                                       </Text>
                                     </View>
                                   )}
-                                  {serie.peso && (
+                                  {!!serie.peso && (
                                     <View>
                                       <Text style={{ fontSize: 10, color: theme.textSecondary }}>
                                         PESO

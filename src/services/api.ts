@@ -396,6 +396,26 @@ export const planoApi = {
       method: "POST",
       body: JSON.stringify({ diasPorSemana }),
     }),
+
+  importPlanDay: (
+    userId: number,
+    dia: string,
+    foco: string,
+    exercicios: Array<{ nome?: string; exercicio?: string; series: number; repeticoes: string; observacao?: string }>
+  ) =>
+    request<{ sucesso: boolean; id_treino: number; nome: string }>(`/api/ai/plan/${userId}/import-day`, {
+      method: "POST",
+      body: JSON.stringify({ dia, foco, exercicios }),
+    }),
+
+  getDailyPhrase: () =>
+    request<{ frase: string; cached: boolean; mock?: boolean }>("/api/daily-phrase"),
+
+  createStripePortal: (userId: number) =>
+    request<{ url: string }>("/api/stripe/portal", {
+      method: "POST",
+      body: JSON.stringify({ userId }),
+    }),
 };
 
 export default {

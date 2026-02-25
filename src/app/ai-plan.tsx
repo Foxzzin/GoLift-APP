@@ -65,6 +65,8 @@ export default function AIPlan() {
   const [semPlano, setSemPlano] = useState(false);
   const [diasSelecionados, setDiasSelecionados] = useState(4);
   const [diaExpandido, setDiaExpandido] = useState<number | null>(null);
+  const [importedDays, setImportedDays] = useState<Set<number>>(new Set());
+  const [importingDay, setImportingDay] = useState<number | null>(null);
 
   useEffect(() => {
     if (user?.id) loadPlan();
@@ -104,6 +106,20 @@ export default function AIPlan() {
     );
   }
 
+  async function handleImportDay(dia: DiaPlano, idx: number) {
+    if (importedDays.has(idx) || importingDay !== null) return;
+    setImportingDay(idx);
+    try {
+      await planoApi.importPlanDay(user!.id, dia.dia, dia.foco, dia.exercicios);
+      setImportedDays(prev => new Set([...prev, idx]));
+      Alert.alert("Treino adicionado!", `"${dia.dia}" foi adicionado aos teus treinos.`);
+    } catch (err: any) {
+      Alert.alert("Erro", err?.message || "Não foi possível importar o treino.");
+    } finally {
+      setImportingDay(null);
+    }
+  }
+
   async function generatePlan() {
     setGenerating(true);
     try {
@@ -115,7 +131,10 @@ export default function AIPlan() {
         setDiaExpandido(0);
       }
     } catch (err: any) {
-      Alert.alert("Erro", err?.message || "Não foi possível gerar o plano. Tenta mais tarde.");
+      Alert.alert(
+        err?.message?.includes("Limite") ? "IA Indisponível" : "Erro",
+        err?.message || "Não foi possível gerar o plano. Tenta mais tarde."
+      );
     } finally {
       setGenerating(false);
     }
@@ -354,6 +373,39 @@ export default function AIPlan() {
                     ) : null}
                   </View>
                 ))}
+                {aberto && (
+                  <View style={{ marginHorizontal: 14, marginBottom: 10 }}>
+                    <TouchableOpacity
+                      onPress={() => handleImportDay(dia, idx)}
+                      disabled={importedDays.has(idx) || importingDay !== null}
+                      style={{
+                        backgroundColor: importedDays.has(idx) ? "#22c55e22" : cor + "22",
+                        borderColor: importedDays.has(idx) ? "#22c55e" : cor,
+                        borderWidth: 1,
+                        borderRadius: 10,
+                        paddingVertical: 10,
+                        alignItems: "center",
+                        flexDirection: "row",
+                        justifyContent: "center",
+                        gap: 8,
+                      }}
+                    >
+                      {importingDay === idx ? (
+                        <ActivityIndicator size="small" color={cor} />
+                      ) : importedDays.has(idx) ? (
+                        <>
+                          <Ionicons name="checkmark-circle" size={16} color="#22c55e" />
+                          <Text style={{ color: "#22c55e", fontWeight: "600", fontSize: 13 }}>Adicionado aos treinos</Text>
+                        </>
+                      ) : (
+                        <>
+                          <Ionicons name="add-circle-outline" size={16} color={cor} />
+                          <Text style={{ color: cor, fontWeight: "600", fontSize: 13 }}>Adicionar aos meus treinos</Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                )}
                 {aberto && <View style={{ height: 4 }} />}
               </View>
             );

@@ -7,11 +7,12 @@ import {
   RefreshControl,
   Alert,
   ActivityIndicator,
+  Modal,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../contexts/AuthContext";
-import { userApi, metricsApi } from "../../services/api";
+import { userApi, metricsApi, planoApi } from "../../services/api";
 import { useTheme } from "../../styles/theme";
 import { getIMCCategory } from "../../utils/imc";
 
@@ -26,6 +27,14 @@ export default function Profile() {
     totalWorkouts: 0,
     totalTime: 0,
   });
+  const [planoTipo, setPlanoTipo] = useState<"free" | "pago">("free");
+  const [showAllRecords, setShowAllRecords] = useState(false);
+
+  const RANK_STYLES = [
+    { medal: "🥇", color: "#f59e0b", border: "#f59e0b" },
+    { medal: "🥈", color: "#94a3b8", border: "#94a3b8" },
+    { medal: "🥉", color: "#cd7f32", border: "#cd7f32" },
+  ];
 
   useEffect(() => {
     if (user?.id) {
@@ -41,6 +50,7 @@ export default function Profile() {
         metricsApi.getRecords(user!.id).catch(() => []),
         metricsApi.getStats(user!.id).catch(() => null),
       ]);
+      planoApi.getUserPlan(user!.id).then(d => setPlanoTipo(d.plano)).catch(() => {});
 
       // Mapear campos do backend (name, age, weight, height) para o frontend (nome, idade, peso, altura)
       const mappedProfile = profileData?.user ? {
@@ -125,22 +135,29 @@ export default function Profile() {
             width: 96,
             height: 96,
             borderRadius: 48,
-            backgroundColor: theme.backgroundSecondary,
-            borderColor: theme.accent,
+            backgroundColor: theme.backgroundTertiary,
+            borderColor: theme.border,
             borderWidth: 2,
             justifyContent: "center",
             alignItems: "center",
             marginBottom: 16,
           }}
         >
-          <Ionicons name="person" size={48} color={theme.accent} />
+          <Ionicons name="person" size={48} color={planoTipo === "pago" ? "#f59e0b" : theme.accent} />
         </View>
         <Text style={{ fontSize: 24, fontWeight: "bold", color: theme.text }}>
           {profile?.nome || "Atleta"}
         </Text>
-        <Text style={{ color: theme.textSecondary, marginTop: 4, fontSize: 14 }}>
-          {profile?.email}
-        </Text>
+        {planoTipo === "pago" ? (
+          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 6, backgroundColor: "#f59e0b22", paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, borderColor: "#f59e0b", borderWidth: 1 }}>
+            <Ionicons name="star" size={13} color="#f59e0b" style={{ marginRight: 5 }} />
+            <Text style={{ color: "#f59e0b", fontWeight: "700", fontSize: 13 }}>GoLift Pro</Text>
+          </View>
+        ) : (
+          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 6, backgroundColor: theme.backgroundSecondary, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, borderColor: theme.border, borderWidth: 1 }}>
+            <Text style={{ color: theme.textSecondary, fontWeight: "600", fontSize: 13 }}>Free</Text>
+          </View>
+        )}
       </View>
 
       {/* Stats rápidos */}
@@ -203,6 +220,38 @@ export default function Profile() {
           </Text>
         </View>
       </View>
+
+      {/* Banner GoLift Pro - apenas para utilizadores free */}
+      {planoTipo !== "pago" && (
+        <View style={{ paddingHorizontal: 24, marginBottom: 16 }}>
+          <TouchableOpacity
+            onPress={() => router.push("/upgrade")}
+            style={{
+              backgroundColor: theme.accent + "18",
+              borderColor: theme.accent,
+              borderWidth: 1.5,
+              borderRadius: 16,
+              paddingHorizontal: 16,
+              paddingVertical: 16,
+              flexDirection: "row",
+              alignItems: "center",
+            }}
+          >
+            <View style={{
+              backgroundColor: theme.accent + "30",
+              width: 44, height: 44, borderRadius: 12,
+              justifyContent: "center", alignItems: "center", marginRight: 14,
+            }}>
+              <Ionicons name="star" size={22} color={theme.accent} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: theme.accent, fontWeight: "800", fontSize: 15 }}>Desbloqueia GoLift Pro</Text>
+              <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 3 }}>IA + relatórios + planos personalizados</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={theme.accent} />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Dados Físicos */}
       <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
@@ -356,54 +405,116 @@ export default function Profile() {
       {/* Recordes */}
       {records.length > 0 && (
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-          <Text style={{ fontSize: 18, fontWeight: "bold", color: theme.text, marginBottom: 12 }}>
-            🏆 Melhores Recordes
-          </Text>
+          <TouchableOpacity
+            onPress={() => setShowAllRecords(true)}
+            style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}
+          >
+            <Text style={{ fontSize: 18, fontWeight: "bold", color: theme.text }}>
+              🏆 Melhores Recordes
+            </Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <Text style={{ color: theme.accent, fontSize: 13, fontWeight: "600" }}>
+                Ver todos ({records.length})
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color={theme.accent} />
+            </View>
+          </TouchableOpacity>
           <View
             style={{
               backgroundColor: theme.backgroundSecondary,
               borderRadius: 16,
-              borderColor: theme.accent,
+              borderColor: theme.border,
               borderWidth: 1,
               overflow: "hidden",
             }}
           >
-            {records.slice(0, 3).map((record, index) => (
-              <View
-                key={index}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingHorizontal: 16,
-                  paddingVertical: 14,
-                  borderBottomColor: index < 2 ? theme.border : "transparent",
-                  borderBottomWidth: index < 2 ? 1 : 0,
-                }}
-              >
+            {records.slice(0, 3).map((record, index) => {
+              const rank = RANK_STYLES[index];
+              return (
                 <View
+                  key={index}
                   style={{
-                    backgroundColor: theme.backgroundTertiary,
-                    width: 40,
-                    height: 40,
-                    borderRadius: 10,
-                    justifyContent: "center",
+                    flexDirection: "row",
                     alignItems: "center",
-                    marginRight: 12,
+                    paddingHorizontal: 16,
+                    paddingVertical: 14,
+                    borderBottomColor: index < 2 ? theme.border : "transparent",
+                    borderBottomWidth: index < 2 ? 1 : 0,
                   }}
                 >
-                  <Ionicons name="trophy" size={20} color={theme.accent} />
+                  <View
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 10,
+                      backgroundColor: theme.backgroundTertiary,
+                      borderColor: theme.border,
+                      borderWidth: 1,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      marginRight: 12,
+                    }}
+                  >
+                    <Text style={{ fontSize: 20 }}>{rank?.medal || "🏅"}</Text>
+                  </View>
+                  <Text style={{ color: theme.textSecondary, flex: 1, fontSize: 14 }}>
+                    {record.nome_exercicio || record.exercicio || record.exercise}
+                  </Text>
+                  <Text style={{ color: rank?.color || theme.accent, fontWeight: "bold", fontSize: 14 }}>
+                    {record.peso || record.weight} kg
+                  </Text>
                 </View>
-                <Text style={{ color: theme.textSecondary, flex: 1, fontSize: 14 }}>
-                  {record.nome_exercicio || record.exercicio || record.exercise}
-                </Text>
-                <Text style={{ color: theme.accent, fontWeight: "bold", fontSize: 14 }}>
-                  {record.peso || record.weight} kg
-                </Text>
-              </View>
-            ))}
+              );
+            })}
           </View>
         </View>
       )}
+
+      {/* Modal Todos os Recordes */}
+      <Modal visible={showAllRecords} animationType="slide" transparent>
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" }}>
+          <View style={{ backgroundColor: theme.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 40, maxHeight: "85%" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 24, paddingTop: 24, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: theme.border }}>
+              <Text style={{ fontSize: 20, fontWeight: "bold", color: theme.text }}>🏆 Todos os Recordes</Text>
+              <TouchableOpacity onPress={() => setShowAllRecords(false)}>
+                <Ionicons name="close" size={26} color={theme.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 16, paddingBottom: 16 }}>
+              {records.map((record, index) => {
+                const rank = RANK_STYLES[index];
+                const color = rank?.color || theme.textSecondary;
+                return (
+                  <View
+                    key={index}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      backgroundColor: theme.backgroundSecondary,
+                      borderRadius: 12,
+                      paddingHorizontal: 16,
+                      paddingVertical: 14,
+                      marginBottom: 10,
+                      borderLeftWidth: 4,
+                      borderLeftColor: color,
+                      borderWidth: 1,
+                      borderColor: rank ? rank.border : theme.border,
+                    }}
+                  >
+                    <Text style={{ fontSize: 22, marginRight: 12 }}>{rank?.medal || `#${index + 1}`}</Text>
+                    <Text style={{ color: theme.text, flex: 1, fontSize: 14, fontWeight: "500" }}>
+                      {record.nome_exercicio || record.exercicio || record.exercise}
+                    </Text>
+                    <Text style={{ color, fontWeight: "bold", fontSize: 15 }}>
+                      {record.peso || record.weight} kg
+                    </Text>
+                  </View>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
 
       {/* Painel Admin - apenas para admins */}
       {user?.tipo === 1 && (
@@ -461,38 +572,6 @@ export default function Profile() {
             overflow: "hidden",
           }}
         >
-          {/* GoLift Pro */}
-          <TouchableOpacity
-            onPress={() => router.push("/upgrade")}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              paddingHorizontal: 16,
-              paddingVertical: 14,
-              borderBottomColor: theme.border,
-              borderBottomWidth: 1,
-              backgroundColor: theme.accent + "12",
-            }}
-          >
-            <View
-              style={{
-                backgroundColor: theme.accent + "30",
-                width: 40,
-                height: 40,
-                borderRadius: 10,
-                justifyContent: "center",
-                alignItems: "center",
-                marginRight: 12,
-              }}
-            >
-              <Ionicons name="star" size={20} color={theme.accent} />
-            </View>
-            <Text style={{ color: theme.text, flex: 1, fontSize: 14, fontWeight: "600" }}>
-              GoLift Pro
-            </Text>
-            <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
-          </TouchableOpacity>
-
           {/* Editar Perfil */}
           <TouchableOpacity
             onPress={() => router.push("/edit-profile")}

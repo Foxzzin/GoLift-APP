@@ -213,34 +213,6 @@ export default function Upgrade() {
           </Text>
         </View>
       )}
-
-      {isPro && (
-        <View style={{ paddingHorizontal: 20 }}>
-          <TouchableOpacity
-            onPress={() => router.push("/ai-report")}
-            style={{
-              borderRadius: 14, paddingVertical: 16, alignItems: "center",
-              flexDirection: "row", justifyContent: "center", gap: 10,
-              backgroundColor: theme.backgroundSecondary, borderWidth: 1, borderColor: theme.border,
-              marginBottom: 12,
-            }}
-          >
-            <Ionicons name="bar-chart-outline" size={20} color={theme.accent} />
-            <Text style={{ color: theme.text, fontSize: 15, fontWeight: "600" }}>Ver Relatório Semanal</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => router.push("/ai-plan")}
-            style={{
-              borderRadius: 14, paddingVertical: 16, alignItems: "center",
-              flexDirection: "row", justifyContent: "center", gap: 10,
-              backgroundColor: theme.backgroundSecondary, borderWidth: 1, borderColor: theme.border,
-            }}
-          >
-            <Ionicons name="calendar-outline" size={20} color={theme.accent} />
-            <Text style={{ color: theme.text, fontSize: 15, fontWeight: "600" }}>Ver Plano Mensal IA</Text>
-          </TouchableOpacity>
-        </View>
-      )}
     </ScrollView>
   );
 }

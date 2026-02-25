@@ -83,7 +83,10 @@ export default function AIReport() {
         Alert.alert("Relatório", "Ainda não há dados suficientes na semana passada para gerar um relatório.");
       }
     } catch (err: any) {
-      Alert.alert("Erro", "Não foi possível gerar o relatório. Tenta mais tarde.");
+      Alert.alert(
+        err?.message?.includes("Limite") ? "IA Indisponível" : "Erro",
+        err?.message || "Não foi possível gerar o relatório. Tenta mais tarde."
+      );
     } finally {
       setGenerating(false);
     }

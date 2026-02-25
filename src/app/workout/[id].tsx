@@ -398,23 +398,22 @@ export default function WorkoutActive() {
             {/* Header do exercício */}
             <TouchableOpacity
               onPress={() => toggleExpandir(exercicio.id)}
-              style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 16 }}
+              style={{ flexDirection: "row", alignItems: "flex-start", paddingHorizontal: 16, paddingVertical: 16 }}
             >
-              <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-                <View style={{ backgroundColor: theme.backgroundTertiary, width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center", marginRight: 16 }}>
-                  <Text style={{ color: theme.text, fontWeight: "bold" }}>{index + 1}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: theme.text, fontWeight: "600" }}>{exercicio.nome}</Text>
-                  <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
-                    {exercicio.series.filter((s: any) => s.concluida).length}/{exercicio.series.length} séries
-                  </Text>
-                </View>
+              <View style={{ backgroundColor: theme.backgroundTertiary, width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center", marginRight: 16, flexShrink: 0 }}>
+                <Text style={{ color: theme.text, fontWeight: "bold" }}>{index + 1}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: theme.text, fontWeight: "600" }}>{exercicio.nome}</Text>
+                <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
+                  {exercicio.series.filter((s: any) => s.concluida).length}/{exercicio.series.length} séries
+                </Text>
               </View>
               <Ionicons
                 name={exercicio.expandido ? "chevron-up" : "chevron-down"}
                 size={20}
                 color={theme.textSecondary}
+                style={{ marginLeft: 8, marginTop: 2 }}
               />
             </TouchableOpacity>
 
