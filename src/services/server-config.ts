@@ -4,10 +4,11 @@ const CACHED_IP_KEY = "@golift:server_ip";
 
 // IP do servidor de produção AWS EC2
 const PRODUCTION_IP = "13.48.56.98";
+const PRODUCTION_PORT = "80"; // Nginx na porta 80
 const IS_PRODUCTION = true; // Muda para false durante desenvolvimento local
 
 let SERVER_IP = IS_PRODUCTION ? PRODUCTION_IP : "localhost";
-let SERVER_PORT = "5000";
+let SERVER_PORT = IS_PRODUCTION ? PRODUCTION_PORT : "5000";
 
 let IS_SERVER_CONFIGURED = IS_PRODUCTION; // Em produção já está configurado de imediato
 
@@ -97,6 +98,8 @@ async function loadSavedServerIPDev(): Promise<string | null> {
 
 // Função para obter a URL da API
 export function getAPIUrl(): string {
+  // Porta 80 não precisa ser especificada no URL
+  if (SERVER_PORT === "80") return `http://${SERVER_IP}`;
   return `http://${SERVER_IP}:${SERVER_PORT}`;
 }
 
