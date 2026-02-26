@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "golift",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true
     },
@@ -44,6 +44,11 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "62ad09ef-b35f-438e-9643-77c6e3a611e4"
+      }
     }
   }
 }
