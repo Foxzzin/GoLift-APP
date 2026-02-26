@@ -41,7 +41,10 @@ async function request<T>(
   } catch (error: any) {
     clearTimeout(timeoutId);
     console.error(`Erro ao conectar a ${url}:`, error.message);
-    throw error;
+    // Enriquecer o erro com contexto para debug
+    const enriched = new Error(`[${error.name}] ${error.message} → ${url}`);
+    enriched.name = error.name || "NetworkError";
+    throw enriched;
   }
 }
 

@@ -34,7 +34,10 @@ export default function Login() {
     try {
       await login(email, password);
     } catch (error: any) {
-      Alert.alert("Erro", error.message || "Erro ao fazer login");
+      Alert.alert(
+        `[${error.name || "Erro"}]`,
+        `Msg: ${error.message}\nURL: http://13.48.56.98/api/login`
+      );
     } finally {
       setLoading(false);
     }
