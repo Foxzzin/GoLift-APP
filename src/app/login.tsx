@@ -14,7 +14,7 @@ import { Link, router } from "expo-router";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../styles/theme";
 import { Ionicons } from "@expo/vector-icons";
-import { SERVER_CONFIG } from "../services/server-config";
+
 
 export default function Login() {
   const { login } = useAuth();
@@ -30,21 +30,14 @@ export default function Login() {
       return;
     }
 
-    // DEBUG TEMPORÁRIO — remover depois
-    const apiUrl = SERVER_CONFIG.getFullURL();
-    Alert.alert("DEBUG URL", `A app está a ligar a:\n${apiUrl}\n\nSe estiver errado, é aí o problema.`, [
-      { text: "Cancelar" },
-      { text: "Continuar", onPress: async () => {
-        setLoading(true);
-        try {
-          await login(email, password);
-        } catch (error: any) {
-          Alert.alert("Erro", error.message || "Erro ao fazer login");
-        } finally {
-          setLoading(false);
-        }
-      }}
-    ]);
+    setLoading(true);
+    try {
+      await login(email, password);
+    } catch (error: any) {
+      Alert.alert("Erro", error.message || "Erro ao fazer login");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
