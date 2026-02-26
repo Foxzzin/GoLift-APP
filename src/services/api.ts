@@ -23,14 +23,8 @@ async function request<T>(
     ...options,
   };
 
-  // Criar AbortController com timeout de 30 segundos
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000);
-  config.signal = controller.signal;
-
   try {
     const response = await fetch(url, config);
-    clearTimeout(timeoutId);
     
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
@@ -39,9 +33,7 @@ async function request<T>(
     
     return response.json();
   } catch (error: any) {
-    clearTimeout(timeoutId);
     console.error(`Erro ao conectar a ${url}:`, error.message);
-    // Enriquecer o erro com contexto para debug
     const enriched = new Error(`[${error.name}] ${error.message} → ${url}`);
     enriched.name = error.name || "NetworkError";
     throw enriched;
