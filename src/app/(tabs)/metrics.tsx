@@ -18,7 +18,7 @@ import { metricsApi, userApi, planoApi } from "../../services/api";
 import { useTheme } from "../../styles/theme";
 
 const { width } = Dimensions.get("window");
-const DAYS = ["D", "S", "T", "Q", "Q", "S", "S"];
+const DAYS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 const MONTHS = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
@@ -223,21 +223,24 @@ export default function Metrics() {
   }
   
   // Funções do calendário
+  // Gera a grelha do mês como semanas completas (cada semana = 7 células, Seg→Dom)
   function getDaysInMonth(date: Date) {
     const year = date.getFullYear();
     const month = date.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const firstDayOfWeek = new Date(year, month, 1).getDay();
-    
+
+    // Dia da semana do 1º do mês: JS usa 0=Dom,1=Seg...
+    // Converter para Mon=0, Tue=1, ..., Sun=6
+    const jsDay = new Date(year, month, 1).getDay();
+    const firstCol = (jsDay + 6) % 7; // Mon=0 ... Sun=6
+
     const days: (number | null)[] = [];
-    // Dias vazios no início
-    for (let i = 0; i < firstDayOfWeek; i++) {
-      days.push(null);
-    }
+    // Células vazias antes do dia 1
+    for (let i = 0; i < firstCol; i++) days.push(null);
     // Dias do mês
-    for (let i = 1; i <= daysInMonth; i++) {
-      days.push(i);
-    }
+    for (let d = 1; d <= daysInMonth; d++) days.push(d);
+    // Preencher até múltiplo de 7 para não quebrar a grelha
+    while (days.length % 7 !== 0) days.push(null);
     return days;
   }
   
@@ -312,24 +315,27 @@ export default function Metrics() {
     });
   }
 
-  // Calcular meta semanal de treinos
+  // Calcular meta semanal de treinos (Segunda a Domingo)
   function getWeeklyProgress() {
     const targetWorkouts = weeklyGoal;
-    const weekStart = new Date();
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+    const now = new Date();
+    // Calcular a segunda-feira desta semana
+    const dayOfWeek = now.getDay(); // 0=Dom, 1=Seg...
+    const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - daysFromMonday);
+    weekStart.setHours(0, 0, 0, 0);
     
-    // Contar treinos desta semana
+    // Contar treinos desta semana (Seg-Dom)
     let weekWorkouts = 0;
-    const weekDates = new Set<string>();
     
     for (let i = 0; i < 7; i++) {
       const date = new Date(weekStart);
       date.setDate(weekStart.getDate() + i);
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
       if (workoutDates.has(dateStr)) {
         weekWorkouts++;
       }
-      weekDates.add(dateStr);
     }
     
     const percentage = Math.min((weekWorkouts / targetWorkouts) * 100, 100);
@@ -792,7 +798,7 @@ export default function Metrics() {
           <View style={{ flexDirection: "row", marginBottom: 12 }}>
             {DAYS.map((day, index) => (
               <View key={index} style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 8 }}>
-                <Text style={{ color: theme.textSecondary, fontSize: 12, fontWeight: "500" }}>
+                <Text style={{ color: theme.textSecondary, fontSize: 10, fontWeight: "600" }}>
                   {day}
                 </Text>
               </View>

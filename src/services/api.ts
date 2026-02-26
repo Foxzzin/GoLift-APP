@@ -202,16 +202,22 @@ export const metricsApi = {
       const sessoesList = Array.isArray(sessoes) ? sessoes : [];
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      // Calcular início da semana atual (Segunda-feira)
+      const dayOfWeek = now.getDay(); // 0=Dom, 1=Seg...
+      const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - daysFromMonday);
+      startOfWeek.setHours(0, 0, 0, 0);
       
       return {
         totalWorkouts: sessoesList.length,
         thisWeek: sessoesList.filter((s: any) => {
-          const date = new Date(s.data_inicio);
-          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          return date >= weekAgo;
+          const date = new Date(s.data_fim || s.data_inicio);
+          return date >= startOfWeek;
         }).length,
         thisMonth: sessoesList.filter((s: any) => {
-          const date = new Date(s.data_inicio);
+          const date = new Date(s.data_fim || s.data_inicio);
           return date >= startOfMonth;
         }).length,
         totalTime: sessoesList.reduce((acc: number, s: any) => acc + (s.duracao_segundos || 0), 0),

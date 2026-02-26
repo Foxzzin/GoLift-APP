@@ -20,7 +20,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.GoLift"
+      "package": "com.golift.app"
     },
     "web": {
       "output": "static",

@@ -37,24 +37,30 @@ export default function Home() {
   }, [user]);
 
   // Gerar histórico de streak da semana (dom-sab)
-  // Esta função cria um array com os 7 dias da semana atual
+  // Esta função cria um array com os 7 dias da semana atual (Seg-Dom)
   function generateStreakWeek() {
     const today = new Date();
-    // Calcular o domingo da semana atual (dia 0 = domingo)
+    // Calcular a segunda-feira desta semana (dia 1 = segunda)
+    const dayOfWeek = today.getDay(); // 0=Dom, 1=Seg...
+    const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
     const weekStart = new Date(today);
-    weekStart.setDate(today.getDate() - today.getDay());
+    weekStart.setDate(today.getDate() - daysFromMonday);
     
     const weekDays = [];
-    const dayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"];
+    const dayNames = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
     
     // Criar um dia para cada dia da semana
     for (let i = 0; i < 7; i++) {
       const date = new Date(weekStart);
       date.setDate(weekStart.getDate() + i);
+      // Usar data local (não UTC) para evitar problemas de timezone
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
       weekDays.push({
         day: dayNames[i],
-        date: date.toISOString().split('T')[0], // Formato: YYYY-MM-DD
-        completed: false // Será actualizado com dados reais
+        date: `${year}-${month}-${day}`,
+        completed: false
       });
     }
     

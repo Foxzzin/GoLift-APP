@@ -3,8 +3,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CACHED_IP_KEY = "@golift:server_ip";
 
-// IP do servidor local (pode ser alterado dinamicamente via setServerIP)
-let SERVER_IP = "localhost";
+// IP do servidor de produção AWS EC2
+// Para desenvolvimento local, usa setServerIP() ou o scan automático abaixo
+const PRODUCTION_IP = "13.48.56.98";
+const IS_PRODUCTION = true; // Muda para false durante desenvolvimento local
+
+let SERVER_IP = IS_PRODUCTION ? PRODUCTION_IP : "localhost";
 let SERVER_PORT = "5000";
 
 // Flag para indicar se o IP foi sobrescrito manualmente nesta sessão
@@ -24,8 +28,17 @@ async function testServerConnection(ip: string, port: string = "5000", timeoutMs
   }
 }
 
-// Carrega o IP com cache: tenta o IP guardado primeiro, faz scan só se necessário
+// Carrega o IP com cache: em produção usa sempre o IP do servidor AWS
+// Em desenvolvimento, tenta IP em cache ou faz scan na rede local
 export async function loadSavedServerIP(): Promise<string | null> {
+  // Em produção, usa sempre o IP do servidor AWS — sem scan
+  if (IS_PRODUCTION) {
+    SERVER_IP = PRODUCTION_IP;
+    IS_SERVER_CONFIGURED = true;
+    console.log(`✓ Modo produção: servidor AWS ${PRODUCTION_IP}`);
+    return PRODUCTION_IP;
+  }
+
   try {
     // 1. Verificar se há IP em cache
     const cachedIP = await AsyncStorage.getItem(CACHED_IP_KEY);
