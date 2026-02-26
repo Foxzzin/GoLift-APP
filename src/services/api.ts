@@ -1,6 +1,7 @@
 // Serviço de API para comunicação com o backend
 // Alterar API_URL para o IP do teu servidor em produção
 
+import axios from "axios";
 import { SERVER_CONFIG } from "./server-config";
 
 // Use 10.0.2.2 para emulador Android (aponta para localhost do PC)
@@ -14,26 +15,25 @@ async function request<T>(
   options?: RequestInit
 ): Promise<T> {
   const url = `${getAPI_URL()}${endpoint}`;
-  
-  const config: RequestInit = {
-    headers: {
-      "Content-Type": "application/json",
-      ...options?.headers,
-    },
-    ...options,
+
+  const method = (options?.method || "GET").toUpperCase();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options?.headers as Record<string, string> | undefined),
   };
+  const data = options?.body ? JSON.parse(options.body as string) : undefined;
 
   try {
-    const response = await fetch(url, config);
-    
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error.erro || error.message || "Erro na requisição");
-    }
-    
-    return response.json();
+    const response = await axios({ method, url, headers, data, timeout: 30000 });
+    return response.data as T;
   } catch (error: any) {
     console.error(`Erro ao conectar a ${url}:`, error.message);
+    // Erro HTTP do servidor (4xx/5xx)
+    if (error.response) {
+      const msg = error.response.data?.erro || error.response.data?.message || "Erro na requisição";
+      throw new Error(msg);
+    }
+    // Erro de rede
     const enriched = new Error(`[${error.name}] ${error.message} → ${url}`);
     enriched.name = error.name || "NetworkError";
     throw enriched;
