@@ -1,25 +1,71 @@
 import * as Network from 'expo-network';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// IP do servidor local (pode ser alterado dinamicamente via setServerIP)
-let SERVER_IP = "localhost";
+const CACHED_IP_KEY = "@golift:server_ip";
+
+// IP do servidor de produção AWS EC2
+// Para desenvolvimento local, usa setServerIP() ou o scan automático abaixo
+const PRODUCTION_IP = "13.48.56.98";
+const IS_PRODUCTION = true; // Muda para false durante desenvolvimento local
+
+let SERVER_IP = IS_PRODUCTION ? PRODUCTION_IP : "localhost";
 let SERVER_PORT = "5000";
 
 // Flag para indicar se o IP foi sobrescrito manualmente nesta sessão
 let IS_SERVER_CONFIGURED = false;
 
-// Descobre sempre o servidor automaticamente (sem cache)
-export async function loadSavedServerIP(): Promise<string | null> {
+// Função para testar conexão com servidor (timeout configurável)
+async function testServerConnection(ip: string, port: string = "5000", timeoutMs = 3000): Promise<boolean> {
   try {
-    console.log("A descobrir servidor na rede...");
+    const url = `http://${ip}:${port}/api/health`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    const response = await fetch(url, { method: "GET", signal: controller.signal });
+    clearTimeout(timeout);
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+// Carrega o IP com cache: em produção usa sempre o IP do servidor AWS
+// Em desenvolvimento, tenta IP em cache ou faz scan na rede local
+export async function loadSavedServerIP(): Promise<string | null> {
+  // Em produção, usa sempre o IP do servidor AWS — sem scan
+  if (IS_PRODUCTION) {
+    SERVER_IP = PRODUCTION_IP;
+    IS_SERVER_CONFIGURED = true;
+    console.log(`✓ Modo produção: servidor AWS ${PRODUCTION_IP}`);
+    return PRODUCTION_IP;
+  }
+
+  try {
+    // 1. Verificar se há IP em cache
+    const cachedIP = await AsyncStorage.getItem(CACHED_IP_KEY);
+
+    if (cachedIP) {
+      console.log(`✓ IP em cache encontrado: ${cachedIP}. A verificar...`);
+      const isAlive = await testServerConnection(cachedIP, SERVER_PORT, 2000);
+      if (isAlive) {
+        SERVER_IP = cachedIP;
+        IS_SERVER_CONFIGURED = true;
+        console.log(`✓ Servidor em cache está ativo: ${cachedIP}`);
+        return cachedIP;
+      }
+      console.log("IP em cache não responde. A fazer scan completo...");
+    }
+
+    // 2. Scan completo na subnet
     const discoveredIP = await discoverServerAutomatically();
     if (discoveredIP) {
       SERVER_IP = discoveredIP;
       IS_SERVER_CONFIGURED = true;
-      console.log(`✓ Servidor descoberto: ${discoveredIP}`);
+      await AsyncStorage.setItem(CACHED_IP_KEY, discoveredIP);
+      console.log(`✓ Servidor descoberto e guardado em cache: ${discoveredIP}`);
       return discoveredIP;
     }
 
-    // Fallback para localhost se nada funcionar
+    // 3. Fallback localhost
     console.log("Nenhum servidor encontrado, usando fallback: localhost");
     SERVER_IP = "localhost";
     return "localhost";
@@ -42,62 +88,33 @@ export async function getDeviceIP(): Promise<string> {
   }
 }
 
-// Função para testar conexão com servidor
-async function testServerConnection(ip: string, port: string = "5000"): Promise<boolean> {
-  try {
-    const url = `http://${ip}:${port}/api/health`;
-    const response = await fetch(url, {
-      method: "GET",
-    });
-    console.log(`Teste de conexão com ${ip}:${port} - Status: ${response.status}`);
-    return response.ok;
-  } catch (error: any) {
-    console.log(`Erro ao testar conexão com ${ip}:${port}:`, error);
-    return false;
-  }
-}
-
-// Função para descobrir o servidor automaticamente
+// Função para descobrir o servidor automaticamente (scan completo)
 export async function discoverServerAutomatically(): Promise<string | null> {
   try {
     console.log("Iniciando descoberta automática do servidor...");
     const deviceIP = await getDeviceIP();
-    
+
     if (deviceIP === "Desconhecido") {
       console.log("Não foi possível obter IP do dispositivo");
       return null;
     }
 
-    // Extrai a subnet (ex: 192.168.1. de 192.168.1.100)
     const subnet = deviceIP.substring(0, deviceIP.lastIndexOf(".") + 1);
     console.log(`Subnet detectada: ${subnet}`);
 
-    // Testa IPs de 1 a 254 na mesma subnet
-    // Começa do 1 até 254 para encontrar o servidor
     const promises = [];
     for (let i = 1; i <= 254; i++) {
       const testIP = `${subnet}${i}`;
-      // Ignora o próprio dispositivo
       if (testIP !== deviceIP) {
         promises.push(
-          testServerConnection(testIP, SERVER_PORT).then(success => ({
-            ip: testIP,
-            success,
-          }))
+          testServerConnection(testIP, SERVER_PORT, 2000).then(success => ({ ip: testIP, success }))
         );
       }
     }
 
-    // Aguarda até 3 segundos por resposta (não espera por todas)
-    const racePromises = promises.map(
-      p => Promise.race([p, new Promise((resolve: any) => setTimeout(() => resolve({ ip: null, success: false }), 3000))])
-    );
-
-    const results = await Promise.all(racePromises);
-    
-    // Encontra o primeiro servidor disponível
+    const results = await Promise.all(promises);
     const foundServer = results.find((r: any) => r.success && r.ip) as any;
-    if (foundServer && foundServer.ip) {
+    if (foundServer?.ip) {
       console.log(`Servidor encontrado: ${foundServer.ip}`);
       return foundServer.ip;
     }
@@ -119,6 +136,7 @@ export function getAPIUrl(): string {
 export function setServerIP(ip: string): void {
   SERVER_IP = ip;
   IS_SERVER_CONFIGURED = true;
+  AsyncStorage.setItem(CACHED_IP_KEY, ip);
   console.log("IP do servidor atualizado para:", ip);
 }
 
@@ -128,11 +146,18 @@ export function setServerPort(port: string): void {
   console.log("Porta do servidor atualizada para:", port);
 }
 
+// Limpar cache (forçar redescoberta no próximo arranque)
+export async function clearServerIPCache(): Promise<void> {
+  await AsyncStorage.removeItem(CACHED_IP_KEY);
+  console.log("Cache do IP do servidor limpo.");
+}
+
 // Informações de debug
 export const DEBUG_INFO = {
   getInfo: async () => ({
     deviceIP: await getDeviceIP(),
     apiURL: getAPIUrl(),
+    cachedIP: await AsyncStorage.getItem(CACHED_IP_KEY),
   }),
 };
 
@@ -143,4 +168,6 @@ export const SERVER_CONFIG = {
   setIP: setServerIP,
   setPort: setServerPort,
   isConfigured: () => IS_SERVER_CONFIGURED,
+  clearCache: clearServerIPCache,
 };
+

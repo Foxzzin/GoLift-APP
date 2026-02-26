@@ -42,7 +42,6 @@ export default function WorkoutActive() {
   const [exercicios, setExercicios] = useState<ExercicioAtivo[]>([]);
   const [tempoDecorrido, setTempoDecorrido] = useState(0);
   const [timerPaused, setTimerPaused] = useState(false);
-  const [sessaoId, setSessaoId] = useState<number | null>(null);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const timerRef = useRef<number | null>(null);
 
@@ -72,31 +71,29 @@ export default function WorkoutActive() {
 
   async function loadWorkout() {
     try {
-      // Iniciar sessão de treino
-      const sessaoResponse = await workoutApi.startSession(user!.id, Number(id));
-      if (sessaoResponse.sucesso && sessaoResponse.id_sessao) {
-        setSessaoId(sessaoResponse.id_sessao);
-      }
-
       // Carregar todos os treinos do utilizador
       const allWorkouts = await workoutApi.getUserWorkouts(user!.id).catch(() => []);
       
-      // Encontrar o treino atual e extrair os exercícios
+      // Encontrar e guardar o treino atual (Bug 1: setWorkout nunca era chamado)
       const currentWorkout = allWorkouts.find((w: any) => w.id_treino === Number(id));
-      let exerciciosDoTreino: any[] = [];
-      
-      if (currentWorkout?.exercicios_nomes) {
-        // Parse dos nomes dos exercícios (vêm em formato STRING separado por vírgula)
-        // Precisamos de carregar os dados completos do endpoint específico
-        const response = await workoutApi.getWorkoutExercises(Number(id)).catch(() => ({ exercicios: [] }));
-        exerciciosDoTreino = response?.exercicios || [];
+      if (currentWorkout) setWorkout(currentWorkout);
+
+      // Carregar exercícios diretamente (Bug 2: antes só carregava se exercicios_nomes não fosse vazio)
+      const response = await workoutApi.getWorkoutExercises(Number(id)).catch(() => ({ exercicios: [] }));
+      const exerciciosDoTreino: any[] = response?.exercicios || [];
+
+      if (exerciciosDoTreino.length === 0) {
+        Alert.alert("Aviso", "Este treino não tem exercícios definidos.");
       }
 
-      // Carregar histórico para comparar séries anteriores
+      // Bug 5: Buscar dados da última sessão DESTE treino específico para sugestões
       let previousWorkoutData: any = null;
       const history = await metricsApi.getHistory(user!.id).catch(() => []);
-      if (Array.isArray(history) && history.length > 0) {
-        previousWorkoutData = history[0];
+      const thisTreinoSession = Array.isArray(history)
+        ? history.find((s: any) => s.id_treino === Number(id))
+        : null;
+      if (thisTreinoSession?.id_sessao) {
+        previousWorkoutData = await metricsApi.getSessionDetails(thisTreinoSession.id_sessao).catch(() => null);
       }
 
       // Transformar exercícios para o formato ativo
@@ -106,13 +103,13 @@ export default function WorkoutActive() {
         // Procurar dados do treino anterior
         if (previousWorkoutData?.exercicios) {
           const previousEx = previousWorkoutData.exercicios.find(
-            (pex: any) => pex.id === ex.id_exercicio || pex.id_exercicio === ex.id_exercicio
+            (pex: any) => pex.id_exercicio === ex.id_exercicio
           );
           if (previousEx?.series) {
             previousSeries = previousEx.series.map((s: any) => ({
-              numero: s.numero || s.numero_serie,
-              repeticoes: String(s.repeticoes),
-              peso: String(s.peso),
+              numero: s.numero_serie,
+              repeticoes: String(s.repeticoes ?? ""),
+              peso: String(s.peso ?? ""),
               concluida: false,
             }));
           }
@@ -254,7 +251,11 @@ export default function WorkoutActive() {
         {
           text: "Cancelar",
           style: "destructive",
-          onPress: () => router.back(),
+          onPress: () => {
+            // Bug 6: parar o timer ao cancelar
+            if (timerRef.current) clearInterval(timerRef.current);
+            router.back();
+          },
         },
       ]
     );
@@ -271,22 +272,17 @@ export default function WorkoutActive() {
       return;
     }
 
-    if (!sessaoId) {
-      Alert.alert("Erro", "Sessão não iniciada corretamente");
-      return;
-    }
-
     Alert.alert("Concluir Treino", "Queres terminar este treino?", [
       { text: "Cancelar", style: "cancel" },
       {
         text: "Concluir",
         onPress: async () => {
           try {
-            // Guardar todas as séries concluídas
+            // Construir lista de todas as séries concluídas
+            const todasAsSeries: { id_exercicio: number; numero_serie: number; repeticoes: number; peso: number }[] = [];
             for (const exercicio of exercicios) {
-              const seriesConcluidas = exercicio.series.filter((s: any) => s.concluida);
-              for (const serie of seriesConcluidas) {
-                await workoutApi.addSerie(sessaoId, {
+              for (const serie of exercicio.series.filter((s: any) => s.concluida)) {
+                todasAsSeries.push({
                   id_exercicio: exercicio.id,
                   numero_serie: serie.numero,
                   repeticoes: parseInt(serie.repeticoes) || 0,
@@ -295,8 +291,8 @@ export default function WorkoutActive() {
               }
             }
 
-            // Finalizar a sessão
-            await workoutApi.finishSession(sessaoId, tempoDecorrido);
+            // Guardar sessão completa num único request
+            await workoutApi.saveSession(user!.id, Number(id), tempoDecorrido, todasAsSeries);
 
             // Parar timer
             if (timerRef.current) clearInterval(timerRef.current);
@@ -402,23 +398,22 @@ export default function WorkoutActive() {
             {/* Header do exercício */}
             <TouchableOpacity
               onPress={() => toggleExpandir(exercicio.id)}
-              style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 16 }}
+              style={{ flexDirection: "row", alignItems: "flex-start", paddingHorizontal: 16, paddingVertical: 16 }}
             >
-              <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-                <View style={{ backgroundColor: theme.backgroundTertiary, width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center", marginRight: 16 }}>
-                  <Text style={{ color: theme.text, fontWeight: "bold" }}>{index + 1}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: theme.text, fontWeight: "600" }}>{exercicio.nome}</Text>
-                  <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
-                    {exercicio.series.filter((s: any) => s.concluida).length}/{exercicio.series.length} séries
-                  </Text>
-                </View>
+              <View style={{ backgroundColor: theme.backgroundTertiary, width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center", marginRight: 16, flexShrink: 0 }}>
+                <Text style={{ color: theme.text, fontWeight: "bold" }}>{index + 1}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: theme.text, fontWeight: "600" }}>{exercicio.nome}</Text>
+                <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
+                  {exercicio.series.filter((s: any) => s.concluida).length}/{exercicio.series.length} séries
+                </Text>
               </View>
               <Ionicons
                 name={exercicio.expandido ? "chevron-up" : "chevron-down"}
                 size={20}
                 color={theme.textSecondary}
+                style={{ marginLeft: 8, marginTop: 2 }}
               />
             </TouchableOpacity>
 

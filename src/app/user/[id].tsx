@@ -8,8 +8,9 @@ import {
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { userApi, metricsApi } from "../../services/api";
+import { userApi, metricsApi, planoApi } from "../../services/api";
 import { useTheme } from "../../styles/theme";
+import { getIMCCategory } from "../../utils/imc";
 
 export default function UserProfile() {
   const theme = useTheme();
@@ -17,6 +18,7 @@ export default function UserProfile() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [records, setRecords] = useState<any[]>([]);
+  const [planoTipo, setPlanoTipo] = useState<"free" | "pago">("free");
 
   useEffect(() => {
     if (id) loadProfile();
@@ -29,6 +31,7 @@ export default function UserProfile() {
         userApi.getProfile(Number(id)).catch(() => null),
         metricsApi.getRecords(Number(id)).catch(() => []),
       ]);
+      planoApi.getUserPlan(Number(id)).then(d => setPlanoTipo(d.plano)).catch(() => {});
       const u = profileData?.user || profileData;
       setProfile({
         id: Number(id),
@@ -51,13 +54,6 @@ export default function UserProfile() {
   function calculateIMC(peso: number, altura: number) {
     if (!peso || !altura) return null;
     return (peso / Math.pow(altura / 100, 2)).toFixed(1);
-  }
-
-  function getIMCCategory(imc: number) {
-    if (imc < 18.5) return { label: "Abaixo do peso", color: "#6b7280" };
-    if (imc < 25) return { label: "Peso normal", color: "#10b981" };
-    if (imc < 30) return { label: "Sobrepeso", color: "#f59e0b" };
-    return { label: "Obesidade", color: "#6b7280" };
   }
 
   const imc = calculateIMC(profile?.peso, profile?.altura);
@@ -99,23 +95,30 @@ export default function UserProfile() {
                 width: 96,
                 height: 96,
                 borderRadius: 48,
-                backgroundColor: theme.accent,
+                backgroundColor: theme.backgroundTertiary,
+                borderColor: theme.border,
+                borderWidth: 2,
                 alignItems: "center",
                 justifyContent: "center",
                 marginBottom: 16,
               }}
             >
-              <Text style={{ color: "white", fontSize: 40, fontWeight: "bold" }}>
+              <Text style={{ color: planoTipo === "pago" ? "#f59e0b" : theme.accent, fontSize: 40, fontWeight: "bold" }}>
                 {(profile?.nome || "?")[0].toUpperCase()}
               </Text>
             </View>
             <Text style={{ color: theme.text, fontSize: 24, fontWeight: "bold" }}>
               {profile?.nome}
             </Text>
-            {!!profile?.email && (
-              <Text style={{ color: theme.textTertiary, fontSize: 13, marginTop: 4 }}>
-                {profile.email}
-              </Text>
+            {planoTipo === "pago" ? (
+              <View style={{ flexDirection: "row", alignItems: "center", marginTop: 6, backgroundColor: "#f59e0b22", paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, borderColor: "#f59e0b", borderWidth: 1 }}>
+                <Ionicons name="star" size={13} color="#f59e0b" style={{ marginRight: 5 }} />
+                <Text style={{ color: "#f59e0b", fontWeight: "700", fontSize: 13 }}>GoLift Pro</Text>
+              </View>
+            ) : (
+              <View style={{ flexDirection: "row", alignItems: "center", marginTop: 6, backgroundColor: theme.backgroundSecondary, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, borderColor: theme.border, borderWidth: 1 }}>
+                <Text style={{ color: theme.textSecondary, fontWeight: "600", fontSize: 13 }}>Free</Text>
+              </View>
             )}
           </View>
 

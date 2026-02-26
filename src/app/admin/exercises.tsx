@@ -13,9 +13,7 @@ import {
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../styles/theme";
-import { SERVER_CONFIG } from "../../services/server-config";
-
-const getAPI_URL = () => SERVER_CONFIG.getFullURL();
+import { adminApi } from "../../services/api";
 
 export default function AdminExercises() {
   const theme = useTheme();
@@ -53,8 +51,7 @@ export default function AdminExercises() {
 
   async function loadExercises() {
     try {
-      const response = await fetch(`${getAPI_URL()}/api/admin/exercicios`);
-      const data = await response.json();
+      const data = await adminApi.getExercises();
       setExercises(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Erro ao carregar exercícios:", error);
@@ -77,19 +74,14 @@ export default function AdminExercises() {
 
     setSaving(true);
     try {
-      const response = await fetch(`${getAPI_URL()}/api/admin/exercicios`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      const data = await response.json();
+      const data = await adminApi.createExercise(form);
       if (data.sucesso) {
         Alert.alert("Sucesso", "Exercício criado com sucesso!");
         setShowModal(false);
         setForm({ nome: "", descricao: "", grupo_tipo: "", sub_tipo: "", video: "" });
         loadExercises();
       } else {
-        Alert.alert("Erro", data.erro || "Erro ao criar exercício");
+        Alert.alert("Erro", "Erro ao criar exercício");
       }
     } catch (error) {
       Alert.alert("Erro", "Erro ao criar exercício");
@@ -109,15 +101,11 @@ export default function AdminExercises() {
           style: "destructive",
           onPress: async () => {
             try {
-              const response = await fetch(
-                `${getAPI_URL()}/api/admin/exercicios/${encodeURIComponent(exercise.nome)}`,
-                { method: "DELETE" }
-              );
-              const data = await response.json();
+              const data = await adminApi.deleteExercise(exercise.nome);
               if (data.sucesso) {
                 loadExercises();
               } else {
-                Alert.alert("Erro", data.erro || "Erro ao apagar exercício");
+                Alert.alert("Erro", "Erro ao apagar exercício");
               }
             } catch (error) {
               Alert.alert("Erro", "Erro ao apagar exercício");

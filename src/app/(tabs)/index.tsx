@@ -11,7 +11,7 @@ import {
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../contexts/AuthContext";
-import { metricsApi, workoutApi } from "../../services/api";
+import { metricsApi, workoutApi, planoApi } from "../../services/api";
 import { useTheme } from "../../styles/theme";
 
 export default function Home() {
@@ -27,32 +27,40 @@ export default function Home() {
     totalTime: 0,
   });
   const [recentWorkouts, setRecentWorkouts] = useState<any[]>([]);
+  const [dailyPhrase, setDailyPhrase] = useState<string | null>(null);
 
   useEffect(() => {
     if (user?.id) {
       loadData();
     }
+    planoApi.getDailyPhrase().then(d => setDailyPhrase(d.frase)).catch(() => {});
   }, [user]);
 
   // Gerar histórico de streak da semana (dom-sab)
-  // Esta função cria um array com os 7 dias da semana atual
+  // Esta função cria um array com os 7 dias da semana atual (Seg-Dom)
   function generateStreakWeek() {
     const today = new Date();
-    // Calcular o domingo da semana atual (dia 0 = domingo)
+    // Calcular a segunda-feira desta semana (dia 1 = segunda)
+    const dayOfWeek = today.getDay(); // 0=Dom, 1=Seg...
+    const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
     const weekStart = new Date(today);
-    weekStart.setDate(today.getDate() - today.getDay());
+    weekStart.setDate(today.getDate() - daysFromMonday);
     
     const weekDays = [];
-    const dayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"];
+    const dayNames = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
     
     // Criar um dia para cada dia da semana
     for (let i = 0; i < 7; i++) {
       const date = new Date(weekStart);
       date.setDate(weekStart.getDate() + i);
+      // Usar data local (não UTC) para evitar problemas de timezone
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
       weekDays.push({
         day: dayNames[i],
-        date: date.toISOString().split('T')[0], // Formato: YYYY-MM-DD
-        completed: false // Será actualizado com dados reais
+        date: `${year}-${month}-${day}`,
+        completed: false
       });
     }
     
@@ -151,18 +159,10 @@ export default function Home() {
           text: "Sim, começar",
           onPress: async () => {
             try {
-              // Iniciar a sessão de treino
-              const response = await workoutApi.startSession(user!.id, workout.id_treino);
-              if (response.sucesso) {
-                // Redirecionar para a página de treino
-                router.push({
-                  pathname: "/workout/[id]",
-                  params: { 
-                    id: workout.id_treino,
-                    sessionId: response.id_sessao
-                  }
-                });
-              }
+              router.push({
+                pathname: "/workout/[id]",
+                params: { id: workout.id_treino }
+              });
             } catch (error) {
               Alert.alert("Erro", "Erro ao iniciar treino");
               console.error("Erro ao iniciar treino:", error);
@@ -258,6 +258,29 @@ export default function Home() {
           </View>
         </View>
 
+      {/* Frase do Dia (IA) */}
+      {dailyPhrase ? (
+        <View style={{ paddingHorizontal: 24, marginBottom: 20 }}>
+          <View style={{
+            backgroundColor: theme.backgroundSecondary,
+            borderRadius: 14,
+            padding: 16,
+            borderLeftWidth: 3,
+            borderLeftColor: theme.accent,
+            borderColor: theme.border,
+            borderWidth: 1,
+            flexDirection: "row",
+            alignItems: "flex-start",
+            gap: 10,
+          }}>
+            <Ionicons name="sparkles" size={18} color={theme.accent} style={{ marginTop: 2 }} />
+            <Text style={{ color: theme.text, fontSize: 13, lineHeight: 20, flex: 1, fontStyle: "italic" }}>
+              {dailyPhrase}
+            </Text>
+          </View>
+        </View>
+      ) : null}
+
       {/* Stats Cards */}
       <View style={{ flexDirection: "row", paddingHorizontal: 24, gap: 12, marginBottom: 24 }}>
         <View style={{ flex: 1, backgroundColor: theme.backgroundSecondary, borderRadius: 12, padding: 16, borderColor: theme.border, borderWidth: 1 }}>
@@ -346,14 +369,6 @@ export default function Home() {
         )}
       </View>
 
-      {/* Motivational Quote */}
-      <View style={{ paddingHorizontal: 24, marginTop: 24, marginBottom: 24 }}>
-        <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 12, padding: 20, borderColor: theme.accent, borderWidth: 1, borderLeftWidth: 4 }}>
-          <Text style={{ color: theme.text, fontSize: 16, fontWeight: "500", textAlign: "center", fontStyle: "italic", lineHeight: 24 }}>
-            "O único treino mau é aquele que não aconteceu."
-          </Text>
-        </View>
-      </View>
     </ScrollView>
 
     {/* Modal da Streak - Mostra a semana */}

@@ -16,7 +16,7 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../contexts/AuthContext";
 import { useCommunities } from "../../contexts/CommunitiesContext";
-import { workoutApi, exerciseApi, metricsApi } from "../../services/api";
+import { workoutApi, exerciseApi, planoApi } from "../../services/api";
 import { useTheme } from "../../styles/theme";
 
 export default function Workouts() {
@@ -28,6 +28,7 @@ export default function Workouts() {
   const [adminWorkouts, setAdminWorkouts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [bodyPartFilter, setBodyPartFilter] = useState<string | null>(null);
+  const [planoTipo, setPlanoTipo] = useState<"free" | "pago">("free");
 
   // Partilha de treino
   const [showShareModal, setShowShareModal] = useState(false);
@@ -53,6 +54,7 @@ export default function Workouts() {
   async function loadData() {
     setLoading(true);
     try {
+      planoApi.getUserPlan(user!.id).then(d => setPlanoTipo(d.plano)).catch(() => {});
       const userWorkouts = await workoutApi.getUserWorkouts(user!.id).catch(() => []);
       
       // Remover duplicatas usando Set com nome do treino como chave
@@ -197,12 +199,7 @@ export default function Workouts() {
           style: "default",
           onPress: async () => {
             try {
-              // Iniciar a sessão de treino
-              const response = await workoutApi.startSession(user!.id, workout.id_treino);
-              if (response.sucesso) {
-                // Redirecionar para o treino
-                router.push(`/workout/${workout.id_treino}`);
-              }
+              router.push(`/workout/${workout.id_treino}`);
             } catch (error) {
               Alert.alert("Erro", "Não foi possível iniciar o treino");
             }
@@ -215,14 +212,19 @@ export default function Workouts() {
   async function handleDeleteWorkout(workout: any) {
     Alert.alert(
       "Apagar Treino",
-      `Tens a certeza que queres apagar "${workout.nome}"?`,
+      `Tens a certeza que queres apagar "${workout.nome}"? O histórico de sessões também será apagado.`,
       [
         { text: "Cancelar", style: "cancel" },
         {
           text: "Apagar",
           style: "destructive",
           onPress: async () => {
-            Alert.alert("Aviso", "Apagar treino não é suportado no momento");
+            try {
+              await workoutApi.deleteWorkout(user!.id, workout.id_treino);
+              loadData();
+            } catch (error: any) {
+              Alert.alert("Erro", error.message || "Não foi possível apagar o treino");
+            }
           },
         },
       ]
@@ -351,6 +353,38 @@ export default function Workouts() {
           </View>
         )}
 
+        {/* Banner IA - Plano Mensal */}
+        {planoTipo === "pago" && (
+          <View style={{ paddingHorizontal: 24, marginBottom: 16 }}>
+            <TouchableOpacity
+              onPress={() => router.push("/ai-plan")}
+              style={{
+                backgroundColor: theme.accent + "18",
+                borderColor: theme.accent,
+                borderWidth: 1,
+                borderRadius: 14,
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                flexDirection: "row",
+                alignItems: "center",
+              }}
+            >
+              <View style={{
+                backgroundColor: theme.accent + "30",
+                width: 40, height: 40, borderRadius: 10,
+                justifyContent: "center", alignItems: "center", marginRight: 12,
+              }}>
+                <Ionicons name="sparkles" size={20} color={theme.accent} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: theme.text, fontWeight: "700", fontSize: 14 }}>Plano Mensal IA</Text>
+                <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>Ver o teu plano personalizado</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={theme.accent} />
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Meus Treinos */}
         <View style={{ paddingHorizontal: 24 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
@@ -423,7 +457,7 @@ export default function Workouts() {
                   <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
                     <View
                       style={{
-                        backgroundColor: theme.backgroundTertiary,
+                        backgroundColor: workout.is_ia ? "#f59e0b22" : theme.backgroundTertiary,
                         width: 44,
                         height: 44,
                         borderRadius: 10,
@@ -432,7 +466,7 @@ export default function Workouts() {
                         marginRight: 12,
                       }}
                     >
-                      <Ionicons name="barbell" size={22} color={theme.text} />
+                      <Ionicons name={workout.is_ia ? "sparkles" : "barbell"} size={22} color={workout.is_ia ? "#f59e0b" : theme.text} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontSize: 16, fontWeight: "bold", color: theme.text }}>
@@ -442,12 +476,14 @@ export default function Workouts() {
                         {workout.num_exercicios ?? 0} exercícios
                       </Text>
                     </View>
+                    {!workout.is_ia && (
                     <TouchableOpacity
                       onPress={() => handleShareTemplate(workout)}
                       style={{ padding: 8, marginRight: 4 }}
                     >
                       <Ionicons name="share-social-outline" size={20} color={theme.accent} />
                     </TouchableOpacity>
+                    )}
                     <TouchableOpacity
                       onPress={() => openEditModal(workout)}
                       style={{ padding: 8, marginRight: 4 }}

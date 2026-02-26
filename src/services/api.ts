@@ -77,6 +77,27 @@ export const authApi = {
       }),
     }),
 
+  // Recuperação de password — Passo 1: solicitar código
+  requestPasswordReset: (email: string) =>
+    request<{ sucesso: boolean; codigo_teste?: string }>("/api/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+
+  // Recuperação de password — Passo 2: verificar código
+  verifyResetCode: (email: string, code: string) =>
+    request<{ sucesso: boolean }>("/api/auth/verify-reset-code", {
+      method: "POST",
+      body: JSON.stringify({ email, code }),
+    }),
+
+  // Recuperação de password — Passo 3: redefinir password
+  resetPassword: (email: string, code: string, newPassword: string) =>
+    request<{ sucesso: boolean }>("/api/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ email, code, newPassword }),
+    }),
+
   // Teste de conexão com o servidor
   testConnection: async () => {
     try {
@@ -132,24 +153,21 @@ export const workoutApi = {
       body: JSON.stringify({ nome, exercicios }),
     }),
 
-  // Iniciar sessão de treino
-  startSession: (userId: number, treinoId: number) =>
-    request<{ sucesso: boolean; id_sessao: number }>(`/api/treino/${userId}/${treinoId}/iniciar`, {
-      method: "POST",
+  deleteWorkout: (userId: number, treinoId: number) =>
+    request<{ sucesso: boolean }>(`/api/treino/${userId}/${treinoId}`, {
+      method: "DELETE",
     }),
 
-  // Finalizar sessão de treino
-  finishSession: (sessaoId: number, duracao_segundos: number) =>
-    request<any>(`/api/treino/sessao/${sessaoId}/finalizar`, {
+  // Guardar sessão de treino completa num único request
+  saveSession: (
+    userId: number,
+    treinoId: number,
+    duracao_segundos: number,
+    series: { id_exercicio: number; numero_serie: number; repeticoes: number; peso: number }[]
+  ) =>
+    request<{ sucesso: boolean; id_sessao: number }>("/api/treino/sessao/guardar", {
       method: "POST",
-      body: JSON.stringify({ duracao_segundos }),
-    }),
-
-  // Registar série
-  addSerie: (sessaoId: number, data: { id_exercicio: number; numero_serie: number; repeticoes: number; peso: number }) =>
-    request<any>(`/api/treino/sessao/${sessaoId}/serie`, {
-      method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({ userId, treinoId, duracao_segundos, series }),
     }),
 
   // Obter exercícios de um treino específico
@@ -184,16 +202,22 @@ export const metricsApi = {
       const sessoesList = Array.isArray(sessoes) ? sessoes : [];
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      // Calcular início da semana atual (Segunda-feira)
+      const dayOfWeek = now.getDay(); // 0=Dom, 1=Seg...
+      const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - daysFromMonday);
+      startOfWeek.setHours(0, 0, 0, 0);
       
       return {
         totalWorkouts: sessoesList.length,
         thisWeek: sessoesList.filter((s: any) => {
-          const date = new Date(s.data_inicio);
-          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          return date >= weekAgo;
+          const date = new Date(s.data_fim || s.data_inicio);
+          return date >= startOfWeek;
         }).length,
         thisMonth: sessoesList.filter((s: any) => {
-          const date = new Date(s.data_inicio);
+          const date = new Date(s.data_fim || s.data_inicio);
           return date >= startOfMonth;
         }).length,
         totalTime: sessoesList.reduce((acc: number, s: any) => acc + (s.duracao_segundos || 0), 0),
@@ -285,6 +309,121 @@ export const communitiesApi = {
     }),
 };
 
+// Admin
+export const adminApi = {
+  // Utilizadores
+  getUsers: () =>
+    request<any[]>("/api/admin/users"),
+
+  deleteUser: (userId: number) =>
+    request<{ sucesso: boolean }>(`/api/admin/users/${userId}`, {
+      method: "DELETE",
+    }),
+
+  // Exercícios
+  getExercises: () =>
+    request<any[]>("/api/admin/exercicios"),
+
+  createExercise: (data: { nome: string; descricao?: string; grupo_tipo?: string; sub_tipo?: string; video?: string }) =>
+    request<{ sucesso: boolean }>("/api/admin/exercicios", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  deleteExercise: (nome: string) =>
+    request<{ sucesso: boolean }>(`/api/admin/exercicios/${encodeURIComponent(nome)}`, {
+      method: "DELETE",
+    }),
+
+  // Treinos recomendados
+  getWorkouts: () =>
+    request<any[]>("/api/treino-admin"),
+
+  createWorkout: (nome: string, exercicios: number[]) =>
+    request<{ sucesso: boolean }>("/api/treino-admin", {
+      method: "POST",
+      body: JSON.stringify({ nome, exercicios }),
+    }),
+
+  deleteWorkout: (id: number) =>
+    request<{ sucesso: boolean }>(`/api/treino-admin/${id}`, {
+      method: "DELETE",
+    }),
+};
+
+export const planoApi = {
+  getUserPlan: (userId: number) =>
+    request<{ plano: "free" | "pago"; ativo_ate: string | null }>(`/api/plano/${userId}`),
+
+  createCheckoutSession: (userId: number) =>
+    request<{ sucesso: boolean; url: string; sessionId: string }>("/api/stripe/checkout-session", {
+      method: "POST",
+      body: JSON.stringify({ userId }),
+    }),
+
+  getReport: (userId: number) =>
+    request<{
+      sucesso: boolean;
+      relatorio: {
+        avaliacao: string;
+        equilibrio: string;
+        progressao: string;
+        descanso: string;
+        melhorias: string[];
+      } | null;
+      semana_inicio: string;
+      cached: boolean;
+      pode_gerar?: boolean;
+    }>(`/api/ai/report/${userId}`),
+
+  getPlan: (userId: number) =>
+    request<{
+      sucesso: boolean;
+      plano: {
+        descricao: string;
+        split: Array<{
+          dia: string;
+          foco: string;
+          exercicios: Array<{
+            nome: string;
+            series: number;
+            repeticoes: string;
+            observacao?: string;
+          }>;
+        }>;
+      } | null;
+      mes: string;
+      criado_em?: string;
+      pode_gerar: boolean;
+    }>(`/api/ai/plan/${userId}`),
+
+  generatePlan: (userId: number, diasPorSemana: number = 4) =>
+    request<{ sucesso: boolean; plano: object; mes: string }>(`/api/ai/plan/${userId}/generate`, {
+      method: "POST",
+      body: JSON.stringify({ diasPorSemana }),
+    }),
+
+  importPlanDay: (
+    userId: number,
+    dia: string,
+    foco: string,
+    exercicios: Array<{ nome?: string; exercicio?: string; series: number; repeticoes: string; observacao?: string }>
+  ) =>
+    request<{ sucesso: boolean; id_treino: number; nome: string }>(`/api/ai/plan/${userId}/import-day`, {
+      method: "POST",
+      body: JSON.stringify({ dia, foco, exercicios }),
+    }),
+
+  getDailyPhrase: () =>
+    request<{ frase: string; cached: boolean; mock?: boolean }>("/api/daily-phrase"),
+
+  createStripePortal: (userId: number) =>
+    request<{ url: string }>("/api/stripe/portal", {
+      method: "POST",
+      body: JSON.stringify({ userId }),
+    }),
+};
+
 export default {
   auth: authApi,
   user: userApi,
@@ -292,4 +431,6 @@ export default {
   workout: workoutApi,
   metrics: metricsApi,
   communities: communitiesApi,
+  admin: adminApi,
+  plano: planoApi,
 };

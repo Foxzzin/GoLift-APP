@@ -13,9 +13,7 @@ import {
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../styles/theme";
-import { SERVER_CONFIG } from "../../services/server-config";
-
-const getAPI_URL = () => SERVER_CONFIG.getFullURL();
+import { adminApi } from "../../services/api";
 
 export default function AdminUsers() {
   const theme = useTheme();
@@ -30,8 +28,7 @@ export default function AdminUsers() {
 
   async function loadUsers() {
     try {
-      const response = await fetch(`${getAPI_URL()}/api/admin/users`);
-      const data = await response.json();
+      const data = await adminApi.getUsers();
       setUsers(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Erro ao carregar utilizadores:", error);
@@ -57,15 +54,11 @@ export default function AdminUsers() {
           style: "destructive",
           onPress: async () => {
             try {
-              const response = await fetch(
-                `${getAPI_URL()}/api/admin/users/${user.id}`,
-                { method: "DELETE" }
-              );
-              const data = await response.json();
+              const data = await adminApi.deleteUser(user.id);
               if (data.sucesso) {
                 loadUsers();
               } else {
-                Alert.alert("Erro", data.erro || "Erro ao apagar utilizador");
+                Alert.alert("Erro", "Erro ao apagar utilizador");
               }
             } catch (error) {
               Alert.alert("Erro", "Erro ao apagar utilizador");

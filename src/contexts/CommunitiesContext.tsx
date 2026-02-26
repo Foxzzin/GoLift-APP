@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Community, CommunityMessage, CommunityMember } from "../types";
-import storage from "../services/storage";
 import { communitiesApi } from "../services/api";
 import { useAuth } from "./AuthContext";
 

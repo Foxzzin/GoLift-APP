@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 import {
   View,
   Text,
@@ -13,11 +14,11 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../contexts/AuthContext";
-import { metricsApi, userApi } from "../../services/api";
+import { metricsApi, userApi, planoApi } from "../../services/api";
 import { useTheme } from "../../styles/theme";
 
 const { width } = Dimensions.get("window");
-const DAYS = ["D", "S", "T", "Q", "Q", "S", "S"];
+const DAYS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 const MONTHS = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
@@ -28,6 +29,7 @@ export default function Metrics() {
   const theme = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [planoTipo, setPlanoTipo] = useState<"free" | "pago">("free");
   const [records, setRecords] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
@@ -136,6 +138,7 @@ export default function Metrics() {
 
   async function loadData() {
     setLoading(true);
+    planoApi.getUserPlan(user!.id).then(d => setPlanoTipo(d.plano)).catch(() => {});
     try {
       // Carregar dados em paralelo: métricas, perfil, histórico
       const [recordsData, historyData, statsData, profileData] = await Promise.all([
@@ -220,21 +223,24 @@ export default function Metrics() {
   }
   
   // Funções do calendário
+  // Gera a grelha do mês como semanas completas (cada semana = 7 células, Seg→Dom)
   function getDaysInMonth(date: Date) {
     const year = date.getFullYear();
     const month = date.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const firstDayOfWeek = new Date(year, month, 1).getDay();
-    
+
+    // Dia da semana do 1º do mês: JS usa 0=Dom,1=Seg...
+    // Converter para Mon=0, Tue=1, ..., Sun=6
+    const jsDay = new Date(year, month, 1).getDay();
+    const firstCol = (jsDay + 6) % 7; // Mon=0 ... Sun=6
+
     const days: (number | null)[] = [];
-    // Dias vazios no início
-    for (let i = 0; i < firstDayOfWeek; i++) {
-      days.push(null);
-    }
+    // Células vazias antes do dia 1
+    for (let i = 0; i < firstCol; i++) days.push(null);
     // Dias do mês
-    for (let i = 1; i <= daysInMonth; i++) {
-      days.push(i);
-    }
+    for (let d = 1; d <= daysInMonth; d++) days.push(d);
+    // Preencher até múltiplo de 7 para não quebrar a grelha
+    while (days.length % 7 !== 0) days.push(null);
     return days;
   }
   
@@ -309,24 +315,27 @@ export default function Metrics() {
     });
   }
 
-  // Calcular meta semanal de treinos
+  // Calcular meta semanal de treinos (Segunda a Domingo)
   function getWeeklyProgress() {
     const targetWorkouts = weeklyGoal;
-    const weekStart = new Date();
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+    const now = new Date();
+    // Calcular a segunda-feira desta semana
+    const dayOfWeek = now.getDay(); // 0=Dom, 1=Seg...
+    const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - daysFromMonday);
+    weekStart.setHours(0, 0, 0, 0);
     
-    // Contar treinos desta semana
+    // Contar treinos desta semana (Seg-Dom)
     let weekWorkouts = 0;
-    const weekDates = new Set<string>();
     
     for (let i = 0; i < 7; i++) {
       const date = new Date(weekStart);
       date.setDate(weekStart.getDate() + i);
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
       if (workoutDates.has(dateStr)) {
         weekWorkouts++;
       }
-      weekDates.add(dateStr);
     }
     
     const percentage = Math.min((weekWorkouts / targetWorkouts) * 100, 100);
@@ -437,6 +446,38 @@ export default function Metrics() {
         </Text>
       </View>
 
+      {/* Banner IA - Relatório Semanal */}
+      {planoTipo === "pago" && (
+        <View style={{ paddingHorizontal: 24, marginBottom: 16 }}>
+          <TouchableOpacity
+            onPress={() => router.push("/ai-report")}
+            style={{
+              backgroundColor: theme.accent + "18",
+              borderColor: theme.accent,
+              borderWidth: 1,
+              borderRadius: 14,
+              paddingHorizontal: 16,
+              paddingVertical: 14,
+              flexDirection: "row",
+              alignItems: "center",
+            }}
+          >
+            <View style={{
+              backgroundColor: theme.accent + "30",
+              width: 40, height: 40, borderRadius: 10,
+              justifyContent: "center", alignItems: "center", marginRight: 12,
+            }}>
+              <Ionicons name="bar-chart" size={20} color={theme.accent} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: theme.text, fontWeight: "700", fontSize: 14 }}>Relatório Semanal IA</Text>
+              <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>Análise personalizada da tua semana</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={theme.accent} />
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Stats Overview com Gráficos */}
       <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
         {/* Progresso Semanal */}
@@ -519,7 +560,7 @@ export default function Metrics() {
         </View>
 
         {/* Card de Objetivo de Peso (se houver dados) */}
-        {profile?.peso && profile?.pesoAlvo && getWeightProgress() && (
+        {!!profile?.peso && !!profile?.pesoAlvo && !!getWeightProgress() && (
           <View
             style={{
               backgroundColor: theme.backgroundSecondary,
@@ -757,7 +798,7 @@ export default function Metrics() {
           <View style={{ flexDirection: "row", marginBottom: 12 }}>
             {DAYS.map((day, index) => (
               <View key={index} style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 8 }}>
-                <Text style={{ color: theme.textSecondary, fontSize: 12, fontWeight: "500" }}>
+                <Text style={{ color: theme.textSecondary, fontSize: 10, fontWeight: "600" }}>
                   {day}
                 </Text>
               </View>
@@ -1000,7 +1041,7 @@ export default function Metrics() {
                                 </View>
 
                                 <View style={{ flex: 1, flexDirection: "row", gap: 20 }}>
-                                  {serie.repeticoes && (
+                                  {!!serie.repeticoes && (
                                     <View>
                                       <Text style={{ fontSize: 10, color: theme.textSecondary }}>
                                         REPS
@@ -1010,7 +1051,7 @@ export default function Metrics() {
                                       </Text>
                                     </View>
                                   )}
-                                  {serie.peso && (
+                                  {!!serie.peso && (
                                     <View>
                                       <Text style={{ fontSize: 10, color: theme.textSecondary }}>
                                         PESO
