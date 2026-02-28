@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { planoApi } from "../../services/api/plano";
 import {
   View,
   Text,
@@ -21,6 +22,23 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [generating, setGenerating] = useState<{ [userId: number]: boolean }>({});
+  async function handleGeneratePlan(user: any) {
+    setGenerating((prev) => ({ ...prev, [user.id]: true }));
+    try {
+      const diasPorSemana = 4; // Padrão, pode ser customizável
+      const resp = await planoApi.generatePlan(user.id, diasPorSemana);
+      if (resp.sucesso) {
+        Alert.alert("Plano gerado com sucesso!", `Plano do mês ${resp.mes} criado para ${user.userName}.`);
+      } else {
+        Alert.alert("Erro", resp.erro || "Não foi possível gerar o plano.");
+      }
+    } catch (err: any) {
+      Alert.alert("Erro", err?.message || "Erro ao gerar plano.");
+    } finally {
+      setGenerating((prev) => ({ ...prev, [user.id]: false }));
+    }
+  }
 
   useEffect(() => {
     loadUsers();
@@ -164,13 +182,31 @@ export default function AdminUsers() {
                   <TouchableOpacity
                     onPress={() => deleteUser(user)}
                     style={{ padding: 8 }}
+                    accessibilityLabel="Apagar utilizador"
+                    accessibilityRole="button"
                   >
                     <Ionicons name="trash-outline" size={20} color={theme.text} />
                   </TouchableOpacity>
+                  {/* Botão Gerar Plano (apenas para admins) */}
+                  {user.id_tipoUser !== 1 && (
+                    <TouchableOpacity
+                      onPress={() => handleGeneratePlan(user)}
+                      className="ml-2 px-3 py-2 rounded bg-[#10b981] active:opacity-70"
+                      disabled={!!generating[user.id]}
+                      accessibilityLabel="Gerar plano de treino para este utilizador"
+                      accessibilityRole="button"
+                    >
+                      {generating[user.id] ? (
+                        <ActivityIndicator size={16} color="#fff" />
+                      ) : (
+                        <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 14 }}>Gerar Plano</Text>
+                      )}
+                    </TouchableOpacity>
+                  )}
                 </View>
 
                 {/* Info extra */}
-                <View style={{ flexDirection: "row", marginTop: 12, gap: 16 }}>
+                <View style={{ flexDirection: "row", marginTop: 12, gap: 16, flexWrap: 'wrap' }}>
                   {user.idade != null && (
                     <Text style={{ color: theme.textSecondary, fontSize: 14 }}>
                       {`🎂 ${user.idade} anos`}

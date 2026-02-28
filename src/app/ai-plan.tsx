@@ -60,6 +60,7 @@ export default function AIPlan() {
   const [mes, setMes] = useState<string>("");
   const [criadoEm, setCriadoEm] = useState<string | null>(null);
   const [podeGerar, setPodeGerar] = useState(false);
+  const isAdmin = user?.tipo === 1;
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [semPlano, setSemPlano] = useState(false);
@@ -80,10 +81,10 @@ export default function AIPlan() {
         setPlano(data.plano);
         setMes(data.mes || "");
         setCriadoEm(data.criado_em || null);
-        setPodeGerar(false);
+        setPodeGerar(isAdmin ? true : false);
         setDiaExpandido(0);
       } else {
-        setPodeGerar(data.pode_gerar);
+        setPodeGerar(data.pode_gerar || isAdmin);
         setMes(data.mes || "");
       }
     } catch (err: any) {
@@ -209,7 +210,7 @@ export default function AIPlan() {
       </View>
 
       {/* Estado: pode gerar */}
-      {podeGerar && !generating && !plano && (
+      {podeGerar && !generating && (
         <View style={{ padding: 24 }}>
           <View style={{
             backgroundColor: theme.backgroundSecondary, borderRadius: 16, padding: 20,
@@ -259,16 +260,19 @@ export default function AIPlan() {
             <TouchableOpacity
               onPress={handleGenerate}
               style={{
-                backgroundColor: theme.accent, borderRadius: 12, paddingVertical: 14,
+                backgroundColor: isAdmin ? theme.accentGreen : theme.accent,
+                borderRadius: 12, paddingVertical: 14,
                 alignItems: "center", flexDirection: "row", justifyContent: "center", gap: 8,
               }}
             >
               <Ionicons name="sparkles-outline" size={18} color="#fff" />
-              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>Gerar Plano com IA</Text>
+              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>
+                {isAdmin ? "Gerar novo plano mensal (Admin)" : "Gerar Plano com IA"}
+              </Text>
             </TouchableOpacity>
 
             <Text style={{ color: theme.textTertiary, fontSize: 11, textAlign: "center", marginTop: 10 }}>
-              Podes gerar um plano por mês.
+              {isAdmin ? "Como admin, podes gerar quantos planos quiseres." : "Podes gerar um plano por mês."}
             </Text>
           </View>
         </View>
