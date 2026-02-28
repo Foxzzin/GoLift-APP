@@ -51,20 +51,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function login(email: string, password: string) {
     try {
       const response = await authApi.login(email, password);
-      
-      // O backend retorna os dados do user diretamente (não dentro de response.user)
-      if (response.sucesso) {
+      if (
+        response.sucesso &&
+        response.user &&
+        typeof response.user.id === "number" &&
+        typeof response.user.nome === "string" &&
+        typeof response.user.email === "string"
+      ) {
         const userData: User = {
-          id: response.id,
-          nome: response.nome,
-          email: response.email,
-          tipo: response.tipo,
+          id: response.user.id,
+          nome: response.user.nome,
+          email: response.user.email,
+          tipo: response.user.tipo,
         };
         setUser(userData);
         await storage.saveUser(userData);
         router.replace("/(tabs)");
+      } else if (response.erro) {
+        throw new Error(response.erro);
       } else {
-        throw new Error("Credenciais inválidas");
+        throw new Error("Resposta inválida do servidor. Tenta novamente.");
       }
     } catch (error) {
       throw error;

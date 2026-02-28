@@ -1,11 +1,18 @@
 import { request } from "./_request";
 
+import storage from "../storage";
+
 export const authApi = {
-  login: (email: string, password: string) =>
-    request<{ sucesso: boolean; id: number; nome: string; email: string; tipo: number }>("/api/login", {
+  login: async (email: string, password: string) => {
+    const response = await request<{ sucesso: boolean; token: string; user: { id: number; nome: string; email: string; tipo: number } }>("/api/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
-    }),
+    });
+    if (response.sucesso && response.token) {
+      await storage.saveToken(response.token);
+    }
+    return response;
+  },
 
   register: (data: {
     nome: string;

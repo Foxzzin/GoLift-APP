@@ -1,5 +1,5 @@
-// Barrel — re-exporta todos os módulos de API.
-// Os imports existentes (ex: import { authApi } from "../services/api") continuam a funcionar sem alterações.
+// Barrel ï¿½ re-exporta todos os mï¿½dulos de API.
+// Os imports existentes (ex: import { authApi } from "../services/api") continuam a funcionar sem alteraï¿½ï¿½es.
 
 export { authApi } from "./api/auth";
 export { userApi } from "./api/user";
