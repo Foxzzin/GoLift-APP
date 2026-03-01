@@ -287,7 +287,7 @@ export default function Profile() {
       }
 
       // Semana de actividade
-      const sessoesList = Array.isArray(historyData) ? historyData : historyData?.treinos || [];
+      const sessoesList: any[] = historyData || [];
       const workoutDatesSet = new Set<string>(
         sessoesList.map((s: any) => {
           const raw = s.data_fim || s.data_inicio || s.data;

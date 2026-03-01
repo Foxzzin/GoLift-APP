@@ -77,9 +77,7 @@ export default function Home() {
       ]);
       
       // Obter histórico de treinos para marcar dias com atividade e mostrar sessões recentes
-      const history = await metricsApi.getHistory(user!.id).catch(() => ({ treinos: [] }));
-      const historyItems: any[] = Array.isArray(history?.treinos) ? history.treinos
-        : Array.isArray(history) ? history : [];
+      const historyItems: any[] = await metricsApi.getHistory(user!.id).catch(() => []);
 
       // Usar as últimas 3 sessões reais (com data e id_treino)
       const recentSessions = [...historyItems]

@@ -2,7 +2,9 @@ import { request } from "./_request";
 
 export const metricsApi = {
   getHistory: (userId: number) =>
-    request<any>(`/api/sessoes/${userId}`),
+    request<any>(`/api/sessoes/${userId}`).then((res: any) =>
+      Array.isArray(res) ? res : []
+    ),
 
   getRecords: (userId: number) =>
     request<any[]>(`/api/recordes/${userId}`),
