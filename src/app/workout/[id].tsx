@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../styles/theme";
+import { useAndroidInsets } from "../../hooks/useAndroidInsets";
 import { workoutApi, metricsApi } from "../../services/api";
 
 interface Serie {
@@ -32,6 +33,7 @@ interface ExercicioAtivo {
 
 export default function WorkoutActive() {
   const theme = useTheme();
+  const { safeTop } = useAndroidInsets();
   const { id } = useLocalSearchParams();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -365,7 +367,7 @@ export default function WorkoutActive() {
     <View style={{ flex: 1, backgroundColor: theme.background }}>
 
       {/* ── Header compacto ── */}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 56, paddingBottom: 12 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: safeTop + 16, paddingBottom: 12 }}>
         <Pressable
           onPress={cancelarTreino}
           accessibilityLabel="Cancelar treino"

@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../styles/theme";
+import { useAndroidInsets } from "../hooks/useAndroidInsets";
 import { userApi } from "../services/api";
 
 // ─── Row item ────────────────────────────────────────────────────────────────
@@ -70,6 +71,7 @@ function ItemRow({ icon, iconBg, label, onPress, destructive }: ItemRowProps) {
 export default function Account() {
   const { user, logout } = useAuth();
   const theme = useTheme();
+  const { safeTop } = useAndroidInsets();
   const isAdmin = user?.tipo === 1;
 
   // Edit profile state
@@ -132,7 +134,7 @@ export default function Account() {
     <>
       <View style={{ flex: 1, backgroundColor: theme.background }}>
         {/* Header */}
-        <View style={{ paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16, flexDirection: "row", alignItems: "center" }}>
+        <View style={{ paddingHorizontal: 20, paddingTop: safeTop + 16, paddingBottom: 16, flexDirection: "row", alignItems: "center" }}>
           <Pressable
             onPress={() => router.back()}
             accessibilityRole="button"

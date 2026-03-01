@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../contexts/AuthContext";
 import { planoApi } from "../services/api";
 import { useTheme } from "../styles/theme";
+import { useAndroidInsets } from "../hooks/useAndroidInsets";
 
 interface Exercicio {
   nome: string;
@@ -57,6 +58,7 @@ function getFocoColor(foco: string): string {
 export default function AIPlan() {
   const { user } = useAuth();
   const theme = useTheme();
+  const { safeTop } = useAndroidInsets();
   const [plano, setPlano] = useState<PlanoIA | null>(null);
   const [mes, setMes] = useState<string>("");
   const [criadoEm, setCriadoEm] = useState<string | null>(null);
@@ -161,7 +163,7 @@ export default function AIPlan() {
     return (
       <View style={{ flex: 1, backgroundColor: theme.background }}>
         {/* Header */}
-        <View style={{ paddingHorizontal: 20, paddingTop: 56, paddingBottom: 8, flexDirection: "row", alignItems: "center" }}>
+        <View style={{ paddingHorizontal: 20, paddingTop: safeTop + 16, paddingBottom: 8, flexDirection: "row", alignItems: "center" }}>
           <Pressable
             onPress={() => router.back()}
             accessibilityRole="button"
@@ -219,7 +221,7 @@ export default function AIPlan() {
       contentContainerStyle={{ paddingBottom: 60 }}
     >
       {/* Header */}
-      <View style={{ paddingHorizontal: 20, paddingTop: 56, paddingBottom: 4, flexDirection: "row", alignItems: "center" }}>
+      <View style={{ paddingHorizontal: 20, paddingTop: safeTop + 16, paddingBottom: 4, flexDirection: "row", alignItems: "center" }}>
         <Pressable
           onPress={() => router.back()}
           accessibilityRole="button"

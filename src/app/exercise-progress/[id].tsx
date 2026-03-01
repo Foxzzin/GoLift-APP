@@ -11,6 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../contexts/AuthContext";
 import { metricsApi } from "../../services/api";
 import { useTheme } from "../../styles/theme";
+import { useAndroidInsets } from "../../hooks/useAndroidInsets";
 
 interface SessionPoint {
   date: string;
@@ -20,6 +21,7 @@ interface SessionPoint {
 
 export default function ExerciseProgress() {
   const theme = useTheme();
+  const { safeTop } = useAndroidInsets();
   const { id, nome } = useLocalSearchParams<{ id: string; nome?: string }>();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -95,7 +97,7 @@ export default function ExerciseProgress() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       {/* Header */}
-      <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingTop: 60, paddingBottom: 20 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingTop: safeTop + 20, paddingBottom: 20 }}>
         <Pressable
           onPress={() => router.back()}
           accessibilityLabel="Voltar"

@@ -13,6 +13,7 @@ import {
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../styles/theme";
+import { useAndroidInsets } from "../../hooks/useAndroidInsets";
 import { adminApi } from "../../services/api";
 
 const GRUPO_COLORS: Record<string, string> = {
@@ -29,6 +30,7 @@ const GRUPO_COLORS: Record<string, string> = {
 
 export default function AdminExercises() {
   const theme = useTheme();
+  const { safeTop } = useAndroidInsets();
   const [exercises, setExercises] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -145,7 +147,7 @@ export default function AdminExercises() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       {/* Header */}
-      <View style={{ paddingHorizontal: 24, paddingTop: 56, paddingBottom: 16, flexDirection: "row", alignItems: "center" }}>
+      <View style={{ paddingHorizontal: 24, paddingTop: safeTop + 16, paddingBottom: 16, flexDirection: "row", alignItems: "center" }}>
         <Pressable
           onPress={() => router.back()}
           style={{ marginRight: 16, padding: 4 }}

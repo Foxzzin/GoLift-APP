@@ -13,12 +13,14 @@ import {
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../styles/theme";
+import { useAndroidInsets } from "../../hooks/useAndroidInsets";
 import { adminApi } from "../../services/api";
 
 const GRUPO_COLORS: Record<string, string> = {};
 
 export default function AdminUsers() {
   const theme = useTheme();
+  const { safeTop } = useAndroidInsets();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -99,7 +101,7 @@ export default function AdminUsers() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       {/* Header */}
-      <View style={{ paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16, flexDirection: "row", alignItems: "center" }}>
+      <View style={{ paddingHorizontal: 20, paddingTop: safeTop + 16, paddingBottom: 16, flexDirection: "row", alignItems: "center" }}>
         <Pressable
           onPress={() => router.back()}
           accessibilityLabel="Voltar"

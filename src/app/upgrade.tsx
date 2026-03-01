@@ -14,6 +14,7 @@ import * as WebBrowser from "expo-web-browser";
 import { useAuth } from "../contexts/AuthContext";
 import { planoApi } from "../services/api";
 import { useTheme } from "../styles/theme";
+import { useAndroidInsets } from "../hooks/useAndroidInsets";
 
 const FREE_FEATURES = [
   "Registo de treinos ilimitado",
@@ -33,6 +34,7 @@ const PRO_FEATURES = [
 export default function Upgrade() {
   const { user } = useAuth();
   const theme = useTheme();
+  const { safeTop } = useAndroidInsets();
   const [plano, setPlano] = useState<"free" | "pago">("free");
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -87,7 +89,7 @@ export default function Upgrade() {
       contentContainerStyle={{ paddingBottom: 40 }}
     >
       {/* Header */}
-      <View style={{ flexDirection: "row", alignItems: "center", padding: 20, paddingTop: 60 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", padding: 20, paddingTop: safeTop + 20 }}>
         <Pressable
           onPress={() => router.back()}
           style={{ marginRight: 12, padding: 4 }}

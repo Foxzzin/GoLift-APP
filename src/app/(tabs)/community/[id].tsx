@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAndroidInsets } from "../../../hooks/useAndroidInsets";
 import { useCommunities } from "../../../contexts/CommunitiesContext";
 import { useAuth } from "../../../contexts/AuthContext";
 import { workoutApi } from "../../../services/api";
@@ -25,7 +25,7 @@ export default function CommunityDetail() {
   const theme = useTheme();
   const { user } = useAuth();
   const { id } = useLocalSearchParams();
-  const insets = useSafeAreaInsets();
+  const { safeTop } = useAndroidInsets();
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   useEffect(() => {
@@ -261,7 +261,7 @@ export default function CommunityDetail() {
       <View
         style={{
           paddingHorizontal: 16,
-          paddingTop: 56,
+          paddingTop: safeTop + 16,
           paddingBottom: 16,
           borderBottomWidth: 1,
           borderBottomColor: theme.border,

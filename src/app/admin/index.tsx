@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../styles/theme";
+import { useAndroidInsets } from "../../hooks/useAndroidInsets";
 import { adminApi } from "../../services/api";
 import type { AdminStats } from "../../services/api/admin";
 
@@ -84,6 +85,7 @@ function NavCard({ title, subtitle, icon, color, route }: NavCardProps) {
 export default function AdminDashboard() {
   const { user } = useAuth();
   const theme = useTheme();
+  const { safeTop } = useAndroidInsets();
 
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -120,7 +122,7 @@ export default function AdminDashboard() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
       {/* Header */}
-      <View style={{ paddingHorizontal: 24, paddingTop: 56, paddingBottom: 8 }}>
+      <View style={{ paddingHorizontal: 24, paddingTop: safeTop + 16, paddingBottom: 8 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
           <View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 }}>

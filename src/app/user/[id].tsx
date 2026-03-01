@@ -10,10 +10,12 @@ import { useLocalSearchParams, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { userApi, metricsApi, planoApi } from "../../services/api";
 import { useTheme } from "../../styles/theme";
+import { useAndroidInsets } from "../../hooks/useAndroidInsets";
 import { getIMCCategory } from "../../utils/imc";
 
 export default function UserProfile() {
   const theme = useTheme();
+  const { safeTop } = useAndroidInsets();
   const { id, nome: nomeParam } = useLocalSearchParams<{ id: string; nome?: string }>();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
@@ -65,7 +67,7 @@ export default function UserProfile() {
       <View
         style={{
           paddingHorizontal: 16,
-          paddingTop: 56,
+          paddingTop: safeTop + 16,
           paddingBottom: 16,
           borderBottomWidth: 1,
           borderBottomColor: theme.border,

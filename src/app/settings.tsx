@@ -12,6 +12,7 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
 import { useTheme, useThemePreference } from "../styles/theme";
+import { useAndroidInsets } from "../hooks/useAndroidInsets";
 import type { ThemePreference } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
 import { planoApi } from "../services/api";
@@ -118,6 +119,7 @@ function ThemePill({ label, icon, value, current, onSelect }: ThemePillProps) {
 export default function Settings() {
   const { user } = useAuth();
   const theme = useTheme();
+  const { safeTop } = useAndroidInsets();
   const { preference, setPreference } = useThemePreference();
 
   const [planoTipo, setPlanoTipo] = useState<"free" | "pago">("free");
@@ -176,7 +178,7 @@ export default function Settings() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       {/* Header */}
-      <View style={{ paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16, flexDirection: "row", alignItems: "center" }}>
+      <View style={{ paddingHorizontal: 20, paddingTop: safeTop + 16, paddingBottom: 16, flexDirection: "row", alignItems: "center" }}>
         <Pressable
           onPress={() => router.back()}
           accessibilityRole="button"

@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../contexts/AuthContext";
 import { planoApi } from "../services/api";
 import { useTheme } from "../styles/theme";
+import { useAndroidInsets } from "../hooks/useAndroidInsets";
 
 interface Relatorio {
   avaliacao: string;
@@ -32,6 +33,7 @@ interface ReportSection {
 export default function AIReport() {
   const { user } = useAuth();
   const theme = useTheme();
+  const { safeTop } = useAndroidInsets();
   const [relatorio, setRelatorio] = useState<Relatorio | null>(null);
   const [semanaInicio, setSemanaInicio] = useState<string>("");
   const [loading, setLoading] = useState(true);
@@ -124,7 +126,7 @@ export default function AIReport() {
   if (semPlano) {
     return (
       <View style={{ flex: 1, backgroundColor: theme.background }}>
-        <View style={{ paddingHorizontal: 20, paddingTop: 56, paddingBottom: 8, flexDirection: "row", alignItems: "center" }}>
+        <View style={{ paddingHorizontal: 20, paddingTop: safeTop + 16, paddingBottom: 8, flexDirection: "row", alignItems: "center" }}>
           <Pressable
             onPress={() => router.back()}
             accessibilityRole="button"
@@ -189,7 +191,7 @@ export default function AIReport() {
       contentContainerStyle={{ paddingBottom: 60 }}
     >
       {/* Header */}
-      <View style={{ paddingHorizontal: 20, paddingTop: 56, paddingBottom: 4, flexDirection: "row", alignItems: "center" }}>
+      <View style={{ paddingHorizontal: 20, paddingTop: safeTop + 16, paddingBottom: 4, flexDirection: "row", alignItems: "center" }}>
         <Pressable
           onPress={() => router.back()}
           accessibilityRole="button"

@@ -13,10 +13,12 @@ import {
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../styles/theme";
+import { useAndroidInsets } from "../../hooks/useAndroidInsets";
 import { adminApi, exerciseApi } from "../../services/api";
 
 export default function AdminWorkouts() {
   const theme = useTheme();
+  const { safeTop } = useAndroidInsets();
   const [workouts, setWorkouts] = useState<any[]>([]);
   const [exercises, setExercises] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -127,7 +129,7 @@ export default function AdminWorkouts() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       {/* Header */}
-      <View style={{ paddingHorizontal: 24, paddingTop: 56, paddingBottom: 16, flexDirection: "row", alignItems: "center" }}>
+      <View style={{ paddingHorizontal: 24, paddingTop: safeTop + 16, paddingBottom: 16, flexDirection: "row", alignItems: "center" }}>
         <Pressable
           onPress={() => router.back()}
           style={{ marginRight: 16, padding: 4 }}

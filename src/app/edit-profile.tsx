@@ -14,12 +14,14 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../styles/theme";
+import { useAndroidInsets } from "../hooks/useAndroidInsets";
 import { userApi } from "../services/api";
 import * as Haptics from "expo-haptics";
 
 export default function EditProfile() {
   const { user } = useAuth();
   const theme = useTheme();
+  const { safeTop } = useAndroidInsets();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -97,7 +99,7 @@ export default function EditProfile() {
         keyboardShouldPersistTaps="handled"
       >
         {/* Header */}
-        <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 24, paddingTop: 56, paddingBottom: 24 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 24, paddingTop: safeTop + 16, paddingBottom: 24 }}>
           <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
             <Ionicons name="chevron-back" size={28} color={theme.text} />
           </TouchableOpacity>

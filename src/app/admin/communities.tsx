@@ -12,6 +12,7 @@ import {
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../styles/theme";
+import { useAndroidInsets } from "../../hooks/useAndroidInsets";
 import { communitiesApi } from "../../services/api";
 
 interface Member {
@@ -41,6 +42,7 @@ function formatDate(dateStr: string) {
 
 export default function AdminCommunities() {
   const theme = useTheme();
+  const { safeTop } = useAndroidInsets();
   const [communities, setCommunities] = useState<Community[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -306,7 +308,7 @@ export default function AdminCommunities() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
     >
       {/* Header */}
-      <View style={{ paddingHorizontal: 24, paddingTop: 56, paddingBottom: 24 }}>
+      <View style={{ paddingHorizontal: 24, paddingTop: safeTop + 16, paddingBottom: 24 }}>
         <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
           <Pressable
             onPress={() => router.back()}
