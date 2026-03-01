@@ -14,7 +14,7 @@ import { Link, router } from "expo-router";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../styles/theme";
 import { Ionicons } from "@expo/vector-icons";
-import axios from "axios";
+import { authApi } from "../services/api";
 
 
 export default function Login() {
@@ -34,19 +34,11 @@ export default function Login() {
     setLoading(true);
     try {
       // 1) Teste de conectividade GET simples
-      let healthOk = false;
-      let healthErr = "";
-      try {
-        const h = await axios.get("http://13.48.56.98/api/health", { timeout: 10000 });
-        healthOk = h.status === 200;
-      } catch (e: any) {
-        healthErr = `[${e.name}] ${e.message}`;
-      }
-
-      if (!healthOk) {
+      const health = await authApi.testConnection();
+      if (!health.sucesso) {
         Alert.alert(
           "Sem ligação ao servidor",
-          `GET /api/health falhou:\n${healthErr}\n\nO Android pode estar a bloquear HTTP.`
+          `GET /api/health falhou:\n${health.mensagem}\n\nO Android pode estar a bloquear HTTP.`
         );
         setLoading(false);
         return;

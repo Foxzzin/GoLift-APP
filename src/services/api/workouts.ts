@@ -10,12 +10,6 @@ export const workoutApi = {
       body: JSON.stringify({ userId, nome, exercicios }),
     }),
 
-  copyWorkout: (userId: number, nome: string, exercicios: number[]) =>
-    request<{ sucesso: boolean; id_treino: number }>("/api/treino/copiar", {
-      method: "POST",
-      body: JSON.stringify({ userId, nome, exercicios }),
-    }),
-
   updateWorkout: (userId: number, treinoId: number, nome: string, exercicios: number[]) =>
     request<{ sucesso: boolean }>(`/api/treino/${userId}/${treinoId}`, {
       method: "PUT",
