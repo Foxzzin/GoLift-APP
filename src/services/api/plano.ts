@@ -7,7 +7,7 @@ export const planoApi = {
   createCheckoutSession: (userId: number) =>
     request<{ sucesso: boolean; url: string; sessionId: string }>("/api/stripe/checkout-session", {
       method: "POST",
-      body: JSON.stringify({ userId }),
+      body: JSON.stringify({}),
     }),
 
   getReport: (userId: number) =>

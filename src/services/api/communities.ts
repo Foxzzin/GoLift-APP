@@ -10,7 +10,6 @@ export const communitiesApi = {
   createCommunity: (data: {
     nome: string;
     descricao: string;
-    criador_id: number;
     pais?: string;
     privada?: boolean;
   }) =>
@@ -21,7 +20,7 @@ export const communitiesApi = {
 
   updateCommunity: (
     comunidadeId: number,
-    data: { criador_id: number; nome?: string; descricao?: string; pais?: string; privada?: boolean }
+    data: { nome?: string; descricao?: string; pais?: string; privada?: boolean }
   ) =>
     request<any>(`/api/comunidades/${comunidadeId}`, {
       method: "PUT",
@@ -31,19 +30,19 @@ export const communitiesApi = {
   joinCommunity: (comunidadeId: number, userId: number) =>
     request<any>(`/api/comunidades/${comunidadeId}/join`, {
       method: "POST",
-      body: JSON.stringify({ userId }),
+      body: JSON.stringify({}),
     }),
 
   leaveCommunity: (comunidadeId: number, userId: number) =>
     request<any>(`/api/comunidades/${comunidadeId}/leave`, {
       method: "POST",
-      body: JSON.stringify({ userId }),
+      body: JSON.stringify({}),
     }),
 
   sendMessage: (comunidadeId: number, userId: number, mensagem: string) =>
     request<any>(`/api/comunidades/${comunidadeId}/mensagens`, {
       method: "POST",
-      body: JSON.stringify({ userId, mensagem }),
+      body: JSON.stringify({ mensagem }),
     }),
 
   getCommunityMessages: (comunidadeId: number) =>

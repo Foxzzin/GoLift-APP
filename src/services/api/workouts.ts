@@ -7,7 +7,7 @@ export const workoutApi = {
   createWorkout: (userId: number, nome: string, exercicios: number[]) =>
     request<{ sucesso: boolean; id_treino: number }>("/api/treino", {
       method: "POST",
-      body: JSON.stringify({ userId, nome, exercicios }),
+      body: JSON.stringify({ nome, exercicios }),
     }),
 
   updateWorkout: (userId: number, treinoId: number, nome: string, exercicios: number[]) =>
@@ -30,7 +30,7 @@ export const workoutApi = {
   ) =>
     request<{ sucesso: boolean; id_sessao: number }>("/api/treino/sessao/guardar", {
       method: "POST",
-      body: JSON.stringify({ userId, treinoId, duracao_segundos, series }),
+      body: JSON.stringify({ treinoId, duracao_segundos, series }),
     }),
 
   // Obter exercícios de um treino específico

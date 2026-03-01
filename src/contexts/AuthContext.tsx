@@ -37,10 +37,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function loadStoredUser() {
     try {
-      const storedUser = await storage.getUser();
-      if (storedUser) {
-        setUser(storedUser);
+      const [storedUser, token] = await Promise.all([
+        storage.getUser(),
+        storage.getToken(),
+      ]);
+
+      if (!storedUser || !token) return;
+
+      // Verificar expiração do token sem biblioteca externa
+      try {
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          const base64Payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+          const padding = '='.repeat((4 - base64Payload.length % 4) % 4);
+          const payload = JSON.parse(atob(base64Payload + padding));
+          if (typeof payload.exp === 'number' && payload.exp < Date.now() / 1000) {
+            // Token expirado — logout silencioso
+            await storage.clear();
+            return;
+          }
+        }
+      } catch {
+        // Se não for possível decodificar o token, deixar o servidor rejeitar
       }
+
+      setUser(storedUser);
     } catch (error) {
       console.error("Erro ao carregar utilizador:", error);
     } finally {
