@@ -174,6 +174,13 @@ export default function Home() {
     );
   }
 
+  function getGreeting(): string {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return "Bom dia";
+    if (hour >= 12 && hour < 19) return "Boa tarde";
+    return "Boa noite";
+  }
+
   function getStreakColor(streak: number): string {
     if (streak === 0) return theme.textTertiary;
     if (streak <= 5) return theme.accentBlue;
@@ -211,294 +218,291 @@ export default function Home() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Header com Streak */}
-        <View style={{ paddingHorizontal: 24, paddingTop: 56, paddingBottom: 16 }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <View>
-              <Text style={{ color: theme.textSecondary, fontSize: 14, marginBottom: 4 }}>
-                Bem-vindo,
-              </Text>
-              <Text style={{ color: theme.text, fontSize: 28, fontWeight: "bold" }}>
-                {user?.nome
-                  ? user.nome.charAt(0).toUpperCase() + user.nome.slice(1)
-                  : "Atleta"}
-              </Text>
-            </View>
-            
-            {/* Streak Badge - Interativa */}
+        {/* ── HEADER ── */}
+        <View style={{ paddingHorizontal: 24, paddingTop: 64, paddingBottom: 8 }}>
+          <Text style={{ color: theme.textSecondary, fontSize: 15, fontWeight: "500", marginBottom: 4 }}>
+            {getGreeting()},
+          </Text>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <Text style={{ color: theme.text, fontSize: 34, fontWeight: "800", letterSpacing: -1.2, flex: 1 }}>
+              {user?.nome
+                ? user.nome.charAt(0).toUpperCase() + user.nome.slice(1)
+                : "Atleta"}
+            </Text>
+            {/* Streak compacto */}
             <TouchableOpacity
               onPress={() => setShowStreakModal(true)}
               style={{
-                backgroundColor: getStreakBackgroundColor(streak),
-                borderColor: getStreakColor(streak),
-                borderWidth: 1,
-                borderRadius: 16,
-                paddingHorizontal: 12,
-                paddingVertical: 8,
                 flexDirection: "row",
                 alignItems: "center",
+                gap: 6,
+                backgroundColor: theme.backgroundSecondary,
+                paddingHorizontal: 14,
+                paddingVertical: 8,
+                borderRadius: 20,
               }}
               activeOpacity={0.7}
             >
-              <Ionicons
-                name="flame"
-                size={20}
-                color={getStreakColor(streak)}
-                style={{ marginRight: 6 }}
-              />
-              <View>
-                <Text style={{ color: getStreakColor(streak), fontWeight: "bold", fontSize: 16 }}>
-                  {streak}
-                </Text>
-                <Text style={{ color: getStreakColor(streak), opacity: 0.6, fontSize: 11 }}>
-                  dias
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-      {/* Frase do Dia (IA) */}
-      {dailyPhrase ? (
-        <View style={{ paddingHorizontal: 24, marginBottom: 20 }}>
-          <View style={{
-            backgroundColor: theme.backgroundSecondary,
-            borderRadius: 14,
-            padding: 16,
-            borderLeftWidth: 3,
-            borderLeftColor: theme.accent,
-            borderColor: theme.border,
-            borderWidth: 1,
-            flexDirection: "row",
-            alignItems: "flex-start",
-            gap: 10,
-          }}>
-            <Ionicons name="sparkles" size={18} color={theme.accent} style={{ marginTop: 2 }} />
-            <Text style={{ color: theme.text, fontSize: 13, lineHeight: 20, flex: 1, fontStyle: "italic" }}>
-              {dailyPhrase}
-            </Text>
-          </View>
-        </View>
-      ) : null}
-
-      {/* Stats Cards */}
-      <View style={{ flexDirection: "row", paddingHorizontal: 24, gap: 12, marginBottom: 24 }}>
-        <View style={{ flex: 1, backgroundColor: theme.backgroundSecondary, borderRadius: 12, padding: 16, borderColor: theme.border, borderWidth: 1 }}>
-          <View style={{ backgroundColor: theme.backgroundTertiary, width: 36, height: 36, borderRadius: 8, alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
-            <Ionicons name="barbell" size={18} color={theme.text} />
-          </View>
-          <Text style={{ fontSize: 24, fontWeight: "bold", color: theme.text, marginBottom: 4 }}>
-            {stats.totalWorkouts}
-          </Text>
-          <Text style={{ color: theme.textSecondary, fontSize: 12 }}>Treinos</Text>
-        </View>
-
-        <View style={{ flex: 1, backgroundColor: theme.backgroundSecondary, borderRadius: 12, padding: 16, borderColor: theme.border, borderWidth: 1 }}>
-          <View style={{ backgroundColor: theme.backgroundTertiary, width: 36, height: 36, borderRadius: 8, alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
-            <Ionicons name="calendar" size={18} color={theme.text} />
-          </View>
-          <Text style={{ fontSize: 24, fontWeight: "bold", color: theme.text, marginBottom: 4 }}>
-            {stats.thisWeek}
-          </Text>
-          <Text style={{ color: theme.textSecondary, fontSize: 12 }}>Esta Semana</Text>
-        </View>
-
-        <View style={{ flex: 1, backgroundColor: theme.backgroundSecondary, borderRadius: 12, padding: 16, borderColor: theme.border, borderWidth: 1 }}>
-          <View style={{ backgroundColor: theme.backgroundTertiary, width: 36, height: 36, borderRadius: 8, alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
-            <Ionicons name="time" size={18} color={theme.text} />
-          </View>
-          <Text style={{ fontSize: 24, fontWeight: "bold", color: theme.text, marginBottom: 4 }}>
-            {formatTime(stats.totalTime)}
-          </Text>
-          <Text style={{ color: theme.textSecondary, fontSize: 12 }}>Tempo</Text>
-        </View>
-      </View>
-
-      {/* Recent Workouts */}
-      <View style={{ paddingHorizontal: 24 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <Text style={{ color: theme.text, fontSize: 18, fontWeight: "bold" }}>
-            Treinos Recentes
-          </Text>
-          <TouchableOpacity onPress={() => router.push("/(tabs)/workouts")}>
-            <Text style={{ color: theme.accent, fontSize: 14, fontWeight: "600" }}>
-              Ver todos
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {recentWorkouts.length === 0 ? (
-          <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 12, padding: 32, alignItems: "center", borderColor: theme.border, borderWidth: 1 }}>
-            <Ionicons name="barbell-outline" size={48} color={theme.textTertiary} />
-            <Text style={{ color: theme.textSecondary, marginTop: 16, textAlign: "center", fontSize: 14 }}>
-              Ainda não tens treinos registados
-            </Text>
-            <TouchableOpacity
-              onPress={() => router.push("/(tabs)/workouts")}
-              style={{ marginTop: 16, backgroundColor: theme.accent, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 }}
-            >
-              <Text style={{ color: "white", fontWeight: "600", fontSize: 14 }}>
-                Criar Primeiro Treino
+              <Ionicons name="flame" size={18} color={streak > 0 ? "#FF9F0A" : theme.textTertiary} />
+              <Text style={{ color: streak > 0 ? "#FF9F0A" : theme.textTertiary, fontWeight: "700", fontSize: 15 }}>
+                {streak}
               </Text>
             </TouchableOpacity>
           </View>
-        ) : (
-          <View style={{ gap: 12 }}>
-            {recentWorkouts.map((workout, index) => (
-              <TouchableOpacity
-                key={workout.id_sessao || workout.id_treino || index}
-                onPress={() => handleStartWorkout(workout)}
-                style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 12, padding: 16, flexDirection: "row", alignItems: "center", borderColor: theme.border, borderWidth: 1 }}
-                activeOpacity={0.7}
-              >
-                <View style={{ backgroundColor: theme.backgroundTertiary, width: 44, height: 44, borderRadius: 10, alignItems: "center", justifyContent: "center", marginRight: 12 }}>
-                  <Ionicons name="barbell" size={22} color={theme.text} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: theme.text, fontWeight: "600", fontSize: 14 }}>
-                    {workout.nome || workout.name || "Treino"}
-                  </Text>
-                  <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>
-                    {workout.num_exercicios ?? 0} exercícios • {formatTime(workout.duracao_segundos || 0)}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={18} color={theme.textTertiary} />
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-      </View>
+        </View>
 
-    </ScrollView>
-
-    {/* Modal da Streak - Mostra a semana */}
-    <Modal
-      visible={showStreakModal}
-      transparent
-      animationType="fade"
-      onRequestClose={() => setShowStreakModal(false)}
-    >
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "rgba(0, 0, 0, 0.5)",
-          justifyContent: "center",
-          alignItems: "center",
-          paddingHorizontal: 24,
-        }}
-      >
-        <View
-          style={{
-            backgroundColor: theme.backgroundSecondary,
-            borderRadius: 20,
-            padding: 24,
-            borderColor: theme.border,
-            borderWidth: 1,
-            width: "100%",
-            maxWidth: 400,
-          }}
-        >
-          {/* Header do Modal */}
-          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 24 }}>
-            <Ionicons
-              name="flame"
-              size={28}
-              color={getStreakColor(streak)}
-              style={{ marginRight: 12 }}
-            />
-            <Text style={{ fontSize: 24, fontWeight: "bold", color: theme.text, flex: 1 }}>
-              Tua Sequência
+        {/* ── ATIVIDADE DA SEMANA (inline, sempre visível) ── */}
+        <View style={{ paddingHorizontal: 24, marginTop: 20, marginBottom: 28 }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <Text style={{ color: theme.text, fontSize: 13, fontWeight: "700", letterSpacing: 0.2 }}>
+              SEMANA
             </Text>
-            <TouchableOpacity onPress={() => setShowStreakModal(false)}>
-              <Ionicons name="close" size={24} color={theme.textSecondary} />
+            <Text style={{ color: theme.textSecondary, fontSize: 13 }}>
+              {streakHistory.filter(d => d.completed).length} de 7 dias
+            </Text>
+          </View>
+          <View style={{ flexDirection: "row", gap: 6 }}>
+            {streakHistory.map((dayData, i) => {
+              const isToday = dayData.date === (() => {
+                const now = new Date();
+                return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+              })();
+              return (
+                <View key={i} style={{ flex: 1, alignItems: "center", gap: 6 }}>
+                  <Text style={{ fontSize: 10, fontWeight: "600", color: isToday ? theme.accent : theme.textTertiary, letterSpacing: 0.3 }}>
+                    {dayData.day.toUpperCase()}
+                  </Text>
+                  <View style={{
+                    width: "100%",
+                    aspectRatio: 1,
+                    borderRadius: 10,
+                    backgroundColor: dayData.completed
+                      ? theme.accentGreen
+                      : isToday
+                        ? theme.accent + "30"
+                        : theme.backgroundSecondary,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderWidth: isToday && !dayData.completed ? 1.5 : 0,
+                    borderColor: theme.accent,
+                  }}>
+                    {dayData.completed && (
+                      <Ionicons name="checkmark" size={14} color="#fff" />
+                    )}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+          {/* Barra de progresso semanal */}
+          <View style={{ marginTop: 14, height: 3, backgroundColor: theme.backgroundSecondary, borderRadius: 2, overflow: "hidden" }}>
+            <View style={{
+              height: 3,
+              width: `${(streakHistory.filter(d => d.completed).length / 7) * 100}%`,
+              backgroundColor: theme.accentGreen,
+              borderRadius: 2,
+            }} />
+          </View>
+        </View>
+
+        {/* ── FRASE DO DIA ── */}
+        {dailyPhrase ? (
+          <View style={{ paddingHorizontal: 24, marginBottom: 28 }}>
+            <View style={{
+              backgroundColor: theme.accent + "12",
+              borderRadius: 18,
+              padding: 18,
+              borderLeftWidth: 3,
+              borderLeftColor: theme.accent,
+              flexDirection: "row",
+              alignItems: "flex-start",
+              gap: 12,
+            }}>
+              <Ionicons name="sparkles" size={16} color={theme.accent} style={{ marginTop: 2 }} />
+              <Text style={{ color: theme.text, fontSize: 14, lineHeight: 22, flex: 1, fontStyle: "italic", letterSpacing: 0.1 }}>
+                {dailyPhrase}
+              </Text>
+            </View>
+          </View>
+        ) : null}
+
+        {/* ── STATS ── */}
+        <View style={{ paddingHorizontal: 24, gap: 12, marginBottom: 36 }}>
+          {/* Hero stat */}
+          <View style={{ backgroundColor: theme.accent, borderRadius: 24, padding: 24 }}>
+            <Text style={{ color: "rgba(255,255,255,0.55)", fontSize: 11, fontWeight: "700", letterSpacing: 1.4, textTransform: "uppercase", marginBottom: 8 }}>
+              Total de Treinos
+            </Text>
+            <Text style={{ fontSize: 58, fontWeight: "800", color: "#fff", letterSpacing: -2.5, lineHeight: 60 }}>
+              {stats.totalWorkouts}
+            </Text>
+            <Text style={{ color: "rgba(255,255,255,0.45)", fontSize: 13, marginTop: 8, fontWeight: "500" }}>
+              sessões completadas
+            </Text>
+          </View>
+          {/* Secondary */}
+          <View style={{ flexDirection: "row", gap: 12 }}>
+            <View style={{ flex: 1, backgroundColor: theme.backgroundSecondary, borderRadius: 24, padding: 20 }}>
+              <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 8 }}>
+                Esta Semana
+              </Text>
+              <Text style={{ fontSize: 38, fontWeight: "800", color: theme.text, letterSpacing: -1.5 }}>
+                {stats.thisWeek}
+              </Text>
+            </View>
+            <View style={{ flex: 1, backgroundColor: theme.backgroundSecondary, borderRadius: 24, padding: 20 }}>
+              <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 8 }}>
+                Tempo Total
+              </Text>
+              <Text style={{ fontSize: 38, fontWeight: "800", color: theme.text, letterSpacing: -1.5 }}>
+                {formatTime(stats.totalTime)}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* ── TREINOS RECENTES ── */}
+        <View style={{ paddingHorizontal: 24 }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+            <Text style={{ color: theme.text, fontSize: 20, fontWeight: "800", letterSpacing: -0.5 }}>
+              Treinos Recentes
+            </Text>
+            <TouchableOpacity onPress={() => router.push("/(tabs)/workouts")} activeOpacity={0.6}>
+              <Text style={{ color: theme.accent, fontSize: 14, fontWeight: "600" }}>
+                Ver todos
+              </Text>
             </TouchableOpacity>
           </View>
 
-          {/* Número de dias */}
-          <View
-            style={{
-              backgroundColor: getStreakBackgroundColor(streak),
-              borderColor: getStreakColor(streak),
-              borderWidth: 2,
-              borderRadius: 12,
-              paddingVertical: 16,
-              marginBottom: 24,
-              alignItems: "center",
-            }}
-          >
-            <Text style={{ fontSize: 48, fontWeight: "bold", color: getStreakColor(streak) }}>
-              {streak}
-            </Text>
-            <Text style={{ fontSize: 14, color: getStreakColor(streak), marginTop: 4 }}>
-              dias consecutivos
-            </Text>
-          </View>
-
-          {/* Dias da semana */}
-          <Text style={{ fontSize: 14, fontWeight: "600", color: theme.text, marginBottom: 12 }}>
-            Esta Semana
-          </Text>
-          
-          <View style={{ flexDirection: "row", gap: 8, marginBottom: 24 }}>
-            {streakHistory.map((dayData, index) => (
-              <View
-                key={index}
-                style={{
-                  flex: 1,
-                  alignItems: "center",
-                  gap: 8,
-                }}
+          {recentWorkouts.length === 0 ? (
+            <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 24, padding: 36, alignItems: "center" }}>
+              <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: theme.backgroundTertiary, alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+                <Ionicons name="barbell-outline" size={32} color={theme.textTertiary} />
+              </View>
+              <Text style={{ color: theme.text, fontWeight: "700", fontSize: 16, marginBottom: 6 }}>
+                Sem treinos ainda
+              </Text>
+              <Text style={{ color: theme.textSecondary, textAlign: "center", fontSize: 14, lineHeight: 20, marginBottom: 24 }}>
+                Cria o teu primeiro treino e começa a registar o teu progresso
+              </Text>
+              <TouchableOpacity
+                onPress={() => router.push("/(tabs)/workouts")}
+                style={{ backgroundColor: theme.accent, paddingHorizontal: 28, paddingVertical: 14, borderRadius: 14 }}
               >
-                {/* Dia da semana */}
-                <Text style={{ fontSize: 11, fontWeight: "600", color: theme.textSecondary }}>
-                  {dayData.day}
+                <Text style={{ color: "white", fontWeight: "700", fontSize: 15 }}>
+                  Criar Treino
                 </Text>
-                
-                {/* Círculo do dia */}
-                <View
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={{ gap: 10 }}>
+              {recentWorkouts.map((workout, index) => (
+                <TouchableOpacity
+                  key={workout.id_sessao || workout.id_treino || index}
+                  onPress={() => handleStartWorkout(workout)}
                   style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 20,
-                    justifyContent: "center",
-                    alignItems: "center",
-                    backgroundColor: dayData.completed
-                      ? theme.accentGreen
-                      : theme.backgroundTertiary,
-                    borderColor: dayData.completed ? theme.accentGreen : theme.border,
-                    borderWidth: 1,
+                    backgroundColor: theme.backgroundSecondary,
+                    borderRadius: 18,
+                    overflow: "hidden",
+                    flexDirection: "row",
                   }}
+                  activeOpacity={0.7}
                 >
-                  {dayData.completed && (
-                    <Ionicons name="checkmark" size={20} color="white" />
-                  )}
-                </View>
-                
-                {/* Data */}
-                <Text style={{ fontSize: 10, color: theme.textTertiary }}>
-                  {new Date(dayData.date).getDate()}
+                  {/* Accent stripe */}
+                  <View style={{ width: 4, backgroundColor: theme.accent }} />
+                  <View style={{ flex: 1, padding: 18, flexDirection: "row", alignItems: "center" }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: theme.text, fontWeight: "700", fontSize: 16, letterSpacing: -0.3, marginBottom: 4 }}>
+                        {workout.nome || workout.name || "Treino"}
+                      </Text>
+                      <Text style={{ color: theme.textSecondary, fontSize: 13 }}>
+                        {workout.num_exercicios ?? 0} exercícios
+                        {(workout.duracao_segundos || 0) > 0 ? ` · ${formatTime(workout.duracao_segundos)}` : ""}
+                      </Text>
+                    </View>
+                    <View style={{ backgroundColor: theme.accent, borderRadius: 12, padding: 8 }}>
+                      <Ionicons name="play" size={16} color="#fff" />
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+
+      </ScrollView>
+
+      {/* ── MODAL STREAK ── */}
+      <Modal
+        visible={showStreakModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowStreakModal(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" }}>
+          <View style={{
+            backgroundColor: theme.backgroundSecondary,
+            borderTopLeftRadius: 28,
+            borderTopRightRadius: 28,
+            padding: 28,
+            paddingBottom: 44,
+          }}>
+            {/* handle */}
+            <View style={{ width: 36, height: 4, backgroundColor: theme.border, borderRadius: 2, alignSelf: "center", marginBottom: 28 }} />
+
+            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 28 }}>
+              <Ionicons name="flame" size={28} color="#FF9F0A" style={{ marginRight: 12 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 26, fontWeight: "800", color: theme.text, letterSpacing: -0.8 }}>
+                  {streak} dias seguidos
+                </Text>
+                <Text style={{ color: theme.textSecondary, fontSize: 14, marginTop: 2 }}>
+                  Continua assim — não quebres a sequência
                 </Text>
               </View>
-            ))}
-          </View>
+              <TouchableOpacity onPress={() => setShowStreakModal(false)}>
+                <Ionicons name="close" size={22} color={theme.textSecondary} />
+              </TouchableOpacity>
+            </View>
 
-          {/* Botão para fechar */}
-          <TouchableOpacity
-            onPress={() => setShowStreakModal(false)}
-            style={{
-              backgroundColor: theme.accent,
-              borderRadius: 10,
-              paddingVertical: 12,
-              alignItems: "center",
-            }}
-          >
-            <Text style={{ color: "white", fontWeight: "600", fontSize: 14 }}>
-              Fechar
+            {/* Dias da semana */}
+            <Text style={{ fontSize: 12, fontWeight: "700", color: theme.textSecondary, letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>
+              Esta Semana
             </Text>
-          </TouchableOpacity>
+            <View style={{ flexDirection: "row", gap: 8, marginBottom: 28 }}>
+              {streakHistory.map((dayData, index) => (
+                <View key={index} style={{ flex: 1, alignItems: "center", gap: 8 }}>
+                  <Text style={{ fontSize: 11, fontWeight: "600", color: theme.textTertiary }}>
+                    {dayData.day}
+                  </Text>
+                  <View style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 12,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    backgroundColor: dayData.completed ? theme.accentGreen : theme.backgroundTertiary,
+                  }}>
+                    {dayData.completed
+                      ? <Ionicons name="checkmark" size={18} color="white" />
+                      : <Text style={{ color: theme.textTertiary, fontWeight: "600", fontSize: 13 }}>{new Date(dayData.date).getDate()}</Text>
+                    }
+                  </View>
+                </View>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              onPress={() => setShowStreakModal(false)}
+              style={{ backgroundColor: theme.accent, borderRadius: 16, paddingVertical: 16, alignItems: "center" }}
+            >
+              <Text style={{ color: "white", fontWeight: "700", fontSize: 16 }}>
+                Fechar
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </Modal>
+      </Modal>
     </>
   );
 }

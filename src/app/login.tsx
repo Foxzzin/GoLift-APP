@@ -65,58 +65,47 @@ export default function Login() {
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={{ flex: 1, justifyContent: "center", paddingHorizontal: 24, paddingVertical: 48 }}>
-          {/* Logo */}
-          <View style={{ alignItems: "center", marginBottom: 40 }}>
+        <View style={{ flex: 1, justifyContent: "space-between", paddingHorizontal: 28, paddingTop: 80, paddingBottom: 48 }}>
+
+          {/* Brand */}
+          <View>
             <View style={{
-              width: 64,
-              height: 64,
-              backgroundColor: theme.backgroundSecondary,
-              borderRadius: 16,
+              width: 48,
+              height: 48,
+              backgroundColor: theme.accent,
+              borderRadius: 14,
               alignItems: "center",
               justifyContent: "center",
-              marginBottom: 16,
-              borderColor: theme.border,
-              borderWidth: 1,
+              marginBottom: 24,
             }}>
-              <Ionicons name="barbell" size={32} color={theme.text} />
+              <Ionicons name="barbell" size={26} color="#fff" />
             </View>
-            <Text style={{ fontSize: 32, fontWeight: "bold", color: theme.text }}>
+            <Text style={{ fontSize: 42, fontWeight: "800", color: theme.text, letterSpacing: -1.5, lineHeight: 46 }}>
               GoLift
             </Text>
-            <Text style={{ color: theme.textSecondary, marginTop: 8, fontSize: 14 }}>
+            <Text style={{ color: theme.textSecondary, marginTop: 10, fontSize: 17, lineHeight: 24 }}>
               Bem-vindo de volta
             </Text>
           </View>
 
-          {/* Formulário */}
-          <View style={{
-            backgroundColor: theme.backgroundSecondary,
-            borderRadius: 16,
-            paddingHorizontal: 24,
-            paddingVertical: 24,
-            borderColor: theme.border,
-            borderWidth: 1,
-          }}>
+          {/* Form */}
+          <View>
             {/* Email */}
             <View style={{ marginBottom: 16 }}>
-              <Text style={{ color: theme.text, marginBottom: 8, fontSize: 13, fontWeight: "500" }}>
+              <Text style={{ color: theme.textSecondary, marginBottom: 8, fontSize: 12, fontWeight: "600", letterSpacing: 0.8, textTransform: "uppercase" }}>
                 Email
               </Text>
               <View style={{
                 flexDirection: "row",
                 alignItems: "center",
-                backgroundColor: theme.background,
-                borderRadius: 10,
-                borderColor: theme.border,
-                borderWidth: 1,
-                paddingHorizontal: 16,
+                backgroundColor: theme.backgroundSecondary,
+                borderRadius: 14,
+                paddingHorizontal: 18,
               }}>
-                <Ionicons name="mail-outline" size={20} color={theme.textSecondary} />
                 <TextInput
-                  style={{ flex: 1, color: theme.text, paddingVertical: 12, paddingHorizontal: 12, fontSize: 16 }}
+                  style={{ flex: 1, color: theme.text, paddingVertical: 16, fontSize: 16 }}
                   placeholder="exemplo@email.com"
-                  placeholderTextColor={theme.textSecondary}
+                  placeholderTextColor={theme.textTertiary}
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -127,24 +116,21 @@ export default function Login() {
             </View>
 
             {/* Password */}
-            <View style={{ marginBottom: 24 }}>
-              <Text style={{ color: theme.text, marginBottom: 8, fontSize: 13, fontWeight: "500" }}>
+            <View style={{ marginBottom: 14 }}>
+              <Text style={{ color: theme.textSecondary, marginBottom: 8, fontSize: 12, fontWeight: "600", letterSpacing: 0.8, textTransform: "uppercase" }}>
                 Password
               </Text>
               <View style={{
                 flexDirection: "row",
                 alignItems: "center",
-                backgroundColor: theme.background,
-                borderRadius: 10,
-                borderColor: theme.border,
-                borderWidth: 1,
-                paddingHorizontal: 16,
+                backgroundColor: theme.backgroundSecondary,
+                borderRadius: 14,
+                paddingHorizontal: 18,
               }}>
-                <Ionicons name="lock-closed-outline" size={20} color={theme.textSecondary} />
                 <TextInput
-                  style={{ flex: 1, color: theme.text, paddingVertical: 12, paddingHorizontal: 12, fontSize: 16 }}
+                  style={{ flex: 1, color: theme.text, paddingVertical: 16, fontSize: 16 }}
                   placeholder="••••••••"
-                  placeholderTextColor={theme.textSecondary}
+                  placeholderTextColor={theme.textTertiary}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
@@ -153,18 +139,18 @@ export default function Login() {
                   <Ionicons
                     name={showPassword ? "eye-off-outline" : "eye-outline"}
                     size={20}
-                    color={theme.textSecondary}
+                    color={theme.textTertiary}
                   />
                 </TouchableOpacity>
               </View>
             </View>
 
             {/* Esqueceu password */}
-            <TouchableOpacity 
-              style={{ marginBottom: 24 }}
+            <TouchableOpacity
+              style={{ alignSelf: "flex-end", marginBottom: 32 }}
               onPress={() => router.push("/forgot-password")}
             >
-              <Text style={{ color: theme.textSecondary, textAlign: "right", fontSize: 13 }}>
+              <Text style={{ color: theme.accent, fontSize: 14, fontWeight: "600" }}>
                 Esqueceste a password?
               </Text>
             </TouchableOpacity>
@@ -174,35 +160,36 @@ export default function Login() {
               onPress={handleLogin}
               disabled={loading}
               style={{
-                backgroundColor: theme.text,
-                paddingVertical: 16,
-                borderRadius: 10,
+                backgroundColor: theme.accent,
+                paddingVertical: 18,
+                borderRadius: 16,
                 alignItems: "center",
               }}
             >
               {loading ? (
-                <ActivityIndicator color={theme.background} />
+                <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={{ color: theme.background, fontWeight: "600", fontSize: 16 }}>
+                <Text style={{ color: "#fff", fontWeight: "700", fontSize: 17, letterSpacing: -0.3 }}>
                   Entrar
                 </Text>
               )}
             </TouchableOpacity>
-
-            {/* Link Registo */}
-            <View style={{ flexDirection: "row", justifyContent: "center", marginTop: 24, paddingTop: 24, borderTopColor: theme.border, borderTopWidth: 1 }}>
-              <Text style={{ color: theme.textSecondary, fontSize: 14 }}>
-                Não tens conta?{" "}
-              </Text>
-              <Link href="/register" asChild>
-                <TouchableOpacity>
-                  <Text style={{ color: theme.text, fontWeight: "600", fontSize: 14 }}>
-                    Criar conta
-                  </Text>
-                </TouchableOpacity>
-              </Link>
-            </View>
           </View>
+
+          {/* Footer */}
+          <View style={{ flexDirection: "row", justifyContent: "center" }}>
+            <Text style={{ color: theme.textSecondary, fontSize: 15 }}>
+              Não tens conta?{" "}
+            </Text>
+            <Link href="/register" asChild>
+              <TouchableOpacity>
+                <Text style={{ color: theme.accent, fontWeight: "700", fontSize: 15 }}>
+                  Criar conta
+                </Text>
+              </TouchableOpacity>
+            </Link>
+          </View>
+
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

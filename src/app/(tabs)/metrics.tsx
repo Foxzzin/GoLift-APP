@@ -438,7 +438,7 @@ export default function Metrics() {
       >
       {/* Header */}
       <View style={{ paddingHorizontal: 24, paddingTop: 56, paddingBottom: 8 }}>
-        <Text style={{ fontSize: 28, fontWeight: "bold", color: theme.text }}>
+        <Text style={{ fontSize: 32, fontWeight: "800", color: theme.text, letterSpacing: -1 }}>
           Métricas
         </Text>
         <Text style={{ color: theme.textSecondary, marginTop: 4, fontSize: 14 }}>

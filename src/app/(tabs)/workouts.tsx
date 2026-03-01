@@ -284,7 +284,7 @@ export default function Workouts() {
       >
         {/* Header */}
         <View style={{ paddingHorizontal: 24, paddingTop: 56, paddingBottom: 16 }}>
-          <Text style={{ fontSize: 28, fontWeight: "bold", color: theme.text }}>
+          <Text style={{ fontSize: 32, fontWeight: "800", color: theme.text, letterSpacing: -1 }}>
             Treinos
           </Text>
         </View>
@@ -388,7 +388,7 @@ export default function Workouts() {
         {/* Meus Treinos */}
         <View style={{ paddingHorizontal: 24 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-            <Text style={{ fontSize: 18, fontWeight: "600", color: theme.text }}>
+            <Text style={{ fontSize: 20, fontWeight: "800", color: theme.text, letterSpacing: -0.5 }}>
               Os Meus Treinos
             </Text>
             <TouchableOpacity
@@ -413,9 +413,7 @@ export default function Workouts() {
             <View
               style={{
                 backgroundColor: theme.backgroundSecondary,
-                borderColor: theme.border,
-                borderWidth: 1,
-                borderRadius: 16,
+                borderRadius: 20,
                 paddingVertical: 40,
                 paddingHorizontal: 24,
                 justifyContent: "center",
@@ -448,10 +446,8 @@ export default function Workouts() {
                   key={workout.id_treino || index}
                   style={{
                     backgroundColor: theme.backgroundSecondary,
-                    borderColor: theme.border,
-                    borderWidth: 1,
-                    borderRadius: 16,
-                    padding: 16,
+                    borderRadius: 20,
+                    padding: 18,
                   }}
                 >
                   <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
@@ -535,8 +531,8 @@ export default function Workouts() {
                     style={{
                       marginTop: 16,
                       backgroundColor: theme.accent,
-                      paddingVertical: 12,
-                      borderRadius: 10,
+                      paddingVertical: 14,
+                      borderRadius: 14,
                       flexDirection: "row",
                       justifyContent: "center",
                       alignItems: "center",

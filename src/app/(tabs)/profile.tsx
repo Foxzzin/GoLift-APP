@@ -123,7 +123,7 @@ export default function Profile() {
     >
       {/* Header */}
       <View style={{ paddingHorizontal: 24, paddingTop: 56, paddingBottom: 24 }}>
-        <Text style={{ fontSize: 28, fontWeight: "bold", color: theme.text }}>
+        <Text style={{ fontSize: 32, fontWeight: "800", color: theme.text, letterSpacing: -1 }}>
           Perfil
         </Text>
       </View>
@@ -166,15 +166,13 @@ export default function Profile() {
           style={{
             flex: 1,
             backgroundColor: theme.backgroundSecondary,
-            borderRadius: 16,
-            paddingVertical: 16,
+            borderRadius: 20,
+            paddingVertical: 20,
             paddingHorizontal: 12,
             alignItems: "center",
-            borderColor: theme.border,
-            borderWidth: 1,
           }}
         >
-          <Text style={{ fontSize: 24, fontWeight: "bold", color: theme.text }}>
+          <Text style={{ fontSize: 28, fontWeight: "800", color: theme.text, letterSpacing: -1 }}>
             {stats.totalWorkouts}
           </Text>
           <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 4 }}>
@@ -185,15 +183,13 @@ export default function Profile() {
           style={{
             flex: 1,
             backgroundColor: theme.backgroundSecondary,
-            borderRadius: 16,
-            paddingVertical: 16,
+            borderRadius: 20,
+            paddingVertical: 20,
             paddingHorizontal: 12,
             alignItems: "center",
-            borderColor: theme.border,
-            borderWidth: 1,
           }}
         >
-          <Text style={{ fontSize: 24, fontWeight: "bold", color: theme.text }}>
+          <Text style={{ fontSize: 28, fontWeight: "800", color: theme.text, letterSpacing: -1 }}>
             {formatTime(stats.totalTime)}
           </Text>
           <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 4 }}>
@@ -204,15 +200,13 @@ export default function Profile() {
           style={{
             flex: 1,
             backgroundColor: theme.backgroundSecondary,
-            borderRadius: 16,
-            paddingVertical: 16,
+            borderRadius: 20,
+            paddingVertical: 20,
             paddingHorizontal: 12,
             alignItems: "center",
-            borderColor: theme.border,
-            borderWidth: 1,
           }}
         >
-          <Text style={{ fontSize: 24, fontWeight: "bold", color: theme.text }}>
+          <Text style={{ fontSize: 28, fontWeight: "800", color: theme.text, letterSpacing: -1 }}>
             {records.length}
           </Text>
           <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 4 }}>
@@ -261,13 +255,13 @@ export default function Profile() {
         <View
           style={{
             backgroundColor: theme.backgroundSecondary,
-            borderRadius: 16,
+            borderRadius: 20,
             borderColor: theme.border,
             borderWidth: 1,
             overflow: "hidden",
           }}
         >
-          {/* Idade */}
+          {/* Idade */}}
           <View
             style={{
               flexDirection: "row",

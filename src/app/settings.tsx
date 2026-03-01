@@ -79,7 +79,7 @@ export default function Settings() {
         <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
           <Ionicons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>
-        <Text style={{ fontSize: 24, fontWeight: "bold", color: theme.text }}>Definições</Text>
+        <Text style={{ fontSize: 24, fontWeight: "800", color: theme.text, letterSpacing: -0.5 }}>Definições</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 24 }}>

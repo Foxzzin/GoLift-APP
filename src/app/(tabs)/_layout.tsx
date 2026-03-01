@@ -62,7 +62,7 @@ function CustomTabBar({ state, descriptors, navigation, hideTabBar }: any) {
 
     return (
       <TouchableOpacity key={route.key} onPress={onPress} style={styles.tab}>
-        <Ionicons name={iconName as any} size={24} color={isFocused ? theme.text : theme.textTertiary} />
+        <Ionicons name={iconName as any} size={24} color={isFocused ? theme.accent : theme.textTertiary} />
       </TouchableOpacity>
     );
   };
@@ -194,12 +194,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   centerButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 60,
+    height: 60,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
     marginHorizontal: 8,
+    shadowColor: '#0066FF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 6,
   },
 });
 
