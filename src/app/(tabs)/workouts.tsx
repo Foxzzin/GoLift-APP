@@ -4,20 +4,22 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
+  Pressable,
   RefreshControl,
   Modal,
   TextInput,
   Alert,
   ActivityIndicator,
   FlatList,
-  StyleSheet,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useAuth } from "../../contexts/AuthContext";
 import { useCommunities } from "../../contexts/CommunitiesContext";
 import { workoutApi, exerciseApi, planoApi } from "../../services/api";
 import { useTheme } from "../../styles/theme";
+import { WorkoutsScreenSkeleton } from "../../components/ui/SkeletonLoader";
 
 export default function Workouts() {
   const { user } = useAuth();
@@ -153,6 +155,7 @@ export default function Workouts() {
       const exerciseIds = selectedExercises.map((e: any) => e.id);
       const upperName = workoutName.charAt(0).toUpperCase() + workoutName.slice(1);
       await workoutApi.createWorkout(user!.id, upperName, exerciseIds);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert("Sucesso", "Treino criado com sucesso!");
       setShowCreateModal(false);
       loadData();
@@ -177,6 +180,7 @@ export default function Workouts() {
       const exerciseIds = selectedExercises.map((e: any) => e.id);
       const upperName = workoutName.charAt(0).toUpperCase() + workoutName.slice(1);
       await workoutApi.updateWorkout(user!.id, editingWorkout.id_treino, upperName, exerciseIds);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert("Guardado! ✅", "Treino atualizado com sucesso.");
       setShowCreateModal(false);
       setEditingWorkout(null);
@@ -199,6 +203,7 @@ export default function Workouts() {
           style: "default",
           onPress: async () => {
             try {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               router.push(`/workout/${workout.id_treino}`);
             } catch (error) {
               Alert.alert("Erro", "Não foi possível iniciar o treino");
@@ -220,6 +225,7 @@ export default function Workouts() {
           style: "destructive",
           onPress: async () => {
             try {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
               await workoutApi.deleteWorkout(user!.id, workout.id_treino);
               loadData();
             } catch (error: any) {
@@ -244,7 +250,6 @@ export default function Workouts() {
     if (!shareWorkoutData || sharingToComm) return;
     setSharingToComm(true);
     try {
-      // Carregar exercícios com IDs do servidor
       const resp = await workoutApi.getWorkoutExercises(shareWorkoutData.id_treino).catch(() => ({ exercicios: [] }));
       const exercicios = (resp?.exercicios || []).map((ex: any) => ({
         id: ex.id_exercicio,
@@ -257,6 +262,7 @@ export default function Workouts() {
         exercicios,
       });
       await sendMessage(community.id, `🏋️__SHARE__${payload}`);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setShowShareModal(false);
       Alert.alert("Partilhado! 💪", `Treino enviado para ${community.nome}`);
     } catch {
@@ -267,11 +273,7 @@ export default function Workouts() {
   }
 
   if (loading) {
-    return (
-      <View style={{ flex: 1, backgroundColor: theme.background, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color={theme.accent} />
-      </View>
-    );
+    return <WorkoutsScreenSkeleton />;
   }
 
   return (
@@ -356,32 +358,28 @@ export default function Workouts() {
         {/* Banner IA - Plano Mensal */}
         {planoTipo === "pago" && (
           <View style={{ paddingHorizontal: 24, marginBottom: 16 }}>
-            <TouchableOpacity
-              onPress={() => router.push("/ai-plan")}
-              style={{
-                backgroundColor: theme.accent + "18",
-                borderColor: theme.accent,
-                borderWidth: 1,
-                borderRadius: 14,
-                paddingHorizontal: 16,
-                paddingVertical: 14,
+            <Pressable
+              onPress={() => router.push("/ai-hub")}
+              accessibilityLabel="Plano Mensal IA"
+              accessibilityRole="button"
+              style={({ pressed }) => ({
+                backgroundColor: theme.backgroundSecondary,
+                borderRadius: 18,
+                paddingHorizontal: 18,
+                paddingVertical: 16,
                 flexDirection: "row",
                 alignItems: "center",
-              }}
+                overflow: "hidden",
+                opacity: pressed ? 0.8 : 1,
+              })}
             >
-              <View style={{
-                backgroundColor: theme.accent + "30",
-                width: 40, height: 40, borderRadius: 10,
-                justifyContent: "center", alignItems: "center", marginRight: 12,
-              }}>
-                <Ionicons name="sparkles" size={20} color={theme.accent} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: theme.text, fontWeight: "700", fontSize: 14 }}>Plano Mensal IA</Text>
+              <View style={{ width: 4, position: "absolute", left: 0, top: 0, bottom: 0, backgroundColor: theme.accent }} />
+              <View style={{ marginLeft: 14, flex: 1 }}>
+                <Text style={{ color: theme.text, fontWeight: "700", fontSize: 14, letterSpacing: -0.2 }}>Plano Mensal IA</Text>
                 <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>Ver o teu plano personalizado</Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color={theme.accent} />
-            </TouchableOpacity>
+              <Ionicons name="chevron-forward" size={18} color={theme.accent} />
+            </Pressable>
           </View>
         )}
 
@@ -410,140 +408,115 @@ export default function Workouts() {
           </View>
 
           {myWorkouts.length === 0 ? (
-            <View
-              style={{
-                backgroundColor: theme.backgroundSecondary,
-                borderRadius: 20,
-                paddingVertical: 40,
-                paddingHorizontal: 24,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <Ionicons name="barbell-outline" size={48} color={theme.textTertiary} />
-              <Text style={{ color: theme.textSecondary, marginTop: 16, textAlign: "center", fontSize: 14 }}>
-                Ainda não criaste nenhum treino
-              </Text>
-              <TouchableOpacity
+            <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 20, paddingVertical: 44, paddingHorizontal: 24, alignItems: "center" }}>
+              <Text style={{ fontSize: 36, marginBottom: 12 }}>🏋️</Text>
+              <Text style={{ color: theme.text, fontWeight: "700", fontSize: 16, letterSpacing: -0.3 }}>Sem treinos ainda</Text>
+              <Text style={{ color: theme.textSecondary, fontSize: 14, marginTop: 6, textAlign: "center" }}>Cria o teu primeiro treino personalizado</Text>
+              <Pressable
                 onPress={openCreateModal}
-                style={{
-                  marginTop: 16,
+                accessibilityLabel="Criar treino"
+                accessibilityRole="button"
+                style={({ pressed }) => ({
+                  marginTop: 20,
                   backgroundColor: theme.accent,
-                  paddingHorizontal: 24,
-                  paddingVertical: 12,
-                  borderRadius: 10,
-                }}
+                  paddingHorizontal: 28,
+                  paddingVertical: 14,
+                  borderRadius: 14,
+                  opacity: pressed ? 0.85 : 1,
+                  shadowColor: theme.accent,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 8,
+                  elevation: 5,
+                })}
               >
-                <Text style={{ color: "white", fontWeight: "600", fontSize: 14 }}>
-                  Criar Treino
-                </Text>
-              </TouchableOpacity>
+                <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>Criar Treino</Text>
+              </Pressable>
             </View>
           ) : (
             <View style={{ gap: 12 }}>
               {myWorkouts.map((workout: any, index: number) => (
-                <View
+                <Pressable
                   key={workout.id_treino || index}
-                  style={{
+                  onPress={() => handleStartWorkout(workout)}
+                  accessibilityLabel={`Começar treino ${workout.nome}`}
+                  accessibilityRole="button"
+                  style={({ pressed }) => ({
                     backgroundColor: theme.backgroundSecondary,
                     borderRadius: 20,
-                    padding: 18,
-                  }}
+                    overflow: "hidden",
+                    flexDirection: "row",
+                    opacity: pressed ? 0.88 : 1,
+                  })}
                 >
-                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
-                    <View
-                      style={{
-                        backgroundColor: workout.is_ia ? "#f59e0b22" : theme.backgroundTertiary,
-                        width: 44,
-                        height: 44,
-                        borderRadius: 10,
-                        justifyContent: "center",
-                        alignItems: "center",
-                        marginRight: 12,
-                      }}
-                    >
-                      <Ionicons name={workout.is_ia ? "sparkles" : "barbell"} size={22} color={workout.is_ia ? "#f59e0b" : theme.text} />
+                  {/* Stripe lateral */}
+                  <View style={{ width: 4, backgroundColor: workout.is_ia ? "#f59e0b" : theme.accent }} />
+
+                  <View style={{ flex: 1, padding: 18 }}>
+                    {/* Header */}
+                    <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
+                      <View style={{ flex: 1, marginRight: 12 }}>
+                        <Text style={{ fontSize: 16, fontWeight: "700", color: theme.text, letterSpacing: -0.3 }}>
+                          {workout.nome}
+                        </Text>
+                        <Text style={{ fontSize: 13, color: theme.textSecondary, marginTop: 3 }}>
+                          {workout.num_exercicios ?? 0} exercícios
+                          {workout.is_ia && (
+                            <Text style={{ color: "#f59e0b" }}> · IA</Text>
+                          )}
+                        </Text>
+                      </View>
+
+                      {/* Ações */}
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                        {!workout.is_ia && (
+                          <TouchableOpacity
+                            onPress={(e) => { e.stopPropagation?.(); handleShareTemplate(workout); }}
+                            style={{ padding: 8 }}
+                            accessibilityLabel="Partilhar treino"
+                          >
+                            <Ionicons name="share-social-outline" size={19} color={theme.textSecondary} />
+                          </TouchableOpacity>
+                        )}
+                        <TouchableOpacity
+                          onPress={(e) => { e.stopPropagation?.(); openEditModal(workout); }}
+                          style={{ padding: 8 }}
+                          accessibilityLabel="Editar treino"
+                        >
+                          <Ionicons name="create-outline" size={19} color={theme.textSecondary} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={(e) => { e.stopPropagation?.(); handleDeleteWorkout(workout); }}
+                          style={{ padding: 8 }}
+                          accessibilityLabel="Apagar treino"
+                        >
+                          <Ionicons name="trash-outline" size={19} color={theme.textSecondary} />
+                        </TouchableOpacity>
+
+                        {/* Botão play */}
+                        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: workout.is_ia ? "#f59e0b" : theme.accent, justifyContent: "center", alignItems: "center", marginLeft: 4 }}>
+                          <Ionicons name="play" size={18} color="#fff" />
+                        </View>
+                      </View>
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 16, fontWeight: "bold", color: theme.text }}>
-                        {workout.nome}
-                      </Text>
-                      <Text style={{ fontSize: 13, color: theme.textSecondary, marginTop: 2 }}>
-                        {workout.num_exercicios ?? 0} exercícios
-                      </Text>
-                    </View>
-                    {!workout.is_ia && (
-                    <TouchableOpacity
-                      onPress={() => handleShareTemplate(workout)}
-                      style={{ padding: 8, marginRight: 4 }}
-                    >
-                      <Ionicons name="share-social-outline" size={20} color={theme.accent} />
-                    </TouchableOpacity>
+
+                    {/* Exercícios preview */}
+                    {workout.exercicios?.length > 0 && (
+                      <View style={{ marginTop: 12, gap: 4 }}>
+                        {workout.exercicios.slice(0, 3).map((ex: any, i: number) => (
+                          <Text key={i} style={{ fontSize: 12, color: theme.textSecondary }}>
+                            · {ex.nome || ex.name}
+                          </Text>
+                        ))}
+                        {workout.exercicios.length > 3 && (
+                          <Text style={{ fontSize: 12, color: theme.textTertiary }}>
+                            +{workout.exercicios.length - 3} mais...
+                          </Text>
+                        )}
+                      </View>
                     )}
-                    <TouchableOpacity
-                      onPress={() => openEditModal(workout)}
-                      style={{ padding: 8, marginRight: 4 }}
-                    >
-                      <Ionicons name="create-outline" size={20} color={theme.accent} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => handleDeleteWorkout(workout)}
-                      style={{ padding: 8 }}
-                    >
-                      <Ionicons name="trash-outline" size={20} color={theme.accent} />
-                    </TouchableOpacity>
                   </View>
-
-                  {/* Lista exercícios */}
-                  {workout.exercicios?.slice(0, 3).map((ex: any, i: number) => (
-                    <View
-                      key={i}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        paddingVertical: 8,
-                        borderTopColor: theme.border,
-                        borderTopWidth: i === 0 ? 1 : 0,
-                      }}
-                    >
-                      <View
-                        style={{
-                          width: 4,
-                          height: 4,
-                          backgroundColor: theme.text,
-                          borderRadius: 2,
-                          marginRight: 12,
-                        }}
-                      />
-                      <Text style={{ fontSize: 13, color: theme.textSecondary }}>
-                        {ex.nome || ex.name}
-                      </Text>
-                    </View>
-                  ))}
-                  {(workout.exercicios?.length || 0) > 3 && (
-                    <Text style={{ fontSize: 12, color: theme.textTertiary, marginTop: 8 }}>
-                      +{workout.exercicios.length - 3} mais...
-                    </Text>
-                  )}
-
-                  <TouchableOpacity
-                    onPress={() => handleStartWorkout(workout)}
-                    style={{
-                      marginTop: 16,
-                      backgroundColor: theme.accent,
-                      paddingVertical: 14,
-                      borderRadius: 14,
-                      flexDirection: "row",
-                      justifyContent: "center",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Ionicons name="play" size={18} color="white" style={{ marginRight: 6 }} />
-                    <Text style={{ color: "white", fontWeight: "600", fontSize: 14 }}>
-                      Começar Treino
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                </Pressable>
               ))}
             </View>
           )}
@@ -868,65 +841,67 @@ export default function Workouts() {
         animationType="slide"
         onRequestClose={() => setShowShareModal(false)}
       >
-        <View style={{ flex: 1, justifyContent: "flex-end" }}>
-          <TouchableOpacity
-            style={{ ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.6)" }}
-            activeOpacity={1}
-            onPress={() => setShowShareModal(false)}
-          />
-          <View style={{ backgroundColor: theme.backgroundSecondary, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: "70%" }}>
-              <View style={{ width: 40, height: 4, backgroundColor: theme.border, borderRadius: 2, alignSelf: "center", marginTop: 12, marginBottom: 16 }} />
+        <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.55)" }}>
+          <View style={{ backgroundColor: theme.backgroundSecondary, borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: "70%" }}>
+            <View style={{ width: 36, height: 4, backgroundColor: theme.border, borderRadius: 2, alignSelf: "center", marginTop: 12, marginBottom: 20 }} />
 
-              <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 24, marginBottom: 16 }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: theme.text, fontSize: 20, fontWeight: "700" }}>Partilhar Treino</Text>
-                  <Text style={{ color: theme.textSecondary, fontSize: 13, marginTop: 4 }}>
-                    🏋️‍♂️ {shareWorkoutData?.nome} — Escolhe uma comunidade
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => setShowShareModal(false)}
-                  style={{ backgroundColor: theme.backgroundTertiary, borderRadius: 20, padding: 8 }}
-                >
-                  <Ionicons name="close" size={20} color={theme.text} />
-                </TouchableOpacity>
+            <View style={{ flexDirection: "row", alignItems: "flex-start", paddingHorizontal: 24, marginBottom: 20 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: theme.text, fontSize: 22, fontWeight: "800", letterSpacing: -0.5 }}>Partilhar Treino</Text>
+                <Text style={{ color: theme.textSecondary, fontSize: 13, marginTop: 4 }}>
+                  {shareWorkoutData?.nome}
+                </Text>
               </View>
+              <Pressable
+                onPress={() => setShowShareModal(false)}
+                accessibilityLabel="Fechar"
+                accessibilityRole="button"
+                style={({ pressed }) => ({ backgroundColor: theme.backgroundTertiary, borderRadius: 12, padding: 8, opacity: pressed ? 0.7 : 1 })}
+              >
+                <Ionicons name="close" size={18} color={theme.text} />
+              </Pressable>
+            </View>
 
-              <FlatList
-                data={userCommunities}
-                keyExtractor={(item) => String(item.id)}
-                style={{ flexShrink: 1 }}
-                contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}
-                ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    onPress={() => sendShareToCommunity(item)}
-                    disabled={sharingToComm}
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      backgroundColor: theme.backgroundTertiary,
-                      borderRadius: 14,
-                      padding: 14,
-                      borderWidth: 1,
-                      borderColor: theme.border,
-                    }}
-                  >
-                    <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: theme.background, justifyContent: "center", alignItems: "center", marginRight: 12 }}>
-                      <Ionicons name="people" size={20} color={theme.accent} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: theme.text, fontWeight: "600", fontSize: 14 }}>{item.nome}</Text>
-                      <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>{item.membros} membros</Text>
-                    </View>
-                    {sharingToComm ? (
-                      <ActivityIndicator size="small" color={theme.accent} />
-                    ) : (
-                      <Ionicons name="send" size={18} color={theme.accent} />
-                    )}
-                  </TouchableOpacity>
-                )}
-              />
+            <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginHorizontal: 24, marginBottom: 10 }}>
+              Escolhe uma comunidade
+            </Text>
+
+            <FlatList
+              data={userCommunities}
+              keyExtractor={(item) => String(item.id)}
+              style={{ flexShrink: 1 }}
+              contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}
+              ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+              renderItem={({ item }) => (
+                <Pressable
+                  onPress={() => sendShareToCommunity(item)}
+                  disabled={sharingToComm}
+                  accessibilityLabel={`Partilhar com ${item.nome}`}
+                  accessibilityRole="button"
+                  style={({ pressed }) => ({
+                    flexDirection: "row",
+                    alignItems: "center",
+                    backgroundColor: theme.backgroundTertiary,
+                    borderRadius: 16,
+                    padding: 14,
+                    opacity: pressed ? 0.7 : 1,
+                  })}
+                >
+                  <View style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: theme.accent + "18", justifyContent: "center", alignItems: "center", marginRight: 12 }}>
+                    <Ionicons name="people" size={20} color={theme.accent} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: theme.text, fontWeight: "700", fontSize: 14 }}>{item.nome}</Text>
+                    <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>{item.membros} membros</Text>
+                  </View>
+                  {sharingToComm ? (
+                    <ActivityIndicator size="small" color={theme.accent} />
+                  ) : (
+                    <Ionicons name="send" size={18} color={theme.accent} />
+                  )}
+                </Pressable>
+              )}
+            />
           </View>
         </View>
       </Modal>

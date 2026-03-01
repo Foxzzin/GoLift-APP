@@ -1,6 +1,19 @@
 import { request } from "./_request";
 
+export interface AdminStats {
+  totalUsers: number;
+  totalTreinos: number;
+  totalExercises: number;
+  totalAdmins: number;
+  proUsers?: number;
+  newUsersThisWeek?: number;
+  sessionsThisWeek?: number;
+}
+
 export const adminApi = {
+  // Estatísticas do dashboard
+  getStats: () =>
+    request<AdminStats>("/api/admin/stats"),
   // Utilizadores
   getUsers: () =>
     request<any[]>("/api/admin/users"),

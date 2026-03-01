@@ -21,7 +21,7 @@ type WeightUnit = "kg" | "lbs";
 type HeightUnit = "cm" | "in";
 
 const objectives = [
-  { id: "musculo", label: "Ganhar Músculo", icon: "barbell", color: "#687C88" },
+  { id: "musculo", label: "Ganhar Músculo", icon: "barbell", color: "#0A84FF" },
   { id: "forca", label: "Ganhar Força", icon: "flash", color: "#10b981" },
   { id: "peso", label: "Perder Peso", icon: "flame", color: "#f59e0b" },
   { id: "atividade", label: "Manter Atividade", icon: "heart", color: "#d946ef" },
@@ -236,8 +236,12 @@ export default function Register() {
       Alert.alert("Erro", "Insere um email válido");
       return;
     }
-    if (step === "password" && password.length < 6) {
-      Alert.alert("Erro", "A password deve ter pelo menos 6 caracteres");
+    if (step === "password" && password.length < 8) {
+      Alert.alert("Erro", "A password deve ter pelo menos 8 caracteres");
+      return;
+    }
+    if (step === "password" && !/\d/.test(password)) {
+      Alert.alert("Atenção", "A password deve incluir pelo menos um número");
       return;
     }
     if (step === "objetivo" && !objetivo) {
@@ -343,6 +347,17 @@ export default function Register() {
         );
 
       case "password":
+        const pwStrength = (() => {
+          if (password.length === 0) return 0;
+          let score = 0;
+          if (password.length >= 8) score++;
+          if (/\d/.test(password)) score++;
+          if (/[A-Z]/.test(password)) score++;
+          if (/[^a-zA-Z0-9]/.test(password)) score++;
+          return score;
+        })();
+        const strengthLabel = pwStrength === 0 ? "" : pwStrength <= 1 ? "Fraca" : pwStrength <= 2 ? "Média" : "Forte";
+        const strengthColor = pwStrength <= 1 ? "#ef4444" : pwStrength === 2 ? "#f59e0b" : "#10b981";
         return (
           <View style={{ flex: 1, justifyContent: "center" }}>
             <View style={{
@@ -357,7 +372,7 @@ export default function Register() {
               <Ionicons name="lock-closed-outline" size={24} color={theme.textSecondary} />
               <TextInput
                 style={{ flex: 1, color: theme.text, paddingVertical: 20, paddingHorizontal: 14, fontSize: 18 }}
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mínimo 8 caracteres"
                 placeholderTextColor={theme.textSecondary}
                 value={password}
                 onChangeText={setPassword}
@@ -372,6 +387,31 @@ export default function Register() {
                 />
               </TouchableOpacity>
             </View>
+            {/* Indicador de força */}
+            {password.length > 0 && (
+              <View style={{ marginTop: 14 }}>
+                <View style={{ flexDirection: "row", gap: 6, marginBottom: 8 }}>
+                  {[1, 2, 3, 4].map((level) => (
+                    <View key={level} style={{
+                      flex: 1,
+                      height: 4,
+                      borderRadius: 2,
+                      backgroundColor: pwStrength >= level ? strengthColor : theme.backgroundTertiary,
+                    }} />
+                  ))}
+                </View>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                  <Text style={{ color: strengthColor, fontSize: 13, fontWeight: "600" }}>
+                    {strengthLabel}
+                  </Text>
+                  <Text style={{ color: theme.textTertiary, fontSize: 12 }}>
+                    {password.length < 8 && `${8 - password.length} caracteres em falta`}
+                    {password.length >= 8 && !/\d/.test(password) && "Adiciona um número"}
+                    {password.length >= 8 && /\d/.test(password) && !/[A-Z]/.test(password) && "Add maiúsculas para mais força"}
+                  </Text>
+                </View>
+              </View>
+            )}
           </View>
         );
 
@@ -603,17 +643,15 @@ export default function Register() {
             <View style={{
               width: 72,
               height: 72,
-              backgroundColor: theme.backgroundSecondary,
-              borderRadius: 18,
+              backgroundColor: theme.accent + "18",
+              borderRadius: 20,
               alignItems: "center",
               justifyContent: "center",
               marginBottom: 20,
-              borderColor: theme.border,
-              borderWidth: 1,
             }}>
-              <Ionicons name="barbell" size={38} color={theme.text} />
+              <Ionicons name="barbell" size={38} color={theme.accent} />
             </View>
-            <Text style={{ fontSize: 26, fontWeight: "bold", color: theme.text, textAlign: "center" }}>
+            <Text style={{ fontSize: 28, fontWeight: "800", color: theme.text, textAlign: "center", letterSpacing: -0.5 }}>
               {stepTitles[step]}
             </Text>
             <Text style={{ color: theme.textSecondary, marginTop: 8, fontSize: 14 }}>
@@ -632,7 +670,7 @@ export default function Register() {
             <View
               style={{
                 height: "100%",
-                backgroundColor: theme.text,
+                backgroundColor: theme.accent,
                 width: `${progressPercent}%`,
                 borderRadius: 2,
               }}
@@ -669,17 +707,22 @@ export default function Register() {
               style={{
                 flex: stepIndex > 0 ? 1 : undefined,
                 width: stepIndex === 0 ? "100%" : undefined,
-                backgroundColor: theme.text,
+                backgroundColor: theme.accent,
                 paddingVertical: 18,
                 borderRadius: 14,
                 alignItems: "center",
                 opacity: loading ? 0.7 : 1,
+                shadowColor: theme.accent,
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.3,
+                shadowRadius: 12,
+                elevation: 6,
               }}
             >
               {loading ? (
-                <ActivityIndicator color={theme.background} />
+                <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={{ color: theme.background, fontWeight: "700", fontSize: 17 }}>
+                <Text style={{ color: "#fff", fontWeight: "700", fontSize: 17 }}>
                   {(step === "objetivo" && !needsTargetWeight) || step === "pesoAlvo" ? "Criar Conta" : "Continuar"}
                 </Text>
               )}
@@ -693,7 +736,7 @@ export default function Register() {
             </Text>
             <Link href="/login" asChild>
               <TouchableOpacity>
-                <Text style={{ color: theme.text, fontWeight: "600", fontSize: 14 }}>
+                <Text style={{ color: theme.accent, fontWeight: "700", fontSize: 14 }}>
                   Fazer Login
                 </Text>
               </TouchableOpacity>

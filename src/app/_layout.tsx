@@ -5,11 +5,12 @@ import * as NavigationBar from "expo-navigation-bar";
 import { Platform, View, ActivityIndicator } from "react-native";
 import { AuthProvider } from "../contexts/AuthContext";
 import { CommunitiesProvider } from "../contexts/CommunitiesContext";
-import { useTheme } from "../styles/theme";
+import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
 import { loadSavedServerIP } from "../services/server-config";
 import "../styles/global.css";
 
-export default function RootLayout() {
+// Componente interno que usa o tema já resolvido pelo ThemeProvider
+function RootLayoutContent() {
   const theme = useTheme();
   const [ready, setReady] = useState(false);
 
@@ -18,7 +19,6 @@ export default function RootLayout() {
       NavigationBar.setBackgroundColorAsync(theme.background);
       NavigationBar.setButtonStyleAsync("light");
     }
-    // Aguardar descoberta do servidor antes de renderizar a app
     loadSavedServerIP()
       .catch(() => {})
       .finally(() => setReady(true));
@@ -48,20 +48,21 @@ export default function RootLayout() {
           <Stack.Screen name="forgot-password" />
           <Stack.Screen name="edit-profile" />
           <Stack.Screen name="settings" />
+          <Stack.Screen name="account" />
           <Stack.Screen name="(tabs)" />
-          <Stack.Screen 
+          <Stack.Screen
             name="admin/_layout"
             options={{
               presentation: "modal",
               animation: "slide_from_right"
             }}
           />
-          <Stack.Screen 
-            name="workout/[id]" 
-            options={{ 
+          <Stack.Screen
+            name="workout/[id]"
+            options={{
               presentation: "fullScreenModal",
               animation: "slide_from_bottom"
-            }} 
+            }}
           />
           <Stack.Screen
             name="user/[id]"
@@ -91,8 +92,37 @@ export default function RootLayout() {
               animation: "slide_from_right"
             }}
           />
+          <Stack.Screen
+            name="ai-hub"
+            options={{
+              presentation: "card",
+              animation: "slide_from_right"
+            }}
+          />
+          <Stack.Screen
+            name="exercise-progress/[id]"
+            options={{
+              presentation: "card",
+              animation: "slide_from_right"
+            }}
+          />
+          <Stack.Screen
+            name="workout/summary"
+            options={{
+              presentation: "fullScreenModal",
+              animation: "slide_from_bottom"
+            }}
+          />
         </Stack>
       </CommunitiesProvider>
     </AuthProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <RootLayoutContent />
+    </ThemeProvider>
   );
 }

@@ -23,7 +23,7 @@ export const planoApi = {
       semana_inicio: string;
       cached: boolean;
       pode_gerar?: boolean;
-    }>(`/api/ai/report/${userId}`),
+    }>(`/api/ai/report/${userId}`, { timeout: 60000 }),
 
   getPlan: (userId: number) =>
     request<{
@@ -50,6 +50,7 @@ export const planoApi = {
     request<{ sucesso: boolean; plano: object; mes: string }>(`/api/ai/plan/${userId}/generate`, {
       method: "POST",
       body: JSON.stringify({ diasPorSemana }),
+      timeout: 60000,
     }),
 
   importPlanDay: (

@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useAuth } from "../../contexts/AuthContext";
 import { metricsApi, workoutApi, planoApi } from "../../services/api";
 import { useTheme } from "../../styles/theme";
@@ -75,35 +76,44 @@ export default function Home() {
         metricsApi.getStreak(user!.id).catch(() => null),
       ]);
       
-      // Obter histórico de treinos para marcar dias com atividade
+      // Obter histórico de treinos para marcar dias com atividade e mostrar sessões recentes
       const history = await metricsApi.getHistory(user!.id).catch(() => ({ treinos: [] }));
-      const historyItems = history?.treinos || history || [];
-      
-      // Pegar os últimos 3 treinos (remover duplicados)
-      let workoutsList = Array.isArray(workouts) ? workouts : [];
-      
-      // Remover duplicados - manter apenas um treino por tipo/nome
-      const seenWorkouts = new Set<string>();
-      const uniqueWorkouts = workoutsList.filter((workout) => {
-        const key = workout.nome || workout.name || workout.id_treino;
-        if (seenWorkouts.has(key)) {
-          return false;
-        }
-        seenWorkouts.add(key);
-        return true;
-      });
-      
-      setRecentWorkouts(uniqueWorkouts.slice(0, 3) || []);
-      
+      const historyItems: any[] = Array.isArray(history?.treinos) ? history.treinos
+        : Array.isArray(history) ? history : [];
+
+      // Usar as últimas 3 sessões reais (com data e id_treino)
+      const recentSessions = [...historyItems]
+        .filter((s: any) => s.id_treino && (s.data_inicio || s.data))
+        .sort((a: any, b: any) => {
+          const dateA = new Date(a.data_inicio || a.data).getTime();
+          const dateB = new Date(b.data_inicio || b.data).getTime();
+          return dateB - dateA;
+        })
+        .slice(0, 3);
+
+      // Fallback: se não há sessões, usar templates (sem duplicados)
+      if (recentSessions.length === 0) {
+        const workoutsList = Array.isArray(workouts) ? workouts : [];
+        const seenWorkouts = new Set<string>();
+        const uniqueWorkouts = workoutsList.filter((w: any) => {
+          const key = w.nome || w.name || w.id_treino;
+          if (seenWorkouts.has(key)) return false;
+          seenWorkouts.add(key);
+          return true;
+        });
+        setRecentWorkouts(uniqueWorkouts.slice(0, 3));
+      } else {
+        setRecentWorkouts(recentSessions);
+      }
+
       // Actualizar streak week com dados reais
       const weekDays = generateStreakWeek();
-      
+
       // Extrair datas dos treinos do histórico
       const workoutDates = new Set(
-        (Array.isArray(historyItems) ? historyItems : []).map((item: any) => {
+        historyItems.map((item: any) => {
           const dateStr = item.data_inicio || item.data;
           if (dateStr) {
-            // Converter para formato YYYY-MM-DD local (não UTC)
             const date = new Date(dateStr);
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -111,18 +121,13 @@ export default function Home() {
             return `${year}-${month}-${day}`;
           }
           return null;
-        }).filter(Boolean)
+        }).filter(Boolean) as string[]
       );
-      
-      console.log("Datas de treinos encontradas:", Array.from(workoutDates));
-      console.log("Dias da semana para validação:", weekDays.map(d => d.date));
       
       // Marcar dias que têm treinos
       weekDays.forEach((day) => {
         day.completed = workoutDates.has(day.date);
       });
-      
-      console.log("Dias com streak marcados:", weekDays.filter(d => d.completed).map(d => d.day));
       
       setStreakHistory(weekDays);
       
@@ -159,6 +164,7 @@ export default function Home() {
           text: "Sim, começar",
           onPress: async () => {
             try {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               router.push({
                 pathname: "/workout/[id]",
                 params: { id: workout.id_treino }
@@ -200,6 +206,19 @@ export default function Home() {
       "#d946ef": theme.backgroundTertiary,
     };
     return colorMap[getStreakColor(streak)] || theme.backgroundTertiary;
+  }
+
+  function formatSessionAge(dateStr: string): string {
+    if (!dateStr) return "";
+    const now = new Date();
+    const then = new Date(dateStr);
+    const diffMs = now.getTime() - then.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return "Hoje";
+    if (diffDays === 1) return "Ontem";
+    if (diffDays < 7) return `Há ${diffDays} dias`;
+    if (diffDays < 30) return `Há ${Math.floor(diffDays / 7)} sem.`;
+    return `Há ${Math.floor(diffDays / 30)} mês`;
   }
 
   function formatTime(seconds: number) {
@@ -365,7 +384,7 @@ export default function Home() {
         <View style={{ paddingHorizontal: 24 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
             <Text style={{ color: theme.text, fontSize: 20, fontWeight: "800", letterSpacing: -0.5 }}>
-              Treinos Recentes
+              Sessões Recentes
             </Text>
             <TouchableOpacity onPress={() => router.push("/(tabs)/workouts")} activeOpacity={0.6}>
               <Text style={{ color: theme.accent, fontSize: 14, fontWeight: "600" }}>
@@ -380,10 +399,10 @@ export default function Home() {
                 <Ionicons name="barbell-outline" size={32} color={theme.textTertiary} />
               </View>
               <Text style={{ color: theme.text, fontWeight: "700", fontSize: 16, marginBottom: 6 }}>
-                Sem treinos ainda
+                Sem sessões ainda
               </Text>
               <Text style={{ color: theme.textSecondary, textAlign: "center", fontSize: 14, lineHeight: 20, marginBottom: 24 }}>
-                Cria o teu primeiro treino e começa a registar o teu progresso
+                Faz o teu primeiro treino e vê o teu progresso aqui
               </Text>
               <TouchableOpacity
                 onPress={() => router.push("/(tabs)/workouts")}
@@ -413,10 +432,12 @@ export default function Home() {
                   <View style={{ flex: 1, padding: 18, flexDirection: "row", alignItems: "center" }}>
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: theme.text, fontWeight: "700", fontSize: 16, letterSpacing: -0.3, marginBottom: 4 }}>
-                        {workout.nome || workout.name || "Treino"}
+                        {workout.nome || workout.nome_treino || workout.name || "Treino"}
                       </Text>
                       <Text style={{ color: theme.textSecondary, fontSize: 13 }}>
-                        {workout.num_exercicios ?? 0} exercícios
+                        {(workout.data_inicio || workout.data)
+                          ? formatSessionAge(workout.data_inicio || workout.data)
+                          : `${workout.num_exercicios ?? 0} exercícios`}
                         {(workout.duracao_segundos || 0) > 0 ? ` · ${formatTime(workout.duracao_segundos)}` : ""}
                       </Text>
                     </View>

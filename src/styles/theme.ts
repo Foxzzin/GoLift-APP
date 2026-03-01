@@ -12,18 +12,18 @@ export const lightTheme = {
   border: '#E5E5EA',
   borderLight: '#F2F2F7',
 
-  primary: '#0066FF',
-  accent: '#0066FF',
+  primary: '#005CE6',
+  accent: '#005CE6',
   accentGreen: '#34C759',
-  accentBlue: '#0066FF',
+  accentBlue: '#005CE6',
 
   streakBase: '#F2F2F7',
 };
 
 export const darkTheme = {
   background: '#080808',
-  backgroundSecondary: '#141414',
-  backgroundTertiary: '#1E1E1E',
+  backgroundSecondary: '#1C1C1E',
+  backgroundTertiary: '#2C2C2E',
 
   text: '#FFFFFF',
   textSecondary: '#8E8E93',
@@ -37,12 +37,24 @@ export const darkTheme = {
   accentGreen: '#30D158',
   accentBlue: '#0A84FF',
 
-  streakBase: '#141414',
+  streakBase: '#1C1C1E',
 };
 
-export function useTheme() {
-  const colorScheme = useColorScheme();
-  return colorScheme === 'dark' ? darkTheme : lightTheme;
-}
+// Escala tipográfica documentada — usar em vez de fontSize inline sempre que possível
+export const typography = {
+  display:   { fontSize: 52, fontWeight: '800' as const, letterSpacing: -2 },
+  title1:    { fontSize: 32, fontWeight: '800' as const, letterSpacing: -1 },
+  title2:    { fontSize: 24, fontWeight: '800' as const, letterSpacing: -0.5 },
+  title3:    { fontSize: 20, fontWeight: '700' as const, letterSpacing: -0.3 },
+  headline:  { fontSize: 17, fontWeight: '600' as const, letterSpacing: -0.2 },
+  body:      { fontSize: 15, fontWeight: '400' as const, letterSpacing: 0 },
+  callout:   { fontSize: 14, fontWeight: '400' as const, letterSpacing: 0 },
+  subhead:   { fontSize: 13, fontWeight: '500' as const, letterSpacing: 0.1 },
+  footnote:  { fontSize: 12, fontWeight: '400' as const, letterSpacing: 0.1 },
+  caption:   { fontSize: 11, fontWeight: '700' as const, letterSpacing: 1, textTransform: 'uppercase' as const },
+};
 
 export type Theme = typeof lightTheme;
+
+// Re-exported from ThemeContext — importar "useTheme" de qualquer um dos dois ficheiros funciona
+export { useTheme, useThemePreference } from '../contexts/ThemeContext';

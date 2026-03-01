@@ -4,6 +4,7 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
+  Pressable,
   ActivityIndicator,
   Alert,
 } from "react-native";
@@ -87,32 +88,37 @@ export default function Upgrade() {
     >
       {/* Header */}
       <View style={{ flexDirection: "row", alignItems: "center", padding: 20, paddingTop: 60 }}>
-        <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}>
+        <Pressable
+          onPress={() => router.back()}
+          style={{ marginRight: 12, padding: 4 }}
+          accessibilityLabel="Voltar"
+          accessibilityRole="button"
+        >
           <Ionicons name="arrow-back" size={24} color={theme.text} />
-        </TouchableOpacity>
-        <Text style={{ fontSize: 22, fontWeight: "700", color: theme.text }}>Planos GoLift</Text>
+        </Pressable>
+        <Text style={{ fontSize: 28, fontWeight: "800", color: theme.text, letterSpacing: -0.5 }}>Planos GoLift</Text>
       </View>
 
       {/* Status atual */}
       {isPro && (
         <View style={{
           marginHorizontal: 20,
-          padding: 14,
-          borderRadius: 12,
-          backgroundColor: theme.accentGreen + "22",
-          borderWidth: 1,
-          borderColor: theme.accentGreen,
+          borderRadius: 20,
+          backgroundColor: theme.accentGreen + "18",
+          overflow: "hidden",
           flexDirection: "row",
           alignItems: "center",
           marginBottom: 8,
+          paddingVertical: 16,
+          paddingHorizontal: 16,
         }}>
-          <Ionicons name="checkmark-circle" size={20} color={theme.accentGreen} />
-          <View style={{ marginLeft: 10 }}>
-            <Text style={{ color: theme.accentGreen, fontWeight: "700", fontSize: 15 }}>
-              Plano GoLift Pro ativo
+          <View style={{ width: 4, position: "absolute", left: 0, top: 0, bottom: 0, backgroundColor: theme.accentGreen }} />
+          <View style={{ marginLeft: 8, flex: 1 }}>
+            <Text style={{ color: theme.accentGreen, fontWeight: "700", fontSize: 15, letterSpacing: 0.2 }}>
+              ✓ Plano GoLift Pro ativo
             </Text>
             {ativoAte && (
-              <Text style={{ color: theme.accentGreen, fontSize: 12, marginTop: 2 }}>
+              <Text style={{ color: theme.accentGreen + "CC", fontSize: 12, marginTop: 3 }}>
                 Válido até {new Date(ativoAte).toLocaleDateString("pt-PT")}
               </Text>
             )}
@@ -122,60 +128,53 @@ export default function Upgrade() {
 
       {/* Hero */}
       <View style={{ alignItems: "center", paddingVertical: 28, paddingHorizontal: 20 }}>
-        <View style={{
-          width: 72, height: 72, borderRadius: 36,
-          backgroundColor: theme.accent + "22",
-          justifyContent: "center", alignItems: "center", marginBottom: 16,
-        }}>
-          <Ionicons name="star" size={36} color={theme.accent} />
-        </View>
-        <Text style={{ fontSize: 26, fontWeight: "800", color: theme.text, textAlign: "center" }}>
+        <Text style={{ fontSize: 13, fontWeight: "700", color: theme.accent, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 12 }}>
           GoLift Pro
         </Text>
-        <Text style={{ fontSize: 14, color: theme.textSecondary, textAlign: "center", marginTop: 8, lineHeight: 22 }}>
-          Desbloqueia relatórios e planos gerados por IA{"\n"}personalizados para os teus objetivos.
+        <Text style={{ fontSize: 52, fontWeight: "800", color: theme.text, letterSpacing: -2, lineHeight: 56 }}>
+          4,99€
+        </Text>
+        <Text style={{ fontSize: 13, color: theme.textSecondary, marginBottom: 4 }}>/mês · cancela quando quiseres</Text>
+        <Text style={{ fontSize: 14, color: theme.textSecondary, textAlign: "center", marginTop: 12, lineHeight: 22 }}>
+          Relatórios e planos de treino gerados por IA{"\n"}personalizados para os teus objetivos.
         </Text>
       </View>
 
-      {/* Cartões de planos */}
-      <View style={{ flexDirection: "row", paddingHorizontal: 16, gap: 12, marginBottom: 28 }}>
+      {/* Comparação Free vs Pro */}
+      <View style={{ paddingHorizontal: 16, gap: 12, marginBottom: 28 }}>
         {/* Free */}
-        <View style={{
-          flex: 1, borderRadius: 16, padding: 18,
-          backgroundColor: theme.backgroundSecondary,
-          borderWidth: 1, borderColor: theme.border,
-        }}>
-          <Text style={{ fontSize: 13, fontWeight: "700", color: theme.textSecondary, marginBottom: 4 }}>FREE</Text>
-          <Text style={{ fontSize: 22, fontWeight: "800", color: theme.text, marginBottom: 14 }}>0€</Text>
+        <View style={{ borderRadius: 20, padding: 20, backgroundColor: theme.backgroundSecondary }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <Text style={{ fontSize: 11, fontWeight: "700", color: theme.textSecondary, letterSpacing: 1, textTransform: "uppercase" }}>FREE</Text>
+            <Text style={{ fontSize: 22, fontWeight: "800", color: theme.textSecondary }}>0€</Text>
+          </View>
           {FREE_FEATURES.map((f, i) => (
-            <View key={i} style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
-              <Ionicons name="checkmark" size={14} color={theme.textSecondary} />
-              <Text style={{ fontSize: 12, color: theme.textSecondary, marginLeft: 6, flex: 1 }}>{f}</Text>
+            <View key={i} style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
+              <Text style={{ fontSize: 14, color: theme.textTertiary, marginRight: 10 }}>○</Text>
+              <Text style={{ fontSize: 13, color: theme.textSecondary, flex: 1 }}>{f}</Text>
             </View>
           ))}
         </View>
 
         {/* Pro */}
-        <View style={{
-          flex: 1, borderRadius: 16, padding: 18,
-          backgroundColor: theme.accent + "15",
-          borderWidth: 2, borderColor: theme.accent,
-        }}>
-          <View style={{
-            backgroundColor: theme.accent, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3,
-            alignSelf: "flex-start", marginBottom: 4,
-          }}>
-            <Text style={{ fontSize: 10, fontWeight: "700", color: "#fff" }}>RECOMENDADO</Text>
-          </View>
-          <Text style={{ fontSize: 13, fontWeight: "700", color: theme.accent, marginBottom: 4 }}>PRO</Text>
-          <View style={{ flexDirection: "row", alignItems: "flex-end", marginBottom: 14 }}>
-            <Text style={{ fontSize: 22, fontWeight: "800", color: theme.text }}>4,99€</Text>
-            <Text style={{ fontSize: 12, color: theme.textSecondary, marginLeft: 2, marginBottom: 3 }}>/mês</Text>
+        <View style={{ borderRadius: 20, padding: 20, backgroundColor: theme.accent + "15", overflow: "hidden" }}>
+          <View style={{ width: 4, position: "absolute", left: 0, top: 0, bottom: 0, backgroundColor: theme.accent }} />
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Text style={{ fontSize: 11, fontWeight: "700", color: theme.accent, letterSpacing: 1, textTransform: "uppercase" }}>PRO</Text>
+              <View style={{ backgroundColor: theme.accent, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 }}>
+                <Text style={{ fontSize: 9, fontWeight: "700", color: "#fff", letterSpacing: 0.5 }}>RECOMENDADO</Text>
+              </View>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "flex-end" }}>
+              <Text style={{ fontSize: 22, fontWeight: "800", color: theme.text }}>4,99€</Text>
+              <Text style={{ fontSize: 12, color: theme.textSecondary, marginLeft: 2, marginBottom: 2 }}>/mês</Text>
+            </View>
           </View>
           {PRO_FEATURES.map((f, i) => (
-            <View key={i} style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
-              <Ionicons name="checkmark-circle" size={14} color={theme.accent} />
-              <Text style={{ fontSize: 12, color: theme.text, marginLeft: 6, flex: 1 }}>{f}</Text>
+            <View key={i} style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
+              <Text style={{ fontSize: 14, color: theme.accent, marginRight: 10 }}>●</Text>
+              <Text style={{ fontSize: 13, color: theme.text, flex: 1 }}>{f}</Text>
             </View>
           ))}
         </View>
@@ -184,32 +183,40 @@ export default function Upgrade() {
       {/* Botão upgrade */}
       {!isPro && (
         <View style={{ paddingHorizontal: 20 }}>
-          <TouchableOpacity
+          <Pressable
             onPress={handleCheckout}
             disabled={checkoutLoading}
-            style={{
+            accessibilityLabel="Subscrever GoLift Pro"
+            accessibilityRole="button"
+            style={({ pressed }) => ({
               backgroundColor: theme.accent,
-              borderRadius: 14,
-              paddingVertical: 16,
+              borderRadius: 16,
+              paddingVertical: 18,
               alignItems: "center",
               flexDirection: "row",
               justifyContent: "center",
               gap: 8,
-            }}
+              opacity: pressed || checkoutLoading ? 0.7 : 1,
+              shadowColor: theme.accent,
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.35,
+              shadowRadius: 16,
+              elevation: 8,
+            })}
           >
             {checkoutLoading ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
               <>
-                <Ionicons name="star" size={18} color="#fff" />
-                <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>
+                <Text style={{ color: "#fff", fontSize: 17, fontWeight: "700" }}>
                   Subscrever GoLift Pro
                 </Text>
+                <Text style={{ color: "#ffffff88", fontSize: 15 }}>→</Text>
               </>
             )}
-          </TouchableOpacity>
-          <Text style={{ textAlign: "center", fontSize: 11, color: theme.textTertiary, marginTop: 10 }}>
-            Pagamento seguro via Stripe. Cancela quando quiseres.
+          </Pressable>
+          <Text style={{ textAlign: "center", fontSize: 11, color: theme.textTertiary, marginTop: 12 }}>
+            Pagamento seguro via Stripe · Cancela quando quiseres
           </Text>
         </View>
       )}

@@ -2,7 +2,7 @@
   "expo": {
     "name": "GoLift",
     "slug": "GoLift",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "golift",
@@ -25,7 +25,7 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"},
+      "favicon": "./assets/images/faviconGoLift.png"},
     "plugins": [
       "expo-router",
       [

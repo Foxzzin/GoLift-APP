@@ -7,13 +7,12 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
-  Modal,
-  FlatList,
+  Pressable,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useAuth } from "../../contexts/AuthContext";
-import { useCommunities } from "../../contexts/CommunitiesContext";
 import { useTheme } from "../../styles/theme";
 import { workoutApi, metricsApi } from "../../services/api";
 
@@ -28,7 +27,6 @@ interface ExercicioAtivo {
   id: number;
   nome: string;
   series: Serie[];
-  expandido: boolean;
   previousSeries?: Serie[]; // Dados do treino anterior
 }
 
@@ -36,7 +34,6 @@ export default function WorkoutActive() {
   const theme = useTheme();
   const { id } = useLocalSearchParams();
   const { user } = useAuth();
-  const { userCommunities, sendMessage } = useCommunities();
   const [loading, setLoading] = useState(true);
   const [workout, setWorkout] = useState<any>(null);
   const [exercicios, setExercicios] = useState<ExercicioAtivo[]>([]);
@@ -44,20 +41,19 @@ export default function WorkoutActive() {
   const [timerPaused, setTimerPaused] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const timerRef = useRef<number | null>(null);
+  const restTimerRef = useRef<number | null>(null);
+  const [restTimer, setRestTimer] = useState<number | null>(null);
+  const REST_DEFAULT = 90; // segundos
 
-  // Partilha de resultados
-  const [showShareResultsModal, setShowShareResultsModal] = useState(false);
-  const [shareResultsData, setShareResultsData] = useState<any>(null);
-  const [sharingToComm, setSharingToComm] = useState(false);
+  // Partilha de resultados — gerida no ecrã summary
 
   useEffect(() => {
     loadWorkout();
     startTimer();
 
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (restTimerRef.current) clearInterval(restTimerRef.current);
     };
   }, []);
 
@@ -118,7 +114,6 @@ export default function WorkoutActive() {
         return {
           id: ex.id_exercicio,
           nome: ex.nome,
-          expandido: false,
           previousSeries,
           series: [
             { numero: 1, repeticoes: "", peso: "", concluida: false },
@@ -136,6 +131,26 @@ export default function WorkoutActive() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function startRestTimer() {
+    if (restTimerRef.current) clearInterval(restTimerRef.current);
+    setRestTimer(REST_DEFAULT);
+    restTimerRef.current = setInterval(() => {
+      setRestTimer((prev) => {
+        if (prev === null || prev <= 1) {
+          clearInterval(restTimerRef.current!);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000) as unknown as number;
+  }
+
+  function skipRestTimer() {
+    if (restTimerRef.current) clearInterval(restTimerRef.current);
+    setRestTimer(null);
   }
 
   function formatarTempo(segundos: number) {
@@ -178,12 +193,8 @@ export default function WorkoutActive() {
     }
   }
 
-  function toggleExpandir(exercicioId: number) {
-    setExercicios(
-      exercicios.map((ex: any) =>
-        ex.id === exercicioId ? { ...ex, expandido: !ex.expandido } : ex
-      )
-    );
+  function toggleExpandir(_exercicioId: number) {
+    // Exercícios sempre visíveis — função mantida por compatibilidade
   }
 
   function atualizarSerie(
@@ -207,6 +218,14 @@ export default function WorkoutActive() {
   }
 
   function toggleSerieConcluida(exercicioId: number, serieIndex: number) {
+    const exercicio = exercicios.find((ex) => ex.id === exercicioId);
+    const serieAtual = exercicio?.series[serieIndex];
+    if (serieAtual && !serieAtual.concluida) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      startRestTimer();
+    } else {
+      skipRestTimer();
+    }
     setExercicios(
       exercicios.map((ex: any) =>
         ex.id === exercicioId
@@ -262,7 +281,6 @@ export default function WorkoutActive() {
   }
 
   async function concluirTreino() {
-    // Verificar se há pelo menos uma série concluída
     const temSeriesConcluidas = exercicios.some((ex: any) =>
       ex.series.some((s: any) => s.concluida)
     );
@@ -278,7 +296,6 @@ export default function WorkoutActive() {
         text: "Concluir",
         onPress: async () => {
           try {
-            // Construir lista de todas as séries concluídas
             const todasAsSeries: { id_exercicio: number; numero_serie: number; repeticoes: number; peso: number }[] = [];
             for (const exercicio of exercicios) {
               for (const serie of exercicio.series.filter((s: any) => s.concluida)) {
@@ -291,31 +308,33 @@ export default function WorkoutActive() {
               }
             }
 
-            // Guardar sessão completa num único request
             await workoutApi.saveSession(user!.id, Number(id), tempoDecorrido, todasAsSeries);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-            // Parar timer
             if (timerRef.current) clearInterval(timerRef.current);
+            if (restTimerRef.current) clearInterval(restTimerRef.current);
 
-            // Mostrar opção de partilha se houver comunidades
-            if (userCommunities.length > 0) {
-              const resultsPayload = {
+            // Calcular volume total e navegar para o ecrã de resumo
+            const volume = todasAsSeries.reduce((acc, s) => acc + s.peso * s.repeticoes, 0);
+            const exerciciosPayload = exercicios
+              .map((ex) => ({
+                nome: ex.nome,
+                series: ex.series
+                  .filter((s) => s.concluida)
+                  .map((s) => ({ reps: parseInt(s.repeticoes) || 0, peso: parseFloat(s.peso) || 0 })),
+              }))
+              .filter((ex) => ex.series.length > 0);
+
+            router.replace({
+              pathname: "/workout/summary",
+              params: {
                 nome: workout?.nome || "Treino",
-                duracao: tempoDecorrido,
-                exercicios: exercicios.map((ex) => ({
-                  nome: ex.nome,
-                  series: ex.series
-                    .filter((s) => s.concluida)
-                    .map((s) => ({ reps: parseInt(s.repeticoes) || 0, peso: parseFloat(s.peso) || 0 })),
-                })).filter((ex) => ex.series.length > 0),
-              };
-              setShareResultsData(resultsPayload);
-              setShowShareResultsModal(true);
-            } else {
-              Alert.alert("Parabéns! 🎉", "Treino concluído com sucesso!", [
-                { text: "OK", onPress: () => router.back() },
-              ]);
-            }
+                duracao: String(tempoDecorrido),
+                totalSeries: String(todasAsSeries.length),
+                volume: String(Math.round(volume)),
+                exercicios: JSON.stringify(exerciciosPayload),
+              },
+            });
           } catch (error) {
             console.error("Erro ao concluir treino:", error);
             Alert.alert("Erro", "Não foi possível guardar o treino");
@@ -325,111 +344,185 @@ export default function WorkoutActive() {
     ]);
   }
 
-  async function sendShareResultsToCommunity(community: any) {
-    if (!shareResultsData || sharingToComm) return;
-    setSharingToComm(true);
-    try {
-      const payload = JSON.stringify({ tipo: "resultado", ...shareResultsData });
-      await sendMessage(community.id, `\u{1F3CB}\uFE0F__SHARE__${payload}`);
-      setShowShareResultsModal(false);
-      Alert.alert("Partilhado! 💪", `Resultados enviados para ${community.nome}`, [
-        { text: "OK", onPress: () => router.back() },
-      ]);
-    } catch {
-      Alert.alert("Erro", "Não foi possível partilhar");
-      setShowShareResultsModal(false);
-      router.back();
-    } finally {
-      setSharingToComm(false);
-    }
-  }
+  // Calcular progresso global
+  const totalSeries = exercicios.reduce((acc: number, ex: any) => acc + ex.series.length, 0);
+  const seriesConcluidas = exercicios.reduce(
+    (acc: number, ex: any) => acc + ex.series.filter((s: any) => s.concluida).length,
+    0
+  );
+  const progressoPct = totalSeries > 0 ? seriesConcluidas / totalSeries : 0;
 
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: theme.background, alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator size="large" color={theme.text} />
-        <Text style={{ color: theme.textSecondary, marginTop: 16 }}>A carregar treino...</Text>
+        <ActivityIndicator size="large" color={theme.accent} />
+        <Text style={{ color: theme.textSecondary, marginTop: 16, fontSize: 15 }}>A carregar treino...</Text>
       </View>
     );
   }
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
-      {/* Header */}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 24, paddingTop: 56, paddingBottom: 16, backgroundColor: theme.backgroundSecondary, borderBottomColor: theme.border, borderBottomWidth: 1 }}>
-        <TouchableOpacity onPress={cancelarTreino} style={{ padding: 8 }}>
-          <Ionicons name="close" size={28} color={theme.text} />
-        </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => setTimerPaused(!timerPaused)}
-          style={{ backgroundColor: theme.backgroundTertiary, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 }}
+      {/* ── Header compacto ── */}
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 56, paddingBottom: 12 }}>
+        <Pressable
+          onPress={cancelarTreino}
+          accessibilityLabel="Cancelar treino"
+          accessibilityRole="button"
+          style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, padding: 8, borderRadius: 12, backgroundColor: theme.backgroundSecondary })}
         >
-          <Text style={{ color: theme.text, fontSize: 20, fontWeight: "bold" }}>
-            {formatarTempo(tempoDecorrido)}
-          </Text>
-        </TouchableOpacity>
+          <Ionicons name="close" size={22} color={theme.textSecondary} />
+        </Pressable>
 
-        <TouchableOpacity
-          onPress={concluirTreino}
-          style={{ backgroundColor: theme.text, paddingHorizontal: 12, paddingVertical: 12, borderRadius: 12 }}
-        >
-          <Ionicons name="checkmark" size={24} color={theme.background} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Título do treino */}
-      <View style={{ paddingHorizontal: 24, paddingVertical: 16 }}>
-        <Text style={{ color: theme.text, fontSize: 20, fontWeight: "bold" }}>
-          {workout?.nome || "Treino"}
-        </Text>
-        <Text style={{ color: theme.textSecondary }}>
-          {exercicios.length} exercícios
-        </Text>
-      </View>
-
-      {/* Lista de exercícios */}
-      <ScrollView style={{ flex: 1, paddingHorizontal: 24 }} contentContainerStyle={{ paddingBottom: 100 }}>
-        {exercicios.map((exercicio: any, index: number) => (
-          <View
-            key={exercicio.id}
-            style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 16, marginBottom: 16, borderColor: theme.border, borderWidth: 1, overflow: "hidden" }}
+        <View style={{ alignItems: "center", flex: 1, marginHorizontal: 12 }}>
+          <Text
+            numberOfLines={1}
+            style={{ color: theme.text, fontSize: 15, fontWeight: "700", letterSpacing: -0.3 }}
           >
-            {/* Header do exercício */}
-            <TouchableOpacity
-              onPress={() => toggleExpandir(exercicio.id)}
-              style={{ flexDirection: "row", alignItems: "flex-start", paddingHorizontal: 16, paddingVertical: 16 }}
-            >
-              <View style={{ backgroundColor: theme.backgroundTertiary, width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center", marginRight: 16, flexShrink: 0 }}>
-                <Text style={{ color: theme.text, fontWeight: "bold" }}>{index + 1}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: theme.text, fontWeight: "600" }}>{exercicio.nome}</Text>
-                <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
-                  {exercicio.series.filter((s: any) => s.concluida).length}/{exercicio.series.length} séries
-                </Text>
-              </View>
-              <Ionicons
-                name={exercicio.expandido ? "chevron-up" : "chevron-down"}
-                size={20}
-                color={theme.textSecondary}
-                style={{ marginLeft: 8, marginTop: 2 }}
-              />
-            </TouchableOpacity>
+            {workout?.nome || "Treino"}
+          </Text>
+          <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 1 }}>
+            {exercicios.length} exercícios
+          </Text>
+        </View>
 
-            {/* Séries (expandido) */}
-            {exercicio.expandido && (
-              <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+        <Pressable
+          onPress={concluirTreino}
+          accessibilityLabel="Concluir treino"
+          accessibilityRole="button"
+          style={({ pressed }) => ({
+            opacity: pressed ? 0.85 : 1,
+            backgroundColor: theme.accent,
+            paddingHorizontal: 16,
+            paddingVertical: 10,
+            borderRadius: 12,
+          })}
+        >
+          <Text style={{ color: "#fff", fontSize: 13, fontWeight: "700" }}>Concluir</Text>
+        </Pressable>
+      </View>
+
+      {/* ── Barra de progresso global ── */}
+      <View style={{ height: 3, backgroundColor: theme.backgroundTertiary, marginHorizontal: 20, borderRadius: 2, marginBottom: 4 }}>
+        <View style={{ height: 3, width: `${progressoPct * 100}%` as any, backgroundColor: theme.accent, borderRadius: 2 }} />
+      </View>
+
+      {/* ── Banner de descanso ── */}
+      {restTimer !== null && (
+        <Pressable
+          onPress={skipRestTimer}
+          accessibilityLabel={`Descanso: ${restTimer} segundos restantes. Toca para saltar.`}
+          accessibilityRole="button"
+          style={({ pressed }) => ({
+            marginHorizontal: 20,
+            marginTop: 8,
+            borderRadius: 16,
+            backgroundColor: "#1E3A5F",
+            padding: 14,
+            opacity: pressed ? 0.8 : 1,
+            overflow: "hidden",
+          })}
+        >
+          {/* Barra de progresso do descanso */}
+          <View style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${(restTimer / REST_DEFAULT) * 100}%` as any, backgroundColor: "#007AFF22", borderRadius: 16 }} />
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons name="timer-outline" size={18} color="#007AFF" />
+              <Text style={{ color: "#fff", fontSize: 13, fontWeight: "700", marginLeft: 8, letterSpacing: 0.2 }}>
+                Descanso
+              </Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              <Text style={{ color: "#007AFF", fontSize: 20, fontWeight: "800", letterSpacing: -0.5 }}>
+                {`${Math.floor(restTimer / 60).toString().padStart(2, "0")}:${(restTimer % 60).toString().padStart(2, "0")}`}
+              </Text>
+              <View style={{ backgroundColor: "#ffffff15", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
+                <Text style={{ color: "#ffffffaa", fontSize: 11, fontWeight: "600" }}>Saltar</Text>
+              </View>
+            </View>
+          </View>
+        </Pressable>
+      )}
+
+      {/* ── Timer Herói ── */}
+      <Pressable
+        onPress={() => setTimerPaused(!timerPaused)}
+        accessibilityLabel={timerPaused ? "Retomar cronómetro" : "Pausar cronómetro"}
+        accessibilityRole="button"
+        style={({ pressed }) => ({
+          alignItems: "center",
+          paddingVertical: 20,
+          opacity: pressed ? 0.7 : 1,
+        })}
+      >
+        <Text style={{ color: theme.text, fontSize: 52, fontWeight: "800", letterSpacing: -2, lineHeight: 56 }}>
+          {formatarTempo(tempoDecorrido)}
+        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4 }}>
+          <Ionicons
+            name={timerPaused ? "play-circle" : "pause-circle"}
+            size={16}
+            color={timerPaused ? theme.accent : theme.textSecondary}
+          />
+          <Text style={{ color: timerPaused ? theme.accent : theme.textSecondary, fontSize: 12, fontWeight: "600", marginLeft: 4 }}>
+            {timerPaused ? "PAUSADO" : "EM CURSO"}
+          </Text>
+        </View>
+      </Pressable>
+
+      {/* ── Lista de exercícios (sempre aberta) ── */}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}
+        keyboardShouldPersistTaps="handled"
+      >
+        {exercicios.map((exercicio: any, index: number) => {
+          const concluidas = exercicio.series.filter((s: any) => s.concluida).length;
+          const todasConcluidas = concluidas === exercicio.series.length && exercicio.series.length > 0;
+
+          return (
+            <View
+              key={exercicio.id}
+              style={{
+                backgroundColor: theme.backgroundSecondary,
+                borderRadius: 20,
+                marginBottom: 14,
+                overflow: "hidden",
+                flexDirection: "row",
+              }}
+            >
+              {/* Stripe lateral */}
+              <View style={{ width: 4, backgroundColor: todasConcluidas ? theme.accentGreen : theme.accent }} />
+
+              <View style={{ flex: 1, padding: 16 }}>
+                {/* Header do exercício */}
+                <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 14 }}>
+                  <View style={{
+                    width: 28, height: 28, borderRadius: 8,
+                    backgroundColor: todasConcluidas ? theme.accentGreen + "20" : theme.accent + "18",
+                    alignItems: "center", justifyContent: "center", marginRight: 10,
+                  }}>
+                    <Text style={{ color: todasConcluidas ? theme.accentGreen : theme.accent, fontSize: 12, fontWeight: "800" }}>
+                      {index + 1}
+                    </Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: theme.text, fontSize: 15, fontWeight: "700", letterSpacing: -0.3 }}>
+                      {exercicio.nome}
+                    </Text>
+                    <Text style={{ color: todasConcluidas ? theme.accentGreen : theme.textSecondary, fontSize: 12, marginTop: 1 }}>
+                      {concluidas}/{exercicio.series.length} séries{todasConcluidas ? " ✓" : ""}
+                    </Text>
+                  </View>
+                </View>
+
                 {/* Header da tabela */}
-                <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderBottomColor: theme.border, borderBottomWidth: 1 }}>
-                  <Text style={{ color: theme.textSecondary, fontSize: 12, width: 64 }}>Série</Text>
-                  <Text style={{ color: theme.textSecondary, fontSize: 12, flex: 1, textAlign: "center" }}>
-                    Peso (kg)
-                  </Text>
-                  <Text style={{ color: theme.textSecondary, fontSize: 12, flex: 1, textAlign: "center" }}>
-                    Reps
-                  </Text>
-                  <View style={{ width: 48 }} />
+                <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+                  <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase", width: 36 }}>Nº</Text>
+                  <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase", flex: 1, textAlign: "center" }}>KG</Text>
+                  <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase", flex: 1, textAlign: "center" }}>REPS</Text>
+                  <View style={{ width: 44 }} />
                 </View>
 
                 {/* Séries */}
@@ -439,181 +532,142 @@ export default function WorkoutActive() {
                     style={{
                       flexDirection: "row",
                       alignItems: "center",
-                      paddingVertical: 12,
-                      borderBottomColor: theme.border,
-                      borderBottomWidth: 1,
-                      opacity: serie.concluida ? 0.6 : 1,
+                      marginBottom: 8,
+                      opacity: serie.concluida ? 0.55 : 1,
                     }}
                   >
-                    <Text style={{ color: theme.text, fontSize: 14, fontWeight: "500", width: 64 }}>
+                    <Text style={{ color: theme.textTertiary, fontSize: 13, fontWeight: "600", width: 36 }}>
                       {serie.numero}
                     </Text>
-                    <View style={{ flex: 1, paddingHorizontal: 8, position: "relative" }}>
+                    <View style={{ flex: 1, paddingRight: 6 }}>
                       <TextInput
-                        style={{ backgroundColor: theme.backgroundTertiary, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, color: theme.text, textAlign: "center" }}
+                        style={{
+                          backgroundColor: theme.backgroundTertiary,
+                          borderRadius: 10,
+                          paddingHorizontal: 10,
+                          paddingVertical: 9,
+                          color: theme.text,
+                          textAlign: "center",
+                          fontSize: 15,
+                          fontWeight: "600",
+                        }}
                         placeholder={getPlaceholder(exercicio.id, serieIndex, "peso")}
-                        placeholderTextColor={theme.textSecondary}
+                        placeholderTextColor={theme.accent + "55"}
                         keyboardType="decimal-pad"
                         value={serie.peso}
-                        onChangeText={(v: string) => {
-                          atualizarSerie(exercicio.id, serieIndex, "peso", v);
-                          if (v.length > 0) setFocusedField(null); // Limpar dados anteriores quando começa a digitar
-                        }}
+                        onChangeText={(v: string) => atualizarSerie(exercicio.id, serieIndex, "peso", v)}
                         onFocus={() => setFocusedField(`peso-${exercicio.id}-${serieIndex}`)}
                         onBlur={() => setFocusedField(null)}
                         editable={!serie.concluida}
                       />
                     </View>
-                    <View style={{ flex: 1, paddingHorizontal: 8 }}>
+                    <View style={{ flex: 1, paddingLeft: 6 }}>
                       <TextInput
-                        style={{ backgroundColor: theme.backgroundTertiary, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, color: theme.text, textAlign: "center" }}
+                        style={{
+                          backgroundColor: theme.backgroundTertiary,
+                          borderRadius: 10,
+                          paddingHorizontal: 10,
+                          paddingVertical: 9,
+                          color: theme.text,
+                          textAlign: "center",
+                          fontSize: 15,
+                          fontWeight: "600",
+                        }}
                         placeholder={getPlaceholder(exercicio.id, serieIndex, "repeticoes")}
-                        placeholderTextColor={theme.textSecondary}
+                        placeholderTextColor={theme.accent + "55"}
                         keyboardType="number-pad"
                         value={serie.repeticoes}
-                        onChangeText={(v: string) => {
-                          atualizarSerie(exercicio.id, serieIndex, "repeticoes", v);
-                          if (v.length > 0) setFocusedField(null); // Limpar dados anteriores quando começa a digitar
-                        }}
+                        onChangeText={(v: string) => atualizarSerie(exercicio.id, serieIndex, "repeticoes", v)}
                         onFocus={() => setFocusedField(`reps-${exercicio.id}-${serieIndex}`)}
                         onBlur={() => setFocusedField(null)}
                         editable={!serie.concluida}
                       />
                     </View>
-                    <TouchableOpacity
+                    <Pressable
                       onPress={() => {
-                        autoFillFromPrevious(exercicio.id, serieIndex); // Auto-preencher se não tiver valores
+                        autoFillFromPrevious(exercicio.id, serieIndex);
                         toggleSerieConcluida(exercicio.id, serieIndex);
                       }}
-                      style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 12,
+                      accessibilityLabel={serie.concluida ? "Desmarcar série" : "Marcar série como concluída"}
+                      accessibilityRole="button"
+                      style={({ pressed }) => ({
+                        width: 44,
+                        height: 44,
+                        borderRadius: 13,
                         alignItems: "center",
                         justifyContent: "center",
-                        backgroundColor: serie.concluida ? theme.text : theme.backgroundTertiary
-                      }}
+                        marginLeft: 4,
+                        opacity: pressed ? 0.7 : 1,
+                        backgroundColor: serie.concluida ? theme.accentGreen : theme.backgroundTertiary,
+                      })}
                     >
                       <Ionicons
                         name="checkmark"
                         size={20}
-                        color={serie.concluida ? theme.background : theme.textSecondary}
+                        color={serie.concluida ? "#fff" : theme.textSecondary}
                       />
-                    </TouchableOpacity>
+                    </Pressable>
                   </View>
                 ))}
 
                 {/* Adicionar série */}
-                <TouchableOpacity
+                <Pressable
                   onPress={() => adicionarSerie(exercicio.id)}
-                  style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 12, marginTop: 8, borderColor: theme.border, borderWidth: 1, borderStyle: "dashed", borderRadius: 12 }}
-                >
-                  <Ionicons name="add" size={20} color={theme.text} />
-                  <Text style={{ color: theme.text, marginLeft: 8 }}>Adicionar Série</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        ))}
-      </ScrollView>
-
-      {/* Botão flutuante concluir */}
-      <View style={{ position: "absolute", bottom: 32, left: 24, right: 24 }}>
-        <TouchableOpacity
-          onPress={concluirTreino}
-          style={{ backgroundColor: theme.text, paddingVertical: 16, borderRadius: 16, alignItems: "center", flexDirection: "row", justifyContent: "center" }}
-        >
-          <Ionicons name="checkmark-circle" size={24} color={theme.background} />
-          <Text style={{ color: theme.background, fontWeight: "bold", fontSize: 16, marginLeft: 8 }}>
-            Concluir Treino
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Modal: Partilhar Resultados */}
-      <Modal
-        visible={showShareResultsModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => { setShowShareResultsModal(false); router.back(); }}
-      >
-        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" }}>
-          <View style={{ backgroundColor: theme.backgroundSecondary, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: "75%" }}>
-            <View style={{ width: 40, height: 4, backgroundColor: theme.border, borderRadius: 2, alignSelf: "center", marginTop: 12, marginBottom: 16 }} />
-
-            <View style={{ paddingHorizontal: 24, marginBottom: 8 }}>
-              <Text style={{ color: theme.text, fontSize: 22, fontWeight: "700" }}>Parabéns! 🎉</Text>
-              <Text style={{ color: theme.textSecondary, fontSize: 13, marginTop: 4 }}>
-                Treino concluído! Queres partilhar os resultados numa comunidade?
-              </Text>
-            </View>
-
-            {/* Preview do treino */}
-            {shareResultsData && (
-              <View style={{ marginHorizontal: 24, marginBottom: 16, backgroundColor: theme.backgroundTertiary, borderRadius: 14, padding: 14 }}>
-                <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
-                  <Text style={{ color: theme.text, fontWeight: "700", fontSize: 15, flex: 1 }}>{shareResultsData.nome}</Text>
-                  <Text style={{ color: theme.accent, fontSize: 13, fontWeight: "600" }}>
-                    ⏱ {Math.floor(shareResultsData.duracao / 60)} min
-                  </Text>
-                </View>
-                {shareResultsData.exercicios?.slice(0, 3).map((ex: any, i: number) => (
-                  <Text key={i} style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>
-                    • {ex.nome} — {ex.series.length} série{ex.series.length !== 1 ? "s" : ""}
-                  </Text>
-                ))}
-              </View>
-            )}
-
-            <FlatList
-              data={userCommunities}
-              keyExtractor={(item) => String(item.id)}
-              contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}
-              ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-              ListHeaderComponent={
-                <Text style={{ color: theme.textSecondary, fontSize: 12, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>
-                  Escolhe uma comunidade
-                </Text>
-              }
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  onPress={() => sendShareResultsToCommunity(item)}
-                  disabled={sharingToComm}
-                  style={{
+                  accessibilityLabel="Adicionar série"
+                  accessibilityRole="button"
+                  style={({ pressed }) => ({
                     flexDirection: "row",
                     alignItems: "center",
-                    backgroundColor: theme.backgroundTertiary,
-                    borderRadius: 14,
-                    padding: 14,
-                    borderWidth: 1,
-                    borderColor: theme.border,
-                  }}
+                    justifyContent: "center",
+                    paddingVertical: 10,
+                    marginTop: 4,
+                    opacity: pressed ? 0.6 : 1,
+                    borderRadius: 12,
+                    backgroundColor: theme.accent + "12",
+                  })}
                 >
-                  <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: theme.background, justifyContent: "center", alignItems: "center", marginRight: 12 }}>
-                    <Ionicons name="people" size={20} color={theme.accent} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: theme.text, fontWeight: "600", fontSize: 14 }}>{item.nome}</Text>
-                    <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>{item.membros} membros</Text>
-                  </View>
-                  {sharingToComm ? (
-                    <ActivityIndicator size="small" color={theme.accent} />
-                  ) : (
-                    <Ionicons name="send" size={18} color={theme.accent} />
-                  )}
-                </TouchableOpacity>
-              )}
-            />
+                  <Ionicons name="add" size={16} color={theme.accent} />
+                  <Text style={{ color: theme.accent, marginLeft: 6, fontSize: 13, fontWeight: "600" }}>Adicionar Série</Text>
+                </Pressable>
+              </View>
+            </View>
+          );
+        })}
+      </ScrollView>
 
-            <TouchableOpacity
-              onPress={() => { setShowShareResultsModal(false); router.back(); }}
-              style={{ marginHorizontal: 24, marginBottom: 32, paddingVertical: 14, borderRadius: 14, alignItems: "center", borderWidth: 1, borderColor: theme.border }}
-            >
-              <Text style={{ color: theme.textSecondary, fontWeight: "600" }}>Não partilhar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      {/* ── Botão flutuante: Concluir Treino ── */}
+      <View style={{ position: "absolute", bottom: 32, left: 20, right: 20 }}>
+        <Pressable
+          onPress={concluirTreino}
+          accessibilityLabel="Concluir treino"
+          accessibilityRole="button"
+          style={({ pressed }) => ({
+            backgroundColor: theme.accent,
+            paddingVertical: 18,
+            borderRadius: 18,
+            alignItems: "center",
+            flexDirection: "row",
+            justifyContent: "center",
+            opacity: pressed ? 0.88 : 1,
+            shadowColor: theme.accent,
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: 0.38,
+            shadowRadius: 14,
+            elevation: 8,
+          })}
+        >
+          <Ionicons name="checkmark-circle" size={22} color="#fff" />
+          <Text style={{ color: "#fff", fontWeight: "700", fontSize: 17, marginLeft: 8, letterSpacing: -0.3 }}>
+            Concluir Treino
+          </Text>
+          {totalSeries > 0 && (
+            <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: "600", marginLeft: 8 }}>
+              {seriesConcluidas}/{totalSeries}
+            </Text>
+          )}
+        </Pressable>
+      </View>
+
     </View>
   );
 }

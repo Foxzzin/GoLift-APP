@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../styles/theme";
 import { userApi } from "../services/api";
+import * as Haptics from "expo-haptics";
 
 export default function EditProfile() {
   const { user } = useAuth();
@@ -67,7 +68,7 @@ export default function EditProfile() {
         peso: peso ? parseFloat(peso) : null,
         altura: altura ? parseFloat(altura) : null,
       });
-
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert("Sucesso", "Perfil atualizado com sucesso!", [
         { text: "OK", onPress: () => router.back() },
       ]);

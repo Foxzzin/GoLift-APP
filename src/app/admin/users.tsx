@@ -4,9 +4,8 @@ import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
   TextInput,
-  Modal,
   Alert,
   ActivityIndicator,
   RefreshControl,
@@ -16,6 +15,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../styles/theme";
 import { adminApi } from "../../services/api";
 
+const GRUPO_COLORS: Record<string, string> = {};
+
 export default function AdminUsers() {
   const theme = useTheme();
   const [users, setUsers] = useState<any[]>([]);
@@ -23,15 +24,15 @@ export default function AdminUsers() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [generating, setGenerating] = useState<{ [userId: number]: boolean }>({});
+
   async function handleGeneratePlan(user: any) {
     setGenerating((prev) => ({ ...prev, [user.id]: true }));
     try {
-      const diasPorSemana = 4; // Padrão, pode ser customizável
-      const resp = await planoApi.generatePlan(user.id, diasPorSemana);
+      const resp = await planoApi.generatePlan(user.id, 4);
       if (resp.sucesso) {
-        Alert.alert("Plano gerado com sucesso!", `Plano do mês ${resp.mes} criado para ${user.userName}.`);
+        Alert.alert("Plano gerado!", `Plano de ${resp.mes} criado para ${user.userName}.`);
       } else {
-        Alert.alert("Erro", resp.erro || "Não foi possível gerar o plano.");
+        Alert.alert("Erro", "Não foi possível gerar o plano.");
       }
     } catch (err: any) {
       Alert.alert("Erro", err?.message || "Erro ao gerar plano.");
@@ -40,16 +41,14 @@ export default function AdminUsers() {
     }
   }
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
+  useEffect(() => { loadUsers(); }, []);
 
   async function loadUsers() {
     try {
       const data = await adminApi.getUsers();
       setUsers(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("Erro ao carregar utilizadores:", error);
+    } catch {
+      Alert.alert("Erro", "Não foi possível carregar os utilizadores.");
     } finally {
       setLoading(false);
     }
@@ -64,7 +63,7 @@ export default function AdminUsers() {
   async function deleteUser(user: any) {
     Alert.alert(
       "Apagar Utilizador",
-      `Tens a certeza que queres apagar "${user.userName}"?`,
+      `Tens a certeza que queres apagar "${user.userName}"? Esta ação é permanente.`,
       [
         { text: "Cancelar", style: "cancel" },
         {
@@ -73,12 +72,9 @@ export default function AdminUsers() {
           onPress: async () => {
             try {
               const data = await adminApi.deleteUser(user.id);
-              if (data.sucesso) {
-                loadUsers();
-              } else {
-                Alert.alert("Erro", "Erro ao apagar utilizador");
-              }
-            } catch (error) {
+              if (data.sucesso) loadUsers();
+              else Alert.alert("Erro", "Erro ao apagar utilizador");
+            } catch {
               Alert.alert("Erro", "Erro ao apagar utilizador");
             }
           },
@@ -87,16 +83,15 @@ export default function AdminUsers() {
     );
   }
 
-  const filteredUsers = users.filter(
-    (u: any) =>
-      u.userName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredUsers = users.filter((u: any) =>
+    u.userName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    u.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: theme.background, alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator size="large" color={theme.text} />
+        <ActivityIndicator size="large" color={theme.accent} />
       </View>
     );
   }
@@ -104,40 +99,53 @@ export default function AdminUsers() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       {/* Header */}
-      <View style={{ paddingHorizontal: 24, paddingTop: 56, paddingBottom: 16, flexDirection: "row", alignItems: "center" }}>
-        <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
-          <Ionicons name="arrow-back" size={24} color={theme.text} />
-        </TouchableOpacity>
-        <Text style={{ fontSize: 20, fontWeight: "bold", flex: 1, color: theme.text }}>Utilizadores</Text>
-        <View style={{ backgroundColor: theme.backgroundSecondary, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20 }}>
-          <Text style={{ color: theme.text, fontWeight: "600" }}>{users.length}</Text>
+      <View style={{ paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16, flexDirection: "row", alignItems: "center" }}>
+        <Pressable
+          onPress={() => router.back()}
+          accessibilityLabel="Voltar"
+          accessibilityRole="button"
+          style={({ pressed }) => ({
+            width: 36, height: 36, borderRadius: 12,
+            backgroundColor: theme.backgroundSecondary,
+            justifyContent: "center", alignItems: "center",
+            marginRight: 14, opacity: pressed ? 0.7 : 1,
+          })}
+        >
+          <Ionicons name="arrow-back" size={20} color={theme.text} />
+        </Pressable>
+        <Text style={{ fontSize: 22, fontWeight: "800", flex: 1, color: theme.text, letterSpacing: -0.6 }}>Utilizadores</Text>
+        <View style={{ backgroundColor: theme.accent + "20", borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5 }}>
+          <Text style={{ color: theme.accent, fontWeight: "700", fontSize: 13 }}>{users.length}</Text>
         </View>
       </View>
 
       {/* Search */}
-      <View style={{ paddingHorizontal: 24, marginBottom: 16 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: theme.backgroundSecondary, borderRadius: 12, paddingHorizontal: 16, borderColor: theme.border, borderWidth: 1 }}>
-          <Ionicons name="search" size={20} color={theme.textSecondary} />
+      <View style={{ paddingHorizontal: 20, marginBottom: 16 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: theme.backgroundSecondary, borderRadius: 14, paddingHorizontal: 16 }}>
+          <Ionicons name="search" size={18} color={theme.textSecondary} />
           <TextInput
-            style={{ flex: 1, paddingVertical: 12, paddingHorizontal: 12, color: theme.text }}
+            style={{ flex: 1, paddingVertical: 12, paddingHorizontal: 10, color: theme.text, fontSize: 15 }}
             placeholder="Pesquisar utilizadores..."
-            placeholderTextColor={theme.textSecondary}
+            placeholderTextColor={theme.textTertiary}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
+          {searchQuery.length > 0 && (
+            <Pressable onPress={() => setSearchQuery("")} accessibilityRole="button" accessibilityLabel="Limpar pesquisa">
+              <Ionicons name="close-circle" size={18} color={theme.textTertiary} />
+            </Pressable>
+          )}
         </View>
       </View>
 
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 20 }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />
-        }
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.accent} />}
       >
         {filteredUsers.length === 0 ? (
-          <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 16, padding: 32, alignItems: "center", borderColor: theme.border, borderWidth: 1, borderStyle: "dashed" }}>
-            <Ionicons name="people-outline" size={48} color={theme.textSecondary} />
-            <Text style={{ color: theme.textSecondary, marginTop: 16, textAlign: "center" }}>
+          <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 20, padding: 48, alignItems: "center" }}>
+            <Ionicons name="people-outline" size={48} color={theme.textTertiary} style={{ marginBottom: 16 }} />
+            <Text style={{ color: theme.textSecondary, fontSize: 15, fontWeight: "600", textAlign: "center" }}>
               Nenhum utilizador encontrado
             </Text>
           </View>
@@ -146,82 +154,93 @@ export default function AdminUsers() {
             {filteredUsers.map((user: any, index: number) => (
               <View
                 key={user.id || index}
-                style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 16, padding: 16, borderColor: theme.border, borderWidth: 1 }}
+                style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 20, padding: 16 }}
               >
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <View
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 12,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginRight: 16,
-                      backgroundColor: user.id_tipoUser === 1 ? theme.backgroundTertiary : theme.backgroundSecondary,
-                    }}
-                  >
-                    <Ionicons
-                      name={user.id_tipoUser === 1 ? "shield" : "person"}
-                      size={24}
-                      color={theme.text}
-                    />
+                {/* User header row */}
+                <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
+                  <View style={{
+                    width: 46, height: 46, borderRadius: 14,
+                    backgroundColor: user.id_tipoUser === 1 ? "#EF444420" : theme.accent + "20",
+                    justifyContent: "center", alignItems: "center", marginRight: 14,
+                  }}>
+                    <Text style={{ fontSize: 18, fontWeight: "800", color: user.id_tipoUser === 1 ? "#EF4444" : theme.accent }}>
+                      {(user.userName || "?")[0].toUpperCase()}
+                    </Text>
                   </View>
                   <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: "row", alignItems: "center" }}>
-                      <Text style={{ color: theme.text, fontWeight: "bold", fontSize: 18 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <Text style={{ color: theme.text, fontWeight: "700", fontSize: 16, letterSpacing: -0.2 }}>
                         {user.userName}
                       </Text>
                       {user.id_tipoUser === 1 && (
-                        <View style={{ backgroundColor: theme.backgroundTertiary, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginLeft: 8 }}>
-                          <Text style={{ color: theme.textSecondary, fontSize: 12 }}>Admin</Text>
+                        <View style={{ backgroundColor: "#EF444420", borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 }}>
+                          <Text style={{ color: "#EF4444", fontSize: 10, fontWeight: "700" }}>ADMIN</Text>
                         </View>
                       )}
                     </View>
-                    <Text style={{ color: theme.textSecondary, fontSize: 14 }}>{user.email}</Text>
+                    <Text style={{ color: theme.textSecondary, fontSize: 13, marginTop: 2 }} numberOfLines={1}>{user.email}</Text>
                   </View>
-                  <TouchableOpacity
-                    onPress={() => deleteUser(user)}
-                    style={{ padding: 8 }}
-                    accessibilityLabel="Apagar utilizador"
-                    accessibilityRole="button"
-                  >
-                    <Ionicons name="trash-outline" size={20} color={theme.text} />
-                  </TouchableOpacity>
-                  {/* Botão Gerar Plano (apenas para admins) */}
-                  {user.id_tipoUser !== 1 && (
-                    <TouchableOpacity
-                      onPress={() => handleGeneratePlan(user)}
-                      className="ml-2 px-3 py-2 rounded bg-[#10b981] active:opacity-70"
-                      disabled={!!generating[user.id]}
-                      accessibilityLabel="Gerar plano de treino para este utilizador"
-                      accessibilityRole="button"
-                    >
-                      {generating[user.id] ? (
-                        <ActivityIndicator size={16} color="#fff" />
-                      ) : (
-                        <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 14 }}>Gerar Plano</Text>
-                      )}
-                    </TouchableOpacity>
-                  )}
                 </View>
 
-                {/* Info extra */}
-                <View style={{ flexDirection: "row", marginTop: 12, gap: 16, flexWrap: 'wrap' }}>
-                  {user.idade != null && (
-                    <Text style={{ color: theme.textSecondary, fontSize: 14 }}>
-                      {`🎂 ${user.idade} anos`}
-                    </Text>
+                {/* Stats row */}
+                {(user.idade != null || user.peso != null || user.altura != null) && (
+                  <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
+                    {user.idade != null && (
+                      <View style={{ backgroundColor: theme.backgroundTertiary, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
+                        <Text style={{ color: theme.textSecondary, fontSize: 12, fontWeight: "600" }}>{user.idade} anos</Text>
+                      </View>
+                    )}
+                    {user.peso != null && (
+                      <View style={{ backgroundColor: theme.backgroundTertiary, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
+                        <Text style={{ color: theme.textSecondary, fontSize: 12, fontWeight: "600" }}>{user.peso} kg</Text>
+                      </View>
+                    )}
+                    {user.altura != null && (
+                      <View style={{ backgroundColor: theme.backgroundTertiary, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
+                        <Text style={{ color: theme.textSecondary, fontSize: 12, fontWeight: "600" }}>{user.altura} cm</Text>
+                      </View>
+                    )}
+                  </View>
+                )}
+
+                {/* Actions */}
+                <View style={{ flexDirection: "row", gap: 10 }}>
+                  {user.id_tipoUser !== 1 && (
+                    <Pressable
+                      onPress={() => handleGeneratePlan(user)}
+                      disabled={!!generating[user.id]}
+                      accessibilityLabel="Gerar plano IA"
+                      accessibilityRole="button"
+                      style={({ pressed }) => ({
+                        flex: 1, paddingVertical: 10,
+                        borderRadius: 12,
+                        backgroundColor: "#8B5CF620",
+                        flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
+                        opacity: pressed || !!generating[user.id] ? 0.7 : 1,
+                      })}
+                    >
+                      {generating[user.id]
+                        ? <ActivityIndicator size={14} color="#8B5CF6" />
+                        : <Ionicons name="sparkles-outline" size={14} color="#8B5CF6" />
+                      }
+                      <Text style={{ color: "#8B5CF6", fontWeight: "700", fontSize: 13 }}>Plano IA</Text>
+                    </Pressable>
                   )}
-                  {user.peso != null && (
-                    <Text style={{ color: theme.textSecondary, fontSize: 14 }}>
-                      {`⚖️ ${user.peso} kg`}
-                    </Text>
-                  )}
-                  {user.altura != null && (
-                    <Text style={{ color: theme.textSecondary, fontSize: 14 }}>
-                      {`📏 ${user.altura} cm`}
-                    </Text>
-                  )}
+                  <Pressable
+                    onPress={() => deleteUser(user)}
+                    accessibilityLabel="Apagar utilizador"
+                    accessibilityRole="button"
+                    style={({ pressed }) => ({
+                      paddingVertical: 10, paddingHorizontal: 18,
+                      borderRadius: 12,
+                      backgroundColor: "#EF444420",
+                      flexDirection: "row", alignItems: "center", gap: 6,
+                      opacity: pressed ? 0.7 : 1,
+                    })}
+                  >
+                    <Ionicons name="trash-outline" size={14} color="#EF4444" />
+                    <Text style={{ color: "#EF4444", fontWeight: "700", fontSize: 13 }}>Apagar</Text>
+                  </Pressable>
                 </View>
               </View>
             ))}

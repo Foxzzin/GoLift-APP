@@ -4,18 +4,21 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
+  Pressable,
   Modal,
   TextInput,
   ActivityIndicator,
   FlatList,
   RefreshControl,
   Switch,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useCommunities } from "../../contexts/CommunitiesContext";
 import { useTheme } from "../../styles/theme";
 import { useAuth } from "../../contexts/AuthContext";
+import * as Haptics from "expo-haptics";
 
 export default function Communities() {
   const theme = useTheme();
@@ -225,12 +228,12 @@ export default function Communities() {
 
   const handleCreateCommunity = async () => {
     if (!communityName.trim() || !communityDesc.trim()) {
-      alert("Por favor, preencha nome e descrição");
+      Alert.alert("Aviso", "Por favor, preenche o nome e a descrição");
       return;
     }
 
     if (!user?.id) {
-      alert("Erro: Utilizador não identificado");
+      Alert.alert("Erro", "Utilizador não identificado");
       return;
     }
 
@@ -239,6 +242,7 @@ export default function Communities() {
       
       // Use the API from CommunitiesContext (which sends JSON, not FormData)
       await createCommunity(communityName, communityDesc, communityPais || undefined, communityPrivada);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       
       // Reset form
       setCommunityName("");
@@ -246,10 +250,10 @@ export default function Communities() {
       setCommunityPais("");
       setCommunityPrivada(false);
       setShowModal(false);
-      alert("Comunidade criada com sucesso! Já está visível para todos.");
+      Alert.alert("Comunidade criada! ✓", "A tua comunidade já está visível para todos.");
     } catch (error) {
       console.error("Erro:", error);
-      alert(error instanceof Error ? error.message : "Erro ao criar comunidade");
+      Alert.alert("Erro", error instanceof Error ? error.message : "Erro ao criar comunidade");
     } finally {
       setUploading(false);
     }
@@ -258,9 +262,10 @@ export default function Communities() {
   const handleJoinCommunity = async (communityId: number) => {
     try {
       await joinCommunity(communityId);
-      alert("Entrou na comunidade com sucesso!");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert("Entrou! ✓", "Já fazes parte desta comunidade.");
     } catch (error) {
-      alert("Erro ao entrar na comunidade");
+      Alert.alert("Erro", "Não foi possível entrar na comunidade");
     }
   };
 
@@ -270,89 +275,77 @@ export default function Communities() {
       style={{ flex: 1 }}
     >
       {userCommunities.length === 0 ? (
-        <View style={{ padding: 24, alignItems: "center", marginTop: 60 }}>
-          <Ionicons name="people-outline" size={56} color={theme.textTertiary} />
-          <Text style={{ color: theme.textSecondary, marginTop: 16, fontSize: 16, fontWeight: "600" }}>
+        <View style={{ padding: 24, alignItems: "center", marginTop: 80 }}>
+          <Text style={{ fontSize: 52, marginBottom: 16 }}>👥</Text>
+          <Text style={{ color: theme.text, fontSize: 18, fontWeight: "700", textAlign: "center", marginBottom: 8 }}>
             Sem comunidades ainda
           </Text>
-          <Text style={{ color: theme.textTertiary, marginTop: 8, textAlign: "center", fontSize: 13 }}>
-            Explore comunidades ou crie uma nova
+          <Text style={{ color: theme.textSecondary, textAlign: "center", fontSize: 14, lineHeight: 20, marginBottom: 24 }}>
+            Explora comunidades existentes{"\n"}ou cria a tua própria.
           </Text>
-          <TouchableOpacity
+          <Pressable
             onPress={() => setActiveTab("discover")}
-            style={{
-              marginTop: 20,
-              paddingHorizontal: 20,
-              paddingVertical: 12,
+            accessibilityLabel="Explorar comunidades"
+            accessibilityRole="button"
+            style={({ pressed }) => ({
+              paddingHorizontal: 28,
+              paddingVertical: 14,
               backgroundColor: theme.accent,
-              borderRadius: 10,
-            }}
+              borderRadius: 14,
+              opacity: pressed ? 0.7 : 1,
+              shadowColor: theme.accent,
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.3,
+              shadowRadius: 12,
+              elevation: 6,
+            })}
           >
-            <Text style={{ color: "white", fontWeight: "bold" }}>
+            <Text style={{ color: "white", fontWeight: "700", fontSize: 15 }}>
               Explorar Comunidades
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       ) : (
         <View style={{ padding: 16 }}>
           {userCommunities.map((community) => (
-            <TouchableOpacity
+            <Pressable
               key={community.id}
               onPress={() => router.push(`/(tabs)/community/${community.id}`)}
-              style={{
+              accessibilityLabel={`Abrir comunidade ${community.nome}`}
+              accessibilityRole="button"
+              style={({ pressed }) => ({
                 backgroundColor: theme.backgroundSecondary,
-                borderRadius: 12,
+                borderRadius: 20,
                 padding: 16,
                 marginBottom: 12,
                 flexDirection: "row",
                 gap: 12,
-                borderWidth: 1,
-                borderColor: theme.border,
-              }}
+                overflow: "hidden",
+                opacity: pressed ? 0.75 : 1,
+              })}
             >
-              <View
-                style={{
-                  width: 60,
-                  height: 60,
-                  borderRadius: 10,
-                  backgroundColor: theme.backgroundTertiary,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Ionicons name="people" size={32} color={theme.accent} />
+              <View style={{ width: 4, position: "absolute", left: 0, top: 0, bottom: 0, backgroundColor: theme.accent }} />
+              <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: theme.backgroundTertiary, alignItems: "center", justifyContent: "center", marginLeft: 8 }}>
+                <Text style={{ fontSize: 24 }}>👥</Text>
               </View>
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4, gap: 4 }}>
-                  <Text
-                    style={{
-                      color: theme.text,
-                      fontSize: 16,
-                      fontWeight: "bold",
-                    }}
-                  >
+                  <Text style={{ color: theme.text, fontSize: 15, fontWeight: "700" }}>
                     {community.nome}
                   </Text>
                   {!!community.verificada && (
-                    <Ionicons name="checkmark-circle" size={16} color={theme.accent} />
+                    <Text style={{ fontSize: 13, color: theme.accent }}>✓</Text>
                   )}
                 </View>
-                <Text
-                  style={{
-                    color: theme.textSecondary,
-                    fontSize: 12,
-                    marginBottom: 8,
-                  }}
-                  numberOfLines={1}
-                >
+                <Text style={{ color: theme.textSecondary, fontSize: 12, marginBottom: 6 }} numberOfLines={1}>
                   {community.descricao}
                 </Text>
                 <Text style={{ color: theme.textTertiary, fontSize: 11 }}>
                   👥 {community.membros} membros
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color={theme.textTertiary} />
-            </TouchableOpacity>
+              <Text style={{ color: theme.textTertiary, fontSize: 18, alignSelf: "center" }}>›</Text>
+            </Pressable>
           ))}
         </View>
       )}
@@ -365,10 +358,13 @@ export default function Communities() {
       style={{ flex: 1 }}
     >
       {communities.length === 0 ? (
-        <View style={{ padding: 24, alignItems: "center", marginTop: 60 }}>
-          <Ionicons name="search-outline" size={56} color={theme.textTertiary} />
-          <Text style={{ color: theme.textSecondary, marginTop: 16, fontSize: 16, fontWeight: "600" }}>
+        <View style={{ padding: 24, alignItems: "center", marginTop: 80 }}>
+          <Text style={{ fontSize: 52, marginBottom: 16 }}>🔍</Text>
+          <Text style={{ color: theme.text, fontSize: 18, fontWeight: "700", textAlign: "center" }}>
             Nenhuma comunidade disponível
+          </Text>
+          <Text style={{ color: theme.textSecondary, textAlign: "center", fontSize: 14, marginTop: 8 }}>
+            Sê o primeiro a criar uma!
           </Text>
         </View>
       ) : (
@@ -381,25 +377,16 @@ export default function Communities() {
                 key={community.id}
                 style={{
                   backgroundColor: theme.backgroundSecondary,
-                  borderRadius: 12,
+                  borderRadius: 20,
                   padding: 16,
                   marginBottom: 12,
-                  borderWidth: 1,
-                  borderColor: theme.border,
+                  overflow: "hidden",
                 }}
               >
-                <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
-                  <View
-                    style={{
-                      width: 70,
-                      height: 70,
-                      borderRadius: 10,
-                      backgroundColor: theme.backgroundTertiary,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Ionicons name="people" size={40} color={theme.accent} />
+                <View style={{ width: 4, position: "absolute", left: 0, top: 0, bottom: 0, backgroundColor: theme.accent }} />
+                <View style={{ flexDirection: "row", gap: 12, marginBottom: isJoined ? 0 : 12, marginLeft: 8 }}>
+                  <View style={{ width: 56, height: 56, borderRadius: 14, backgroundColor: theme.backgroundTertiary, alignItems: "center", justifyContent: "center" }}>
+                    <Text style={{ fontSize: 26 }}>👥</Text>
                   </View>
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 2, gap: 4 }}>
@@ -413,7 +400,7 @@ export default function Communities() {
                         {community.nome}
                       </Text>
                       {!!community.verificada && (
-                        <Ionicons name="checkmark-circle" size={15} color={theme.accent} />
+                        <Text style={{ fontSize: 13, color: theme.accent }}>✓</Text>
                       )}
                     </View>
                     <Text
@@ -440,19 +427,23 @@ export default function Communities() {
                 </View>
 
                 {!isJoined && (
-                  <TouchableOpacity
+                  <Pressable
                     onPress={() => handleJoinCommunity(community.id)}
-                    style={{
+                    accessibilityLabel={`Entrar na comunidade ${community.nome}`}
+                    accessibilityRole="button"
+                    style={({ pressed }) => ({
                       backgroundColor: theme.accent,
-                      paddingVertical: 10,
-                      borderRadius: 8,
+                      paddingVertical: 12,
+                      borderRadius: 12,
                       alignItems: "center",
-                    }}
+                      marginLeft: 8,
+                      opacity: pressed ? 0.7 : 1,
+                    })}
                   >
-                    <Text style={{ color: "white", fontWeight: "bold", fontSize: 14 }}>
+                    <Text style={{ color: "white", fontWeight: "700", fontSize: 14 }}>
                       Entrar
                     </Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 )}
               </View>
             );
@@ -471,9 +462,10 @@ export default function Communities() {
           style={{
             color: theme.text,
             fontSize: 32,
-            fontWeight: "bold",
+            fontWeight: "800",
             marginTop: 4,
             marginBottom: 20,
+            letterSpacing: -0.5,
           }}
         >
           Comunidades
@@ -481,63 +473,54 @@ export default function Communities() {
 
         {/* Tabs */}
         <View style={{ flexDirection: "row", gap: 8 }}>
-          <TouchableOpacity
+          <Pressable
             onPress={() => setActiveTab("joined")}
-            style={{
+            accessibilityLabel="As minhas comunidades"
+            accessibilityRole="tab"
+            style={({ pressed }) => ({
               flex: 1,
-              paddingVertical: 10,
+              paddingVertical: 12,
               paddingHorizontal: 16,
-              borderRadius: 8,
-              backgroundColor:
-                activeTab === "joined" ? theme.accent : theme.backgroundSecondary,
-            }}
+              borderRadius: 12,
+              backgroundColor: activeTab === "joined" ? theme.accent : theme.backgroundSecondary,
+              opacity: pressed ? 0.8 : 1,
+            })}
           >
-            <Text
-              style={{
-                color: activeTab === "joined" ? "white" : theme.text,
-                fontWeight: "bold",
-                textAlign: "center",
-                fontSize: 13,
-              }}
-            >
+            <Text style={{ color: activeTab === "joined" ? "white" : theme.textSecondary, fontWeight: "700", textAlign: "center", fontSize: 13 }}>
               Minhas
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Pressable>
+          <Pressable
             onPress={() => setActiveTab("discover")}
-            style={{
+            accessibilityLabel="Explorar comunidades"
+            accessibilityRole="tab"
+            style={({ pressed }) => ({
               flex: 1,
-              paddingVertical: 10,
+              paddingVertical: 12,
               paddingHorizontal: 16,
-              borderRadius: 8,
-              backgroundColor:
-                activeTab === "discover" ? theme.accent : theme.backgroundSecondary,
-            }}
+              borderRadius: 12,
+              backgroundColor: activeTab === "discover" ? theme.accent : theme.backgroundSecondary,
+              opacity: pressed ? 0.8 : 1,
+            })}
           >
-            <Text
-              style={{
-                color: activeTab === "discover" ? "white" : theme.text,
-                fontWeight: "bold",
-                textAlign: "center",
-                fontSize: 13,
-              }}
-            >
+            <Text style={{ color: activeTab === "discover" ? "white" : theme.textSecondary, fontWeight: "700", textAlign: "center", fontSize: 13 }}>
               Explorar
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Pressable>
+          <Pressable
             onPress={() => setShowModal(true)}
-            style={{
-              paddingVertical: 10,
+            accessibilityLabel="Criar nova comunidade"
+            accessibilityRole="button"
+            style={({ pressed }) => ({
+              paddingVertical: 12,
               paddingHorizontal: 16,
-              borderRadius: 8,
+              borderRadius: 12,
               backgroundColor: theme.backgroundSecondary,
-              borderWidth: 1,
-              borderColor: theme.accent,
-            }}
+              opacity: pressed ? 0.7 : 1,
+            })}
           >
-            <Ionicons name="add" size={20} color={theme.accent} />
-          </TouchableOpacity>
+            <Text style={{ fontSize: 20, color: theme.accent }}>+</Text>
+          </Pressable>
         </View>
       </View>
 

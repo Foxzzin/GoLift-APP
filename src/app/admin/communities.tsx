@@ -3,7 +3,7 @@ import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
   ActivityIndicator,
   RefreshControl,
   Switch,
@@ -147,29 +147,28 @@ export default function AdminCommunities() {
         key={community.id}
         style={{
           backgroundColor: theme.backgroundSecondary,
-          borderRadius: 14,
+          borderRadius: 20,
           marginBottom: 12,
-          borderWidth: 1,
-          borderColor: community.verificada ? theme.accent : theme.border,
           overflow: "hidden",
         }}
       >
         {/* Card Header */}
-        <TouchableOpacity
+        <Pressable
           onPress={() => handleToggleExpand(community.id)}
-          activeOpacity={0.8}
-          style={{ padding: 16 }}
+          accessibilityLabel={`${isExpanded ? "Recolher" : "Expandir"} ${community.nome}`}
+          accessibilityRole="button"
+          style={({ pressed }) => ({ padding: 16, opacity: pressed ? 0.85 : 1 })}
         >
           <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
             <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Text style={{ color: theme.text, fontSize: 16, fontWeight: "bold" }}>
+              <Text style={{ color: theme.text, fontSize: 16, fontWeight: "700" }}>
                 {community.nome}
               </Text>
               {!!community.verificada && (
-                <Ionicons name="checkmark-circle" size={16} color={theme.accent} />
+                <Text style={{ fontSize: 12, color: theme.accent }}>✓</Text>
               )}
               {!!community.privada && (
-                <Ionicons name="lock-closed" size={14} color={theme.textTertiary} />
+                <Text style={{ fontSize: 12, color: theme.textTertiary }}>🔒</Text>
               )}
             </View>
             <Ionicons
@@ -204,7 +203,7 @@ export default function AdminCommunities() {
               <Text style={{ color: theme.textTertiary, fontSize: 12 }}>{formatDate(community.criada_em)}</Text>
             </View>
           </View>
-        </TouchableOpacity>
+        </Pressable>
 
         {/* Expanded details */}
         {isExpanded && (
@@ -278,20 +277,22 @@ export default function AdminCommunities() {
                   />
                 )}
               </View>
-              <TouchableOpacity
+              <Pressable
                 onPress={() => handleDelete(community.id, community.nome)}
                 disabled={deleting === community.id}
-                style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#ff3b3022", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 }}
+                accessibilityLabel="Eliminar comunidade"
+                accessibilityRole="button"
+                style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#EF444422", borderRadius: 10, paddingHorizontal: 14, paddingVertical: 9, opacity: pressed ? 0.7 : 1 })}
               >
                 {deleting === community.id ? (
                   <ActivityIndicator size="small" color="#ff3b30" />
                 ) : (
                   <>
-                    <Ionicons name="trash-outline" size={15} color="#ff3b30" />
-                    <Text style={{ color: "#ff3b30", fontSize: 13, fontWeight: "600" }}>Eliminar</Text>
+                    <Ionicons name="trash-outline" size={15} color="#EF4444" />
+                    <Text style={{ color: "#EF4444", fontSize: 13, fontWeight: "600" }}>Eliminar</Text>
                   </>
                 )}
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </View>
         )}
@@ -306,21 +307,29 @@ export default function AdminCommunities() {
     >
       {/* Header */}
       <View style={{ paddingHorizontal: 24, paddingTop: 56, paddingBottom: 24 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
-          <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}>
-            <Ionicons name="chevron-back" size={28} color={theme.text} />
-          </TouchableOpacity>
-          <Text style={{ color: theme.text, fontSize: 24, fontWeight: "bold" }}>Comunidades</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
+          <Pressable
+            onPress={() => router.back()}
+            accessibilityLabel="Voltar"
+            accessibilityRole="button"
+            style={({ pressed }) => ({
+              width: 36, height: 36, borderRadius: 12,
+              backgroundColor: theme.backgroundSecondary,
+              justifyContent: "center", alignItems: "center",
+              marginRight: 14, opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <Ionicons name="arrow-back" size={20} color={theme.text} />
+          </Pressable>
+          <Text style={{ color: theme.text, fontSize: 22, fontWeight: "800", letterSpacing: -0.5 }}>Comunidades</Text>
         </View>
         {!loading && (
-          <View style={{ flexDirection: "row", gap: 16 }}>
-            <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8, flexDirection: "row", gap: 6, alignItems: "center" }}>
-              <Ionicons name="people" size={15} color={theme.accent} />
-              <Text style={{ color: theme.text, fontSize: 13 }}>{communities.length} total</Text>
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            <View style={{ backgroundColor: theme.accent + "18", borderRadius: 14, paddingHorizontal: 14, paddingVertical: 8, flexDirection: "row", gap: 6, alignItems: "center" }}>
+              <Text style={{ color: theme.accent, fontSize: 13, fontWeight: "700" }}>{communities.length} total</Text>
             </View>
-            <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8, flexDirection: "row", gap: 6, alignItems: "center" }}>
-              <Ionicons name="checkmark-circle" size={15} color={theme.accent} />
-              <Text style={{ color: theme.text, fontSize: 13 }}>{verified.length} verificadas</Text>
+            <View style={{ backgroundColor: theme.accentGreen + "18", borderRadius: 14, paddingHorizontal: 14, paddingVertical: 8, flexDirection: "row", gap: 6, alignItems: "center" }}>
+              <Text style={{ color: theme.accentGreen, fontSize: 13, fontWeight: "700" }}>{verified.length} verificadas</Text>
             </View>
           </View>
         )}
@@ -332,8 +341,8 @@ export default function AdminCommunities() {
         </View>
       ) : communities.length === 0 ? (
         <View style={{ paddingHorizontal: 24, paddingVertical: 60, alignItems: "center" }}>
-          <Ionicons name="people-outline" size={48} color={theme.textTertiary} />
-          <Text style={{ color: theme.text, marginTop: 12, fontSize: 16, fontWeight: "bold" }}>Sem comunidades</Text>
+          <Text style={{ fontSize: 52, marginBottom: 16 }}>👥</Text>
+          <Text style={{ color: theme.text, fontSize: 18, fontWeight: "700" }}>Sem comunidades</Text>
         </View>
       ) : (
         <View style={{ paddingHorizontal: 20, paddingBottom: 40 }}>

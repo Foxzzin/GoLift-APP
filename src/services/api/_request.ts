@@ -8,7 +8,7 @@ const getAPI_URL = () => SERVER_CONFIG.getFullURL();
 
 export async function request<T>(
   endpoint: string,
-  options?: RequestInit
+  options?: RequestInit & { timeout?: number }
 ): Promise<T> {
   const url = `${getAPI_URL()}${endpoint}`;
   const method = (options?.method || "GET").toUpperCase();
@@ -22,9 +22,10 @@ export async function request<T>(
     headers["Authorization"] = `Bearer ${token}`;
   }
   const data = options?.body ? JSON.parse(options.body as string) : undefined;
+  const timeout = options?.timeout ?? 10000;
 
   try {
-    const response = await axios({ method, url, headers, data, timeout: 30000 });
+    const response = await axios({ method, url, headers, data, timeout });
     return response.data as T;
   } catch (error: any) {
     // Tratamento global de 401: logout automático

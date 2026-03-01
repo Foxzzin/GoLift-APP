@@ -14,6 +14,7 @@ import { Link, router } from "expo-router";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../styles/theme";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { authApi } from "../services/api";
 
 
@@ -46,7 +47,9 @@ export default function Login() {
 
       // 2) Login real
       await login(email, password);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error: any) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert(
         `[${error.name || "Erro"}]`,
         `${error.message}`

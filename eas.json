@@ -6,11 +6,19 @@
     "preview": {
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_IP": "13.48.56.98",
+        "EXPO_PUBLIC_IS_PRODUCTION": "true"
       }
     },
     "production": {
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_IP": "13.48.56.98",
+        "EXPO_PUBLIC_IS_PRODUCTION": "true"
       }
     }
   }

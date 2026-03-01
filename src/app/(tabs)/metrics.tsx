@@ -7,8 +7,8 @@ import {
   ScrollView,
   RefreshControl,
   ActivityIndicator,
-  Dimensions,
   TouchableOpacity,
+  Pressable,
   Modal,
   PanResponder,
 } from "react-native";
@@ -16,9 +16,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../contexts/AuthContext";
 import { metricsApi, userApi, planoApi } from "../../services/api";
 import { useTheme } from "../../styles/theme";
+import { MetricsScreenSkeleton } from "../../components/ui/SkeletonLoader";
 
-const { width } = Dimensions.get("window");
-const DAYS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+const DAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const MONTHS = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
@@ -48,6 +48,10 @@ export default function Metrics() {
   const [workoutDetails, setWorkoutDetails] = useState<any>(null); // Detalhes completos do treino
   const [showWorkoutModal, setShowWorkoutModal] = useState(false);
   const [loadingDetails, setLoadingDetails] = useState(false); // Loading para detalhes
+
+  // Tabs internas
+  const [activeMetricsTab, setActiveMetricsTab] = useState<'progresso' | 'calendario' | 'recordes' | 'ia'>('progresso');
+  const scrollViewRef = useRef<any>(null);
 
   // Meta semanal
   const [weeklyGoal, setWeeklyGoal] = useState(4);
@@ -118,6 +122,15 @@ export default function Metrics() {
     setGoalMode(goalModeDraft);
     setShowGoalModal(false);
     setGoalModalIsNew(false);
+  }
+
+  function handleTabChange(tab: 'progresso' | 'calendario' | 'recordes' | 'ia') {
+    if (tab === 'ia') {
+      router.push('/ai-hub');
+      return;
+    }
+    setActiveMetricsTab(tab);
+    scrollViewRef.current?.scrollTo({ y: 0, animated: false });
   }
 
   async function openGoalEdit() {
@@ -230,9 +243,9 @@ export default function Metrics() {
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
     // Dia da semana do 1º do mês: JS usa 0=Dom,1=Seg...
-    // Converter para Mon=0, Tue=1, ..., Sun=6
+    // Semana começa no Domingo, então Dom=0 → coluna 0, diretamente
     const jsDay = new Date(year, month, 1).getDay();
-    const firstCol = (jsDay + 6) % 7; // Mon=0 ... Sun=6
+    const firstCol = jsDay; // Dom=0, Seg=1, ..., Sáb=6
 
     const days: (number | null)[] = [];
     // Células vazias antes do dia 1
@@ -342,38 +355,7 @@ export default function Metrics() {
     return { weekWorkouts, targetWorkouts, percentage };
   }
 
-  // Renderizar barra de progresso visual
-  function renderProgressBar(percentage: number, height: number = 12) {
-    const filledWidth = (percentage / 100) * (width - 80);
-    
-    return (
-      <View
-        style={{
-          height,
-          backgroundColor: theme.backgroundTertiary,
-          borderRadius: height / 2,
-          overflow: "hidden",
-          marginVertical: 12,
-        }}
-      >
-        <View
-          style={{
-            height: "100%",
-            width: `${percentage}%`,
-            backgroundColor:
-              percentage >= 100
-                ? theme.accentGreen
-                : percentage >= 75
-                ? "#f59e0b"
-                : percentage >= 50
-                ? theme.accentBlue
-                : theme.accent,
-            borderRadius: height / 2,
-          }}
-        />
-      </View>
-    );
-  }
+
 
   // Calcular progresso do peso alvo (comparação entre peso atual e peso alvo)
   // Nota: Para um cálculo preciso seria necessário ter o peso inicial registado no registo
@@ -419,25 +401,54 @@ export default function Metrics() {
     };
   }
 
+  // Últimas 8 semanas de atividade para bar chart
+  function getWeeklyBarData(): { label: string; count: number }[] {
+    const result: { label: string; count: number }[] = [];
+    const now = new Date();
+    for (let w = 7; w >= 0; w--) {
+      const weekStart = new Date(now);
+      // Monday of each past week
+      const dayOfWeek = now.getDay();
+      const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      weekStart.setDate(now.getDate() - daysFromMonday - w * 7);
+      weekStart.setHours(0, 0, 0, 0);
+      let count = 0;
+      for (let d = 0; d < 7; d++) {
+        const date = new Date(weekStart);
+        date.setDate(weekStart.getDate() + d);
+        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+        if (workoutDates.has(key)) count++;
+      }
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      const label = w === 0 ? "Esta" : `${weekStart.getDate()}/${weekStart.getMonth() + 1}`;
+      result.push({ label, count });
+    }
+    return result;
+  }
+
+  const weekProgress = getWeeklyProgress();
+  const weightProg = getWeightProgress();
+  const weeklyBarData = useMemo(() => getWeeklyBarData(), [workoutDates]);
+  const MEDALS = ["🥇", "🥈", "🥉"];
+
   if (loading) {
-    return (
-      <View style={{ flex: 1, backgroundColor: theme.background, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color={theme.accent} />
-      </View>
-    );
+    return <MetricsScreenSkeleton />;
   }
 
   return (
     <View style={{ flex: 1 }}>
       <ScrollView
+        ref={scrollViewRef}
         style={{ flex: 1, backgroundColor: theme.background }}
         contentContainerStyle={{ paddingBottom: 120 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-      {/* Header */}
-      <View style={{ paddingHorizontal: 24, paddingTop: 56, paddingBottom: 8 }}>
+
+      {/* ── Header ── */}
+      <View style={{ paddingHorizontal: 24, paddingTop: 56, paddingBottom: 16 }}>
         <Text style={{ fontSize: 32, fontWeight: "800", color: theme.text, letterSpacing: -1 }}>
           Métricas
         </Text>
@@ -446,683 +457,547 @@ export default function Metrics() {
         </Text>
       </View>
 
-      {/* Banner IA - Relatório Semanal */}
+      {/* ── Tab switcher ── */}
+      <View style={{ flexDirection: "row", paddingHorizontal: 24, gap: 8, marginBottom: 20 }}>
+        {([ 
+          { key: 'progresso', label: 'Progresso' },
+          { key: 'calendario', label: 'Calendário' },
+          { key: 'recordes', label: 'Recordes' },
+          { key: 'ia', label: '✦ IA', accent: '#8B5CF6' },
+        ] as const).map((tab) => (
+          <Pressable
+            key={tab.key}
+            onPress={() => handleTabChange(tab.key)}
+            accessibilityLabel={tab.label}
+            accessibilityRole="tab"
+            style={({ pressed }) => ({
+              flex: 1,
+              paddingVertical: 10,
+              borderRadius: 12,
+              alignItems: "center",
+              backgroundColor: activeMetricsTab === tab.key
+                ? ('accent' in tab ? tab.accent : theme.accent)
+                : tab.key === 'ia'
+                ? '#8B5CF620'
+                : theme.backgroundSecondary,
+              opacity: pressed ? 0.8 : 1,
+            })}
+          >
+            <Text style={{
+              fontSize: 12,
+              fontWeight: "700",
+              color: activeMetricsTab === tab.key
+                ? "#fff"
+                : tab.key === 'ia'
+                ? '#8B5CF6'
+                : theme.textSecondary,
+            }}>
+              {tab.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {/* ── TAB: Progresso ── */}
+      {activeMetricsTab === 'progresso' && (<>
+
+      {/* ── Banner IA ── */}
       {planoTipo === "pago" && (
-        <View style={{ paddingHorizontal: 24, marginBottom: 16 }}>
+        <View style={{ paddingHorizontal: 24, marginBottom: 20 }}>
           <TouchableOpacity
-            onPress={() => router.push("/ai-report")}
+            onPress={() => router.push("/ai-hub")}
             style={{
-              backgroundColor: theme.accent + "18",
-              borderColor: theme.accent,
-              borderWidth: 1,
-              borderRadius: 14,
-              paddingHorizontal: 16,
+              backgroundColor: "#30D15818",
+              borderRadius: 18,
+              paddingHorizontal: 18,
               paddingVertical: 14,
               flexDirection: "row",
               alignItems: "center",
+              borderWidth: 1,
+              borderColor: "#30D15840",
             }}
           >
-            <View style={{
-              backgroundColor: theme.accent + "30",
-              width: 40, height: 40, borderRadius: 10,
-              justifyContent: "center", alignItems: "center", marginRight: 12,
-            }}>
-              <Ionicons name="bar-chart" size={20} color={theme.accent} />
+            <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: "#30D15822", justifyContent: "center", alignItems: "center", marginRight: 12 }}>
+              <Ionicons name="sparkles" size={18} color="#30D158" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ color: theme.text, fontWeight: "700", fontSize: 14 }}>Relatório Semanal IA</Text>
               <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>Análise personalizada da tua semana</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={theme.accent} />
+            <Ionicons name="chevron-forward" size={16} color="#30D158" />
           </TouchableOpacity>
         </View>
       )}
 
-      {/* Stats Overview com Gráficos */}
-      <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-        {/* Progresso Semanal */}
-        <View
-          style={{
-            backgroundColor: theme.backgroundSecondary,
-            borderTopLeftRadius: 24,
-            borderTopRightRadius: 24,
-            borderBottomLeftRadius: 12,
-            borderBottomRightRadius: 12,
-            padding: 20,
-            borderColor: theme.border,
-            borderTopWidth: 1,
-            borderLeftWidth: 1,
-            borderRightWidth: 1,
-            marginBottom: 12,
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
-            <View
-              style={{
-                backgroundColor: theme.backgroundTertiary,
-                width: 40,
-                height: 40,
-                borderRadius: 10,
-                justifyContent: "center",
-                alignItems: "center",
-                marginRight: 12,
-              }}
-            >
-              <Ionicons name="flame" size={20} color={theme.accent} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 14, fontWeight: "600", color: theme.text }}>
-                Meta Semanal
+      {/* ── Hero — Meta Semanal ── */}
+      <View style={{ paddingHorizontal: 24, marginBottom: 14 }}>
+        <View style={{ backgroundColor: theme.accent, borderRadius: 24, padding: 22 }}>
+          <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
+            <View>
+              <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase" }}>
+                META SEMANAL
               </Text>
-              <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
-                Objetivo: {weeklyGoal} treino{weeklyGoal !== 1 ? "s" : ""} por semana
-                {"  "}
-                <Text style={{ color: goalMode === "weekly" ? theme.accent : theme.accentGreen }}>
-                  {goalMode === "weekly" ? "· Semanal" : "· Permanente"}
+              <View style={{ flexDirection: "row", alignItems: "flex-end", marginTop: 4 }}>
+                <Text style={{ color: "#fff", fontSize: 52, fontWeight: "800", letterSpacing: -2, lineHeight: 56 }}>
+                  {weekProgress.weekWorkouts}
                 </Text>
+                <Text style={{ color: "rgba(255,255,255,0.55)", fontSize: 28, fontWeight: "700", letterSpacing: -1, marginBottom: 6, marginLeft: 4 }}>
+                  /{weekProgress.targetWorkouts}
+                </Text>
+              </View>
+              <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 13, marginTop: 2 }}>
+                treino{weekProgress.weekWorkouts !== 1 ? "s" : ""} esta semana
               </Text>
             </View>
             <TouchableOpacity
               onPress={openGoalEdit}
-              style={{
-                backgroundColor: theme.backgroundTertiary,
-                borderRadius: 20,
-                padding: 8,
-              }}
+              accessibilityLabel="Editar meta semanal"
+              accessibilityRole="button"
+              style={{ backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 12, padding: 10, marginTop: 2 }}
             >
-              <Ionicons name="pencil" size={16} color={theme.textSecondary} />
+              <Ionicons name="pencil" size={16} color="#fff" />
             </TouchableOpacity>
           </View>
 
-          {/* Barra de progresso semanal */}
-          {renderProgressBar(getWeeklyProgress().percentage)}
-
-          {/* Informação do progresso */}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <Text style={{ color: theme.text, fontWeight: "bold", fontSize: 16 }}>
-              {getWeeklyProgress().weekWorkouts} / {getWeeklyProgress().targetWorkouts}
-            </Text>
-            <Text
-              style={{
-                color:
-                  getWeeklyProgress().percentage >= 100
-                    ? theme.accentGreen
-                    : getWeeklyProgress().percentage >= 50
-                    ? theme.accentBlue
-                    : theme.accent,
-                fontWeight: "600",
-                fontSize: 14,
-              }}
-            >
-              {Math.round(getWeeklyProgress().percentage)}%
-            </Text>
-          </View>
-        </View>
-
-        {/* Card de Objetivo de Peso (se houver dados) */}
-        {!!profile?.peso && !!profile?.pesoAlvo && !!getWeightProgress() && (
-          <View
-            style={{
-              backgroundColor: theme.backgroundSecondary,
-              borderRadius: 16,
-              padding: 16,
-              borderColor: theme.border,
-              borderWidth: 1,
-              marginTop: 12,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
-              <View
-                style={{
-                  backgroundColor: theme.backgroundTertiary,
-                  width: 40,
-                  height: 40,
-                  borderRadius: 10,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  marginRight: 12,
-                }}
-              >
-                <Ionicons 
-                  name={getWeightProgress()?.direction === "down" ? "trending-down" : "trending-up"} 
-                  size={20} 
-                  color={theme.accentGreen}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 14, fontWeight: "600", color: theme.text }}>
-                  Objetivo de Peso
-                </Text>
-                <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
-                  {profile.pesoAlvo}kg ({getWeightProgress()?.direction === "down" ? "Perder" : "Ganhar"})
-                </Text>
-              </View>
-            </View>
-
-            {/* Barra de progresso de peso */}
-            {renderProgressBar(getWeightProgress()?.percentage || 0)}
-
-            {/* Informação do peso e mensagem */}
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-              <Text style={{ color: theme.text, fontWeight: "bold", fontSize: 16 }}>
-                {profile.peso}kg → {profile.pesoAlvo}kg
-              </Text>
-              <Text
-                style={{
-                  color:
-                    getWeightProgress()?.percentage && getWeightProgress()!.percentage >= 100
-                      ? theme.accentGreen
-                      : theme.accent,
-                  fontWeight: "600",
-                  fontSize: 14,
-                }}
-              >
-                {Math.round(getWeightProgress()?.percentage || 0)}%
-              </Text>
-            </View>
-
-            {/* Mensagem do objetivo */}
-            <Text style={{ color: theme.textSecondary, fontSize: 12, textAlign: "center" }}>
-              {getWeightProgress()?.message}
-            </Text>
-          </View>
-        )}
-
-        {/* Estatísticas */}
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 12 }}>
-          <View
-            style={{
-              width: (width - 60) / 2,
-              backgroundColor: theme.backgroundSecondary,
-              borderRadius: 16,
-              padding: 16,
-              borderColor: theme.border,
-              borderWidth: 1,
-            }}
-          >
-            <View
-              style={{
-                backgroundColor: theme.backgroundTertiary,
-                width: 40,
-                height: 40,
-                borderRadius: 10,
-                justifyContent: "center",
-                alignItems: "center",
-                marginBottom: 12,
-              }}
-            >
-              <Ionicons name="fitness" size={20} color={theme.text} />
-            </View>
-            <Text style={{ fontSize: 24, fontWeight: "bold", color: theme.text }}>
-              {stats.totalWorkouts}
-            </Text>
-            <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
-              Total de Treinos
-            </Text>
+          {/* Barra de progresso */}
+          <View style={{ height: 4, backgroundColor: "rgba(255,255,255,0.25)", borderRadius: 2, marginBottom: 10 }}>
+            <View style={{
+              height: 4,
+              width: `${Math.min(weekProgress.percentage, 100)}%` as any,
+              backgroundColor: weekProgress.percentage >= 100 ? "#30D158" : "#fff",
+              borderRadius: 2,
+            }} />
           </View>
 
-          <View
-            style={{
-              width: (width - 60) / 2,
-              backgroundColor: theme.backgroundSecondary,
-              borderRadius: 16,
-              padding: 16,
-              borderColor: theme.border,
-              borderWidth: 1,
-            }}
-          >
-            <View
-              style={{
-                backgroundColor: theme.backgroundTertiary,
-                width: 40,
-                height: 40,
-                borderRadius: 10,
-                justifyContent: "center",
-                alignItems: "center",
-                marginBottom: 12,
-              }}
-            >
-              <Ionicons name="calendar" size={20} color={theme.text} />
-            </View>
-            <Text style={{ fontSize: 24, fontWeight: "bold", color: theme.text }}>
-              {stats.thisMonth}
-            </Text>
-            <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
-              Este Mês
-            </Text>
-          </View>
-
+          <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, fontWeight: "600" }}>
+            {weekProgress.percentage >= 100
+              ? "✓ Meta atingida esta semana!"
+              : `${weekProgress.targetWorkouts - weekProgress.weekWorkouts} treino${weekProgress.targetWorkouts - weekProgress.weekWorkouts !== 1 ? "s" : ""} para a meta`}
+          </Text>
         </View>
       </View>
 
-      {/* Recordes Pessoais */}
-      <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-        <Text style={{ fontSize: 18, fontWeight: "bold", color: theme.text, marginBottom: 16 }}>
-          🏆 Recordes Pessoais
+      {/* ── Stats grid 2×2 ── */}
+      <View style={{ paddingHorizontal: 24, marginBottom: 20 }}>
+        <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
+          <View style={{ flex: 1, backgroundColor: theme.backgroundSecondary, borderRadius: 20, padding: 18 }}>
+            <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 8 }}>
+              Total
+            </Text>
+            <Text style={{ color: theme.text, fontSize: 32, fontWeight: "800", letterSpacing: -1 }}>
+              {stats.totalWorkouts}
+            </Text>
+            <Text style={{ color: theme.textSecondary, fontSize: 13, marginTop: 2 }}>treinos</Text>
+          </View>
+          <View style={{ flex: 1, backgroundColor: theme.backgroundSecondary, borderRadius: 20, padding: 18 }}>
+            <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 8 }}>
+              Este Mês
+            </Text>
+            <Text style={{ color: theme.text, fontSize: 32, fontWeight: "800", letterSpacing: -1 }}>
+              {stats.thisMonth}
+            </Text>
+            <Text style={{ color: theme.textSecondary, fontSize: 13, marginTop: 2 }}>treinos</Text>
+          </View>
+        </View>
+        <View style={{ flexDirection: "row", gap: 12 }}>
+          <View style={{ flex: 1, backgroundColor: theme.backgroundSecondary, borderRadius: 20, padding: 18 }}>
+            <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 8 }}>
+              Tempo Total
+            </Text>
+            <Text style={{ color: theme.text, fontSize: 28, fontWeight: "800", letterSpacing: -1 }}>
+              {formatTime(stats.totalTime)}
+            </Text>
+            <Text style={{ color: theme.textSecondary, fontSize: 13, marginTop: 2 }}>acumulado</Text>
+          </View>
+          <View style={{ flex: 1, backgroundColor: theme.backgroundSecondary, borderRadius: 20, padding: 18 }}>
+            <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 8 }}>
+              Duração Média
+            </Text>
+            <Text style={{ color: theme.text, fontSize: 28, fontWeight: "800", letterSpacing: -1 }}>
+              {stats.avgDuration ? formatTime(stats.avgDuration) : "—"}
+            </Text>
+            <Text style={{ color: theme.textSecondary, fontSize: 13, marginTop: 2 }}>por treino</Text>
+          </View>
+        </View>
+
+        {/* Objetivo de Peso */}
+        {!!profile?.peso && !!profile?.pesoAlvo && !!weightProg && (
+          <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 20, padding: 18, marginTop: 12 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <View>
+                <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase" }}>
+                  OBJETIVO DE PESO
+                </Text>
+                <Text style={{ color: theme.text, fontSize: 20, fontWeight: "800", letterSpacing: -0.5, marginTop: 4 }}>
+                  {profile.peso}
+                  <Text style={{ color: theme.textSecondary, fontSize: 14, fontWeight: "600" }}>kg</Text>
+                  {"  →  "}
+                  {profile.pesoAlvo}
+                  <Text style={{ color: theme.textSecondary, fontSize: 14, fontWeight: "600" }}>kg</Text>
+                </Text>
+              </View>
+              <View style={{
+                backgroundColor: weightProg.direction === "down" ? "#FF3B30" + "18" : theme.accentGreen + "18",
+                borderRadius: 10, padding: 8,
+              }}>
+                <Ionicons
+                  name={weightProg.direction === "down" ? "trending-down" : "trending-up"}
+                  size={20}
+                  color={weightProg.direction === "down" ? "#FF3B30" : theme.accentGreen}
+                />
+              </View>
+            </View>
+            <View style={{ height: 4, backgroundColor: theme.backgroundTertiary, borderRadius: 2 }}>
+              <View style={{ height: 4, width: `${Math.min(weightProg.percentage, 100)}%` as any, backgroundColor: theme.accentGreen, borderRadius: 2 }} />
+            </View>
+            <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 10 }}>{weightProg.message}</Text>
+          </View>
+        )}
+      </View>
+
+      {/* ── Atividade Semanal (bar chart) ── */}
+      <View style={{ paddingHorizontal: 24, marginBottom: 20 }}>
+        <Text style={{ fontSize: 11, fontWeight: "700", color: theme.textSecondary, letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>
+          Atividade por Semana
+        </Text>
+        <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 20, padding: 18 }}>
+          {(() => {
+            const maxCount = Math.max(...weeklyBarData.map(w => w.count), 1);
+            return (
+              <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", height: 80, gap: 4 }}>
+                {weeklyBarData.map((week, i) => {
+                  const isCurrentWeek = i === weeklyBarData.length - 1;
+                  const pct = week.count / maxCount;
+                  return (
+                    <View key={i} style={{ flex: 1, alignItems: "center", gap: 6 }}>
+                      <View style={{
+                        width: "100%",
+                        height: Math.max(4, pct * 60),
+                        borderRadius: 4,
+                        backgroundColor: isCurrentWeek
+                          ? theme.accent
+                          : week.count > 0
+                            ? theme.accent + "55"
+                            : theme.backgroundTertiary,
+                      }} />
+                      <Text style={{ color: isCurrentWeek ? theme.accent : theme.textTertiary, fontSize: 9, fontWeight: isCurrentWeek ? "700" : "500" }}>
+                        {week.label}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            );
+          })()}
+          <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: theme.backgroundTertiary }}>
+            <Text style={{ color: theme.textTertiary, fontSize: 12 }}>Treinos por semana</Text>
+            <Text style={{ color: theme.accent, fontSize: 12, fontWeight: "700" }}>
+              Esta semana: {weeklyBarData[weeklyBarData.length - 1]?.count ?? 0}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      </>
+      )}
+      {/* ── TAB: Recordes ── */}
+      {activeMetricsTab === 'recordes' && (<>
+
+      {/* ── Recordes Pessoais ── */}
+      <View style={{ paddingHorizontal: 24, marginBottom: 20 }}>
+        <Text style={{ fontSize: 11, fontWeight: "700", color: theme.textSecondary, letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>
+          Recordes Pessoais
         </Text>
 
         {records.length === 0 ? (
-          <View
-            style={{
-              backgroundColor: theme.backgroundSecondary,
-              borderColor: theme.border,
-              borderWidth: 1,
-              borderRadius: 16,
-              paddingVertical: 32,
-              paddingHorizontal: 24,
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <Ionicons name="trophy-outline" size={40} color={theme.textTertiary} />
-            <Text style={{ color: theme.textSecondary, marginTop: 12, textAlign: "center", fontSize: 14 }}>
+          <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 20, paddingVertical: 36, alignItems: "center" }}>
+            <Text style={{ fontSize: 36 }}>🏆</Text>
+            <Text style={{ color: theme.textSecondary, marginTop: 12, fontSize: 14 }}>
               Ainda não tens recordes registados
             </Text>
           </View>
         ) : (
-          <View style={{ gap: 12 }}>
+          <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 20, overflow: "hidden" }}>
             {records.slice(0, 3).map((record, index) => (
-              <View
+              <Pressable
                 key={index}
-                style={{
-                  backgroundColor: theme.backgroundSecondary,
-                  borderColor: theme.accent,
-                  borderWidth: 1,
-                  borderRadius: 16,
-                  padding: 16,
+                onPress={() => {
+                  const exercicioId = record.id_exercicio || record.exercicio_id;
+                  const nome = record.nome_exercicio || record.exercicio || record.exercise || "";
+                  if (exercicioId) {
+                    router.push({ pathname: "/exercise-progress/[id]", params: { id: String(exercicioId), nome } });
+                  }
+                }}
+                accessibilityLabel={`Ver progressão de ${record.nome_exercicio || record.exercicio || ""}`}
+                accessibilityRole="button"
+                style={({ pressed }) => ({
                   flexDirection: "row",
                   alignItems: "center",
-                }}
+                  paddingHorizontal: 18,
+                  paddingVertical: 16,
+                  borderBottomWidth: index < Math.min(records.length, 3) - 1 ? 1 : 0,
+                  borderBottomColor: theme.backgroundTertiary,
+                  opacity: pressed ? 0.7 : 1,
+                })}
               >
-                <View
-                  style={{
-                    backgroundColor: theme.backgroundTertiary,
-                    width: 44,
-                    height: 44,
-                    borderRadius: 10,
-                    justifyContent: "center",
-                    alignItems: "center",
-                    marginRight: 12,
-                  }}
-                >
-                  <Ionicons name="trophy" size={24} color={theme.accent} />
-                </View>
+                <Text style={{ fontSize: 24, marginRight: 14 }}>{MEDALS[index] ?? "🏅"}</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: theme.text, fontWeight: "600", fontSize: 14 }}>
+                  <Text style={{ color: theme.text, fontWeight: "700", fontSize: 15, letterSpacing: -0.2 }}>
                     {record.nome_exercicio || record.exercicio || record.exercise}
                   </Text>
                   {(record.data_serie || record.data) && (
-                    <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 4 }}>
+                    <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>
                       {formatDate(record.data_serie || record.data)}
                     </Text>
                   )}
                 </View>
-                <Text style={{ color: theme.accent, fontWeight: "bold", fontSize: 16 }}>
-                  {record.peso || record.weight} kg
-                </Text>
-              </View>
+                <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 8 }}>
+                  <View style={{ alignItems: "flex-end" }}>
+                    <Text style={{ color: theme.accent, fontSize: 26, fontWeight: "800", letterSpacing: -0.8 }}>
+                      {record.peso || record.weight}
+                    </Text>
+                    <Text style={{ color: theme.textSecondary, fontSize: 12, fontWeight: "600" }}>kg</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={theme.textTertiary} style={{ marginTop: 4 }} />
+                </View>
+              </Pressable>
             ))}
           </View>
         )}
       </View>
 
-      {/* Calendário de Treinos */}
+      </>
+      )}
+      {/* ── TAB: Calendário ── */}
+      {activeMetricsTab === 'calendario' && (<>
+
+      {/* ── Calendário de Treinos ── */}
       <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-        <Text style={{ fontSize: 18, fontWeight: "bold", color: theme.text, marginBottom: 16 }}>
-          📅 Calendário de Treinos
+        <Text style={{ fontSize: 11, fontWeight: "700", color: theme.textSecondary, letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>
+          Calendário de Treinos
         </Text>
-        
-        <View
-          style={{
-            backgroundColor: theme.backgroundSecondary,
-            borderColor: theme.border,
-            borderWidth: 1,
-            borderRadius: 16,
-            padding: 16,
-          }}
-        >
+
+        <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 20, padding: 18 }}>
           {/* Navegação do mês */}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-            <TouchableOpacity onPress={previousMonth} style={{ padding: 8 }}>
-              <Ionicons name="chevron-back" size={24} color={theme.textSecondary} />
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+            <TouchableOpacity
+              onPress={previousMonth}
+              accessibilityLabel="Mês anterior"
+              accessibilityRole="button"
+              style={{ padding: 8, borderRadius: 10, backgroundColor: theme.backgroundTertiary }}
+            >
+              <Ionicons name="chevron-back" size={18} color={theme.text} />
             </TouchableOpacity>
-            <Text style={{ color: theme.text, fontWeight: "600", fontSize: 16 }}>
+            <Text style={{ color: theme.text, fontWeight: "700", fontSize: 16, letterSpacing: -0.3 }}>
               {MONTHS[currentMonth.getMonth()]} {currentMonth.getFullYear()}
             </Text>
-            <TouchableOpacity onPress={nextMonth} style={{ padding: 8 }}>
-              <Ionicons name="chevron-forward" size={24} color={theme.textSecondary} />
+            <TouchableOpacity
+              onPress={nextMonth}
+              accessibilityLabel="Próximo mês"
+              accessibilityRole="button"
+              style={{ padding: 8, borderRadius: 10, backgroundColor: theme.backgroundTertiary }}
+            >
+              <Ionicons name="chevron-forward" size={18} color={theme.text} />
             </TouchableOpacity>
           </View>
-          
+
           {/* Dias da semana */}
-          <View style={{ flexDirection: "row", marginBottom: 12 }}>
+          <View style={{ flexDirection: "row", marginBottom: 8 }}>
             {DAYS.map((day, index) => (
-              <View key={index} style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 8 }}>
-                <Text style={{ color: theme.textSecondary, fontSize: 10, fontWeight: "600" }}>
-                  {day}
+              <View key={index} style={{ flex: 1, alignItems: "center", paddingVertical: 6 }}>
+                <Text style={{ color: theme.textTertiary, fontSize: 10, fontWeight: "700", letterSpacing: 0.5 }}>
+                  {day.toUpperCase()}
                 </Text>
               </View>
             ))}
           </View>
-          
-          {/* Grid do calendário */}
-          <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-            {daysInMonth.map((day, index) => (
-              <TouchableOpacity 
-                key={index} 
-                style={{
-                  width: (width - 80) / 7,
-                  height: 40,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-                onPress={() => handleDayPress(day)}
-                activeOpacity={isWorkoutDay(day) ? 0.7 : 1}
-              >
-                {day && (
-                  <View 
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 6,
+
+          {/* Grid — renderizado por semana para alinhamento perfeito */}
+          {Array.from({ length: Math.ceil(daysInMonth.length / 7) }, (_, weekIndex) => (
+            <View key={weekIndex} style={{ flexDirection: "row" }}>
+              {daysInMonth.slice(weekIndex * 7, weekIndex * 7 + 7).map((day, dayIndex) => (
+                <TouchableOpacity
+                  key={dayIndex}
+                  style={{ flex: 1, height: 40, justifyContent: "center", alignItems: "center" }}
+                  onPress={() => handleDayPress(day)}
+                  activeOpacity={isWorkoutDay(day) ? 0.7 : 1}
+                >
+                  {day !== null && (
+                    <View style={{
+                      width: 34,
+                      height: 34,
+                      borderRadius: 10,
                       justifyContent: "center",
                       alignItems: "center",
                       backgroundColor: isToday(day)
-                        ? theme.accent
+                        ? theme.accentGreen
                         : isWorkoutDay(day)
-                          ? theme.backgroundTertiary
+                          ? theme.accent
                           : "transparent",
-                      borderColor: isWorkoutDay(day) && !isToday(day) ? theme.text : "transparent",
-                      borderWidth: isWorkoutDay(day) && !isToday(day) ? 1 : 0,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        color: isToday(day)
-                          ? "white"
-                          : isWorkoutDay(day)
-                            ? theme.text
-                            : theme.textSecondary,
-                        fontWeight: isToday(day) ? "bold" : "normal",
-                      }}
-                    >
-                      {day}
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-          
+                    }}>
+                      <Text style={{
+                        fontSize: 13,
+                        fontWeight: isToday(day) || isWorkoutDay(day) ? "700" : "400",
+                        color: isToday(day) || isWorkoutDay(day)
+                          ? "#fff"
+                          : theme.textSecondary,
+                      }}>
+                        {day}
+                      </Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          ))}
+
           {/* Legenda */}
-          <View style={{ flexDirection: "row", justifyContent: "center", gap: 24, marginTop: 16, paddingTop: 12, borderTopColor: theme.border, borderTopWidth: 1 }}>
+          <View style={{ flexDirection: "row", justifyContent: "center", gap: 20, marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: theme.backgroundTertiary }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <View style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: theme.accent }} />
+              <View style={{ width: 12, height: 12, borderRadius: 4, backgroundColor: theme.accentGreen }} />
               <Text style={{ color: theme.textSecondary, fontSize: 12 }}>Hoje</Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <View style={{ width: 12, height: 12, borderRadius: 3, borderColor: theme.text, borderWidth: 1 }} />
-              <Text style={{ color: theme.textSecondary, fontSize: 12 }}>Treino</Text>
+              <View style={{ width: 12, height: 12, borderRadius: 4, backgroundColor: theme.accent }} />
+              <Text style={{ color: theme.textSecondary, fontSize: 12 }}>Com treino</Text>
             </View>
           </View>
         </View>
       </View>
+
+      </>
+      )}
+
     </ScrollView>
 
-    {/* Modal de Detalhes do Treino */}
+    {/* ── Modal: Detalhes do Treino ── */}
     <Modal
       visible={showWorkoutModal}
       transparent
-      animationType="none"
+      animationType="slide"
       onRequestClose={() => setShowWorkoutModal(false)}
     >
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "flex-end",
-        }}
-      >
-        {/* Backdrop */}
+      <View style={{ flex: 1, justifyContent: "flex-end" }}>
         <TouchableOpacity
-          style={{
-            position: "absolute",
-            top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.15)",
-          }}
+          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.55)" }}
           activeOpacity={1}
           onPress={() => setShowWorkoutModal(false)}
         />
 
-        {/* Sheet */}
-        <View
-          style={{
-            backgroundColor: theme.backgroundSecondary,
-            borderTopLeftRadius: 24,
-            borderTopRightRadius: 24,
-            maxHeight: "90%",
-            borderColor: theme.border,
-            borderTopWidth: 1,
-            borderLeftWidth: 1,
-            borderRightWidth: 1,
-          }}
-        >
-          {/* Drag handle */}
-          <View
-            {...panResponder.panHandlers}
-            style={{
-              width: 40,
-              height: 4,
-              backgroundColor: theme.textSecondary,
-              borderRadius: 2,
-              alignSelf: "center",
-              marginTop: 16,
-              marginBottom: 4,
-              opacity: 0.3,
-            }}
-          />
+        <View style={{ backgroundColor: theme.backgroundSecondary, borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: "90%" }}>
+          {/* Handle */}
+          <View {...panResponder.panHandlers} style={{ width: 36, height: 4, backgroundColor: theme.border, borderRadius: 2, alignSelf: "center", marginTop: 12, marginBottom: 16 }} />
 
-          {/* Fixed header — outside ScrollView */}
-          <View style={{ paddingHorizontal: 24, paddingTop: 12, paddingBottom: 16, flexDirection: "row", alignItems: "flex-start" }}>
+          {/* Header */}
+          <View style={{ paddingHorizontal: 24, paddingBottom: 16, flexDirection: "row", alignItems: "flex-start" }}>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 24, fontWeight: "700", color: theme.text, marginBottom: 4 }}>
-                {workoutDetails?.nome_treino ||
-                  selectedDayWorkout?.nome_treino ||
-                  selectedDayWorkout?.nome ||
-                  "Treino"}
+              <Text style={{ fontSize: 22, fontWeight: "800", color: theme.text, letterSpacing: -0.5 }}>
+                {workoutDetails?.nome_treino || selectedDayWorkout?.nome_treino || selectedDayWorkout?.nome || "Treino"}
               </Text>
-              {(workoutDetails?.data_inicio ||
-                selectedDayWorkout?.data_inicio ||
-                selectedDayWorkout?.data) && (
-                <Text style={{ fontSize: 13, color: theme.textSecondary }}>
-                  {formatDateTime(
-                    workoutDetails?.data_inicio ||
-                      selectedDayWorkout?.data_inicio ||
-                      selectedDayWorkout?.data
-                  )}
+              {(workoutDetails?.data_inicio || selectedDayWorkout?.data_inicio || selectedDayWorkout?.data) && (
+                <Text style={{ fontSize: 13, color: theme.textSecondary, marginTop: 4 }}>
+                  {formatDateTime(workoutDetails?.data_inicio || selectedDayWorkout?.data_inicio || selectedDayWorkout?.data)}
                 </Text>
               )}
             </View>
             <TouchableOpacity
               onPress={() => setShowWorkoutModal(false)}
-              style={{ backgroundColor: theme.backgroundTertiary, borderRadius: 20, padding: 8, marginLeft: 12 }}
+              accessibilityLabel="Fechar"
+              accessibilityRole="button"
+              style={{ backgroundColor: theme.backgroundTertiary, borderRadius: 12, padding: 8, marginLeft: 12 }}
             >
               <Ionicons name="close" size={18} color={theme.text} />
             </TouchableOpacity>
           </View>
 
-          {/* Scrollable content */}
-          {selectedDayWorkout ? (
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              style={{ flexShrink: 1 }}
-              contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}
-            >
-              {/* Duração em destaque */}
-              {(workoutDetails?.duracao_segundos ||
-                selectedDayWorkout?.duracao_segundos) && (
-                <View
-                  style={{
-                    backgroundColor: theme.backgroundTertiary,
-                    borderRadius: 12,
-                    paddingHorizontal: 16,
-                    paddingVertical: 12,
-                    marginBottom: 24,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 12,
-                  }}
-                >
-                  <Ionicons name="timer" size={20} color={theme.accent} />
-                  <Text style={{ fontSize: 16, color: theme.text, fontWeight: "600" }}>
-                    {formatTime(
-                      workoutDetails?.duracao_segundos ||
-                        selectedDayWorkout?.duracao_segundos
-                    )}
-                  </Text>
-                </View>
-              )}
-
-              {/* Carregando detalhes */}
-              {loadingDetails && (
-                <View style={{ justifyContent: "center", alignItems: "center", padding: 24 }}>
-                  <ActivityIndicator size="large" color={theme.accent} />
-                  <Text style={{ color: theme.textSecondary, marginTop: 12 }}>A carregar...</Text>
-                </View>
-              )}
-
-              {/* Exercícios */}
-              {(workoutDetails?.exercicios || selectedDayWorkout?.exercicios) && 
-               (workoutDetails?.exercicios?.length > 0 || selectedDayWorkout?.exercicios?.length > 0) ? (
-                <View>
-                  {workoutDetails?.exercicios && workoutDetails.exercicios.length > 0 ? (
-                    workoutDetails.exercicios.map((ex: any, index: number) => (
-                      <View key={index} style={{ marginBottom: 20 }}>
-                        {/* Cabeçalho do exercício */}
-                        <Text style={{ fontSize: 16, fontWeight: "700", color: theme.text, marginBottom: 8 }}>
-                          {ex.nome_exercicio || `Exercício ${index + 1}`}
-                        </Text>
-                        {ex.grupo_tipo && (
-                          <Text style={{ fontSize: 12, color: theme.textSecondary, marginBottom: 12 }}>
-                            {ex.grupo_tipo}
-                            {ex.sub_tipo ? ` • ${ex.sub_tipo}` : ""}
-                          </Text>
-                        )}
-
-                        {/* Séries */}
-                        {ex.series && ex.series.length > 0 ? (
-                          <View style={{ gap: 8 }}>
-                            {ex.series.map((serie: any, serieIdx: number) => (
-                              <View
-                                key={serieIdx}
-                                style={{
-                                  flexDirection: "row",
-                                  alignItems: "center",
-                                  backgroundColor: theme.background,
-                                  borderRadius: 10,
-                                  paddingHorizontal: 12,
-                                  paddingVertical: 10,
-                                  gap: 12,
-                                }}
-                              >
-                                <View
-                                  style={{
-                                    width: 28,
-                                    height: 28,
-                                    borderRadius: 6,
-                                    backgroundColor: theme.accent,
-                                    justifyContent: "center",
-                                    alignItems: "center",
-                                  }}
-                                >
-                                  <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>
-                                    {serie.numero_serie}
-                                  </Text>
-                                </View>
-
-                                <View style={{ flex: 1, flexDirection: "row", gap: 20 }}>
-                                  {!!serie.repeticoes && (
-                                    <View>
-                                      <Text style={{ fontSize: 10, color: theme.textSecondary }}>
-                                        REPS
-                                      </Text>
-                                      <Text style={{ fontSize: 13, fontWeight: "600", color: theme.text }}>
-                                        {serie.repeticoes}
-                                      </Text>
-                                    </View>
-                                  )}
-                                  {!!serie.peso && (
-                                    <View>
-                                      <Text style={{ fontSize: 10, color: theme.textSecondary }}>
-                                        PESO
-                                      </Text>
-                                      <Text style={{ fontSize: 13, fontWeight: "600", color: theme.accentGreen }}>
-                                        {serie.peso}kg
-                                      </Text>
-                                    </View>
-                                  )}
-                                </View>
-                              </View>
-                            ))}
-                          </View>
-                        ) : (
-                          <Text style={{ fontSize: 12, color: theme.textSecondary, fontStyle: "italic" }}>
-                            Nenhuma série registada
-                          </Text>
-                        )}
-                      </View>
-                    ))
-                  ) : selectedDayWorkout?.exercicios?.length > 0 ? (
-                    selectedDayWorkout.exercicios.map((ex: any, index: number) => (
-                      <View
-                        key={index}
-                        style={{
-                          backgroundColor: theme.background,
-                          borderRadius: 10,
-                          paddingHorizontal: 12,
-                          paddingVertical: 10,
-                          marginBottom: 8,
-                        }}
-                      >
-                        <Text style={{ fontSize: 14, fontWeight: "600", color: theme.text }}>
-                          {ex.nome || ex.exercicio || `Exercício ${index + 1}`}
-                        </Text>
-                      </View>
-                    ))
-                  ) : null}
-                </View>
-              ) : null}
-
-              {/* Espaço no final */}
-              <View style={{ height: 20 }} />
-            </ScrollView>
-          ) : (
-            <View style={{ paddingHorizontal: 24, paddingBottom: 40 }}>
-              <Text style={{ color: theme.textSecondary, textAlign: "center", fontSize: 14 }}>
-                Nenhum dado disponível
+          {/* Duração destaque */}
+          {(workoutDetails?.duracao_segundos || selectedDayWorkout?.duracao_segundos) && (
+            <View style={{ marginHorizontal: 24, marginBottom: 16, backgroundColor: theme.accent, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, flexDirection: "row", alignItems: "center" }}>
+              <Ionicons name="timer" size={18} color="#fff" />
+              <Text style={{ color: "#fff", fontSize: 15, fontWeight: "700", marginLeft: 8 }}>
+                {formatTime(workoutDetails?.duracao_segundos || selectedDayWorkout?.duracao_segundos)}
               </Text>
             </View>
           )}
+
+          <ScrollView showsVerticalScrollIndicator={false} style={{ flexShrink: 1 }} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}>
+            {loadingDetails && (
+              <View style={{ justifyContent: "center", alignItems: "center", padding: 24 }}>
+                <ActivityIndicator size="large" color={theme.accent} />
+                <Text style={{ color: theme.textSecondary, marginTop: 12 }}>A carregar...</Text>
+              </View>
+            )}
+
+            {workoutDetails?.exercicios && workoutDetails.exercicios.length > 0 ?
+              workoutDetails.exercicios.map((ex: any, index: number) => (
+                <View key={index} style={{ marginBottom: 20 }}>
+                  <Text style={{ fontSize: 15, fontWeight: "700", color: theme.text, letterSpacing: -0.2, marginBottom: 4 }}>
+                    {ex.nome_exercicio || `Exercício ${index + 1}`}
+                  </Text>
+                  {ex.grupo_tipo && (
+                    <Text style={{ fontSize: 11, color: theme.textSecondary, fontWeight: "600", letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 10 }}>
+                      {ex.grupo_tipo}{ex.sub_tipo ? ` · ${ex.sub_tipo}` : ""}
+                    </Text>
+                  )}
+                  {ex.series && ex.series.length > 0 ? (
+                    <View style={{ gap: 6 }}>
+                      {ex.series.map((serie: any, serieIdx: number) => (
+                        <View key={serieIdx} style={{ flexDirection: "row", alignItems: "center", backgroundColor: theme.backgroundTertiary, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10 }}>
+                          <View style={{ width: 24, height: 24, borderRadius: 7, backgroundColor: theme.accent, justifyContent: "center", alignItems: "center", marginRight: 12 }}>
+                            <Text style={{ color: "#fff", fontSize: 11, fontWeight: "800" }}>{serie.numero_serie}</Text>
+                          </View>
+                          <View style={{ flex: 1, flexDirection: "row", gap: 20 }}>
+                            {!!serie.repeticoes && (
+                              <View>
+                                <Text style={{ fontSize: 10, color: theme.textSecondary, fontWeight: "700", letterSpacing: 0.5 }}>REPS</Text>
+                                <Text style={{ fontSize: 14, fontWeight: "700", color: theme.text }}>{serie.repeticoes}</Text>
+                              </View>
+                            )}
+                            {!!serie.peso && (
+                              <View>
+                                <Text style={{ fontSize: 10, color: theme.textSecondary, fontWeight: "700", letterSpacing: 0.5 }}>PESO</Text>
+                                <Text style={{ fontSize: 14, fontWeight: "700", color: theme.accentGreen }}>{serie.peso}kg</Text>
+                              </View>
+                            )}
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  ) : (
+                    <Text style={{ fontSize: 12, color: theme.textSecondary, fontStyle: "italic" }}>Nenhuma série registada</Text>
+                  )}
+                </View>
+              ))
+            : selectedDayWorkout?.exercicios?.length > 0 ?
+              selectedDayWorkout.exercicios.map((ex: any, index: number) => (
+                <View key={index} style={{ backgroundColor: theme.backgroundTertiary, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 8 }}>
+                  <Text style={{ fontSize: 14, fontWeight: "600", color: theme.text }}>{ex.nome || ex.exercicio || `Exercício ${index + 1}`}</Text>
+                </View>
+              ))
+            : !loadingDetails ? (
+              <Text style={{ color: theme.textSecondary, textAlign: "center", fontSize: 14 }}>Nenhum dado disponível</Text>
+            ) : null}
+          </ScrollView>
         </View>
       </View>
     </Modal>
 
-    {/* Modal de Meta Semanal */}
+    {/* ── Modal: Meta Semanal ── */}
     <Modal
       visible={showGoalModal}
       transparent
-      animationType="fade"
+      animationType="slide"
       onRequestClose={() => !goalModalIsNew && setShowGoalModal(false)}
     >
-      <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center", paddingHorizontal: 24 }}>
+      <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.55)" }}>
         <View style={{
           backgroundColor: theme.backgroundSecondary,
-          borderRadius: 24,
+          borderTopLeftRadius: 28,
+          borderTopRightRadius: 28,
           padding: 24,
-          width: "100%",
-          borderColor: theme.border,
-          borderWidth: 1,
+          paddingBottom: 40,
         }}>
+          <View style={{ width: 36, height: 4, backgroundColor: theme.border, borderRadius: 2, alignSelf: "center", marginBottom: 20 }} />
           {/* Título */}
           <Text style={{ fontSize: 20, fontWeight: "700", color: theme.text, marginBottom: 4 }}>
             {goalModalIsNew ? "🎯 Nova semana!" : "Meta Semanal"}
@@ -1230,12 +1105,7 @@ export default function Metrics() {
             {!goalModalIsNew && (
               <TouchableOpacity
                 onPress={() => setShowGoalModal(false)}
-                style={{
-                  flex: 1, padding: 14, borderRadius: 14,
-                  backgroundColor: theme.backgroundTertiary,
-                  alignItems: "center",
-                  borderWidth: 1, borderColor: theme.border,
-                }}
+                style={{ flex: 1, padding: 16, borderRadius: 16, backgroundColor: theme.backgroundTertiary, alignItems: "center" }}
               >
                 <Text style={{ color: theme.textSecondary, fontWeight: "600" }}>Cancelar</Text>
               </TouchableOpacity>
@@ -1243,12 +1113,12 @@ export default function Metrics() {
             <TouchableOpacity
               onPress={saveGoalSettings}
               style={{
-                flex: 2, padding: 14, borderRadius: 14,
-                backgroundColor: theme.accent,
-                alignItems: "center",
+                flex: 2, padding: 16, borderRadius: 16,
+                backgroundColor: theme.accent, alignItems: "center",
+                shadowColor: theme.accent, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6,
               }}
             >
-              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>Guardar</Text>
+              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>Guardar</Text>
             </TouchableOpacity>
           </View>
         </View>

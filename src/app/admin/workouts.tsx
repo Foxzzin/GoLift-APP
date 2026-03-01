@@ -3,7 +3,7 @@ import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
   TextInput,
   Modal,
   Alert,
@@ -119,7 +119,7 @@ export default function AdminWorkouts() {
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: theme.background, alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator size="large" color={theme.text} />
+        <ActivityIndicator size="large" color={theme.accent} />
       </View>
     );
   }
@@ -128,18 +128,30 @@ export default function AdminWorkouts() {
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       {/* Header */}
       <View style={{ paddingHorizontal: 24, paddingTop: 56, paddingBottom: 16, flexDirection: "row", alignItems: "center" }}>
-        <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
+        <Pressable
+          onPress={() => router.back()}
+          style={{ marginRight: 16, padding: 4 }}
+          accessibilityLabel="Voltar"
+          accessibilityRole="button"
+        >
           <Ionicons name="arrow-back" size={24} color={theme.text} />
-        </TouchableOpacity>
-        <Text style={{ fontSize: 20, fontWeight: "bold", flex: 1, color: theme.text }}>
+        </Pressable>
+        <Text style={{ fontSize: 28, fontWeight: "800", flex: 1, color: theme.text, letterSpacing: -0.5 }}>
           Treinos Recomendados
         </Text>
-        <TouchableOpacity
+        <Pressable
           onPress={() => setShowModal(true)}
-          style={{ backgroundColor: theme.text, paddingHorizontal: 8, paddingVertical: 8, borderRadius: 12 }}
+          accessibilityLabel="Criar treino"
+          accessibilityRole="button"
+          style={({ pressed }) => ({
+            backgroundColor: theme.accent,
+            padding: 10,
+            borderRadius: 14,
+            opacity: pressed ? 0.7 : 1,
+          })}
         >
-          <Ionicons name="add" size={24} color={theme.background} />
-        </TouchableOpacity>
+          <Ionicons name="add" size={22} color="#fff" />
+        </Pressable>
       </View>
 
       <ScrollView
@@ -149,54 +161,78 @@ export default function AdminWorkouts() {
         }
       >
         {workouts.length === 0 ? (
-          <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 16, padding: 32, alignItems: "center", borderColor: theme.border, borderWidth: 1, borderStyle: "dashed" }}>
-            <Ionicons name="fitness-outline" size={48} color={theme.textSecondary} />
-            <Text style={{ color: theme.textSecondary, marginTop: 16, textAlign: "center" }}>
+          <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 20, padding: 40, alignItems: "center" }}>
+            <Text style={{ fontSize: 48, marginBottom: 16 }}>⭐</Text>
+            <Text style={{ color: theme.text, fontSize: 16, fontWeight: "700", textAlign: "center", marginBottom: 8 }}>
               Nenhum treino recomendado criado
             </Text>
-            <TouchableOpacity
+            <Pressable
               onPress={() => setShowModal(true)}
-              style={{ marginTop: 16, backgroundColor: theme.text, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 }}
+              accessibilityLabel="Criar treino"
+              accessibilityRole="button"
+              style={({ pressed }) => ({
+                marginTop: 8,
+                backgroundColor: theme.accent,
+                paddingHorizontal: 24,
+                paddingVertical: 12,
+                borderRadius: 14,
+                opacity: pressed ? 0.7 : 1,
+              })}
             >
-              <Text style={{ color: theme.background, fontWeight: "600" }}>Criar Treino</Text>
-            </TouchableOpacity>
+              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 14 }}>Criar Treino</Text>
+            </Pressable>
           </View>
         ) : (
           <View style={{ gap: 12 }}>
             {workouts.map((workout, index) => (
               <View
                 key={workout.id_treino_admin || index}
-                style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 16, padding: 16, borderColor: theme.border, borderWidth: 1 }}
+                style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 20, padding: 16 }}
               >
-                <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
-                  <View style={{ backgroundColor: theme.backgroundTertiary, width: 48, height: 48, borderRadius: 12, alignItems: "center", justifyContent: "center", marginRight: 16 }}>
-                    <Ionicons name="star" size={24} color={theme.text} />
+                <View style={{ flexDirection: "row", alignItems: "center", marginBottom: workout.exercicios?.length ? 14 : 0 }}>
+                  <View style={{
+                    width: 44, height: 44, borderRadius: 13,
+                    backgroundColor: theme.accent + "20",
+                    justifyContent: "center", alignItems: "center", marginRight: 14,
+                  }}>
+                    <Ionicons name="barbell-outline" size={20} color={theme.accent} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: theme.text, fontWeight: "bold", fontSize: 18 }}>
+                    <Text style={{ color: theme.text, fontWeight: "700", fontSize: 16, letterSpacing: -0.2 }}>
                       {workout.nome}
                     </Text>
-                    <Text style={{ color: theme.textSecondary, fontSize: 14 }}>
-                      {workout.exercicios?.length || 0} exercícios
-                    </Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 }}>
+                      <View style={{ backgroundColor: theme.accent + "18", borderRadius: 7, paddingHorizontal: 8, paddingVertical: 3 }}>
+                        <Text style={{ color: theme.accent, fontSize: 11, fontWeight: "700" }}>
+                          {workout.exercicios?.length || 0} exercícios
+                        </Text>
+                      </View>
+                    </View>
                   </View>
-                  <TouchableOpacity
+                  <Pressable
                     onPress={() => deleteWorkout(workout)}
-                    style={{ padding: 8 }}
+                    accessibilityLabel="Apagar treino"
+                    accessibilityRole="button"
+                    style={({ pressed }) => ({ padding: 8, opacity: pressed ? 0.6 : 1 })}
                   >
-                    <Ionicons name="trash-outline" size={20} color={theme.text} />
-                  </TouchableOpacity>
+                    <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                  </Pressable>
                 </View>
 
-                {workout.exercicios?.map((ex: any, i: number) => (
+                {workout.exercicios?.slice(0, 4).map((ex: any, i: number) => (
                   <View
                     key={i}
-                    style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderTopColor: theme.border, borderTopWidth: 1 }}
+                    style={{ flexDirection: "row", alignItems: "center", paddingVertical: 6, borderTopWidth: 1, borderTopColor: theme.backgroundTertiary }}
                   >
-                    <View style={{ width: 4, height: 4, backgroundColor: theme.textSecondary, borderRadius: 2, marginRight: 12 }} />
-                    <Text style={{ color: theme.textSecondary, fontSize: 14 }}>{ex.nome}</Text>
+                    <View style={{ width: 5, height: 5, backgroundColor: theme.accent, borderRadius: 3, marginRight: 10 }} />
+                    <Text style={{ color: theme.textSecondary, fontSize: 13 }}>{ex.nome}</Text>
                   </View>
                 ))}
+                {(workout.exercicios?.length || 0) > 4 && (
+                  <View style={{ paddingTop: 6, borderTopWidth: 1, borderTopColor: theme.backgroundTertiary }}>
+                    <Text style={{ color: theme.textTertiary, fontSize: 12 }}>+{workout.exercicios.length - 4} mais</Text>
+                  </View>
+                )}
               </View>
             ))}
           </View>
@@ -216,14 +252,14 @@ export default function AdminWorkouts() {
               <Text style={{ color: theme.text, fontSize: 20, fontWeight: "bold" }}>
                 Novo Treino Recomendado
               </Text>
-              <TouchableOpacity onPress={() => setShowModal(false)}>
+              <Pressable onPress={() => setShowModal(false)} accessibilityRole="button" accessibilityLabel="Fechar" style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
                 <Ionicons name="close" size={24} color={theme.textSecondary} />
-              </TouchableOpacity>
+              </Pressable>
             </View>
 
             <ScrollView style={{ paddingHorizontal: 24, paddingVertical: 16 }}>
               <View style={{ marginBottom: 24 }}>
-                <Text style={{ color: theme.text, marginBottom: 8, fontWeight: "500" }}>
+                <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>
                   Nome do Treino
                 </Text>
                 <TextInput
@@ -236,47 +272,51 @@ export default function AdminWorkouts() {
               </View>
 
               <View style={{ marginBottom: 16 }}>
-                <Text style={{ color: theme.text, marginBottom: 8, fontWeight: "500" }}>
+                <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>
                   Exercícios Selecionados ({selectedExercises.length})
                 </Text>
                 {selectedExercises.length > 0 && (
                   <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 12, padding: 12, borderColor: theme.border, borderWidth: 1, marginBottom: 16 }}>
                     {selectedExercises.map((ex) => (
-                      <View
+                      <Pressable
                         key={ex.id}
-                        style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 8 }}
+                        onPress={() => toggleExercise(ex)}
+                        accessibilityLabel={`Remover ${ex.nome}`}
+                        accessibilityRole="button"
+                        style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 8, opacity: pressed ? 0.7 : 1 })}
                       >
                         <Text style={{ color: theme.text }}>{ex.nome}</Text>
-                        <TouchableOpacity onPress={() => toggleExercise(ex)}>
-                          <Ionicons name="close-circle" size={20} color={theme.text} />
-                        </TouchableOpacity>
-                      </View>
+                        <Ionicons name="close-circle" size={20} color={theme.textSecondary} />
+                      </Pressable>
                     ))}
                   </View>
                 )}
               </View>
 
-              <Text style={{ color: theme.text, marginBottom: 8, fontWeight: "500" }}>
+              <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>
                 Adicionar Exercícios
               </Text>
               <View style={{ gap: 8, marginBottom: 24 }}>
                 {exercises.map((exercise) => {
                   const isSelected = selectedExercises.find((e) => e.id === exercise.id);
                   return (
-                    <TouchableOpacity
+                    <Pressable
                       key={exercise.id}
                       onPress={() => toggleExercise(exercise)}
-                      style={{
+                      accessibilityLabel={isSelected ? `Remover ${exercise.nome}` : `Adicionar ${exercise.nome}`}
+                      accessibilityRole="checkbox"
+                      style={({ pressed }) => ({
                         paddingHorizontal: 16,
                         paddingVertical: 12,
                         borderRadius: 12,
                         flexDirection: "row",
                         alignItems: "center",
                         justifyContent: "space-between",
-                        borderColor: isSelected ? theme.text : theme.border,
+                        borderColor: isSelected ? theme.accent : theme.border,
                         borderWidth: 1,
-                        backgroundColor: isSelected ? theme.backgroundTertiary : theme.backgroundSecondary
-                      }}
+                        backgroundColor: isSelected ? theme.accent + "15" : theme.backgroundSecondary,
+                        opacity: pressed ? 0.7 : 1,
+                      })}
                     >
                       <View>
                         <Text style={{ color: theme.text, fontWeight: "500" }}>{exercise.nome}</Text>
@@ -289,28 +329,41 @@ export default function AdminWorkouts() {
                       <Ionicons
                         name={isSelected ? "checkmark-circle" : "add-circle-outline"}
                         size={24}
-                        color={isSelected ? theme.text : theme.textSecondary}
-                      />
-                    </TouchableOpacity>
+                          color={isSelected ? theme.accent : theme.textSecondary}
+                        />
+                      </Pressable>
                   );
                 })}
               </View>
             </ScrollView>
 
-            <View style={{ paddingHorizontal: 24, paddingVertical: 16, borderTopColor: theme.border, borderTopWidth: 1 }}>
-              <TouchableOpacity
+            <View style={{ paddingHorizontal: 24, paddingVertical: 16, borderTopColor: theme.backgroundTertiary, borderTopWidth: 1 }}>
+              <Pressable
                 onPress={handleCreate}
                 disabled={saving}
-                style={{ backgroundColor: theme.text, paddingVertical: 16, borderRadius: 12, alignItems: "center", opacity: saving ? 0.7 : 1 }}
+                accessibilityLabel="Criar treino recomendado"
+                accessibilityRole="button"
+                style={({ pressed }) => ({
+                  backgroundColor: theme.accent,
+                  paddingVertical: 16,
+                  borderRadius: 14,
+                  alignItems: "center",
+                  opacity: pressed || saving ? 0.7 : 1,
+                  shadowColor: theme.accent,
+                  shadowOffset: { width: 0, height: 6 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 12,
+                  elevation: 6,
+                })}
               >
                 {saving ? (
-                  <ActivityIndicator color={theme.background} />
+                  <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={{ color: theme.background, fontWeight: "bold", fontSize: 16 }}>
+                  <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>
                     Criar Treino Recomendado
                   </Text>
                 )}
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </View>
         </View>
