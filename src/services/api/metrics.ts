@@ -18,7 +18,7 @@ export const metricsApi = {
   // Stats calculados a partir das sessões (não existe endpoint dedicado no backend)
   getStats: (userId: number) =>
     request<any>(`/api/sessoes/${userId}`).then((sessoes: any) => {
-      const sessoesList = Array.isArray(sessoes) ? sessoes : [];
+      const sessoesList = Array.isArray(sessoes) ? sessoes : Array.isArray(sessoes?.treinos) ? sessoes.treinos : [];
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 

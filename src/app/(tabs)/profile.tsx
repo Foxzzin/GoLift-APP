@@ -271,7 +271,7 @@ export default function Profile() {
         ]);
 
       const mapped = profileData?.user
-        ? { id: profileData.user.id, nome: profileData.user.name, email: profileData.user.email, idade: profileData.user.age, peso: profileData.user.weight, altura: profileData.user.height }
+        ? { id: profileData.user.id_users ?? profileData.user.id, nome: profileData.user.userName ?? profileData.user.nome ?? profileData.user.name, email: profileData.user.email, idade: profileData.user.idade ?? profileData.user.age, peso: profileData.user.peso ?? profileData.user.weight, altura: profileData.user.altura ?? profileData.user.height }
         : user;
       setProfile(mapped);
 
