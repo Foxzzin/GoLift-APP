@@ -38,21 +38,12 @@ export default function ForgotPassword() {
     try {
       const response = await authApi.requestPasswordReset(email);
       if (response.sucesso) {
-        if (response.codigo_teste) {
-          // Modo desenvolvimento: email não configurado, mostrar código no ecrã
-          setCode(response.codigo_teste);
-          Alert.alert(
-            "Modo de Teste",
-            `O email não pôde ser enviado.\n\nO teu código é:\n\n${response.codigo_teste}\n\n(já foi preenchido automaticamente)`,
-            [{ text: "Continuar", onPress: () => setStep("code") }]
-          );
-        } else {
-          Alert.alert(
-            "Código Enviado",
-            "Verifica o teu email para o código de recuperação.",
-            [{ text: "OK", onPress: () => setStep("code") }]
-          );
-        }
+        Alert.alert(
+          "Código Enviado",
+          "Verifica o teu email para o código de recuperação.",
+          [{ text: "OK", onPress: () => setStep("code") }]
+        );
+        setCode("");
       }
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Erro ao solicitar recuperação");

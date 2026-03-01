@@ -9,7 +9,7 @@ const IS_PRODUCTION = process.env.EXPO_PUBLIC_IS_PRODUCTION === "true";
 const DEV_PORT = "3000";
 
 let SERVER_IP = IS_PRODUCTION ? PRODUCTION_IP : "localhost";
-let SERVER_PORT = IS_PRODUCTION ? PRODUCTION_PORT : "5000";
+let SERVER_PORT = IS_PRODUCTION ? PRODUCTION_PORT : DEV_PORT;
 
 let IS_SERVER_CONFIGURED = IS_PRODUCTION; // Em produção já está configurado de imediato
 
@@ -25,7 +25,7 @@ export async function loadSavedServerIP(): Promise<string | null> {
 }
 
 // ─── APENAS DESENVOLVIMENTO ─────────────────────────────────────────────────
-async function testServerConnection(ip: string, port: string = "5000", timeoutMs = 3000): Promise<boolean> {
+async function testServerConnection(ip: string, port: string = DEV_PORT, timeoutMs = 3000): Promise<boolean> {
   try {
     const url = `http://${ip}:${port}/api/health`;
     const controller = new AbortController();

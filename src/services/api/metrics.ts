@@ -3,7 +3,7 @@ import { request } from "./_request";
 export const metricsApi = {
   getHistory: (userId: number) =>
     request<any>(`/api/sessoes/${userId}`).then((res: any) =>
-      Array.isArray(res) ? res : []
+      Array.isArray(res) ? res : Array.isArray(res?.treinos) ? res.treinos : []
     ),
 
   getRecords: (userId: number) =>
