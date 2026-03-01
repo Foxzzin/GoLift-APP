@@ -17,11 +17,33 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useCommunities } from "../../contexts/CommunitiesContext";
 import { useTheme } from "../../styles/theme";
+import { useAndroidInsets } from "../../hooks/useAndroidInsets";
 import { useAuth } from "../../contexts/AuthContext";
 import * as Haptics from "expo-haptics";
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function communityInitials(name: string): string {
+  return name
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+}
+
+function communityColor(name: string): string {
+  const colors = ["#0A84FF", "#30D158", "#FF9F0A", "#FF375F", "#BF5AF2", "#FF6B35"];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+}
+
 export default function Communities() {
   const theme = useTheme();
+  const { paddingTop: safeTop, paddingBottom: safeBottom } = useAndroidInsets();
   const { user } = useAuth();
   const {
     communities,
@@ -273,6 +295,7 @@ export default function Communities() {
     <ScrollView
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
       style={{ flex: 1 }}
+      contentContainerStyle={{ paddingBottom: 120 }}
     >
       {userCommunities.length === 0 ? (
         <View style={{ padding: 24, alignItems: "center", marginTop: 80 }}>
@@ -320,13 +343,15 @@ export default function Communities() {
                 marginBottom: 12,
                 flexDirection: "row",
                 gap: 12,
-                overflow: "hidden",
+                borderLeftWidth: 3,
+                borderLeftColor: communityColor(community.nome),
                 opacity: pressed ? 0.75 : 1,
               })}
             >
-              <View style={{ width: 4, position: "absolute", left: 0, top: 0, bottom: 0, backgroundColor: theme.accent }} />
-              <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: theme.backgroundTertiary, alignItems: "center", justifyContent: "center", marginLeft: 8 }}>
-                <Text style={{ fontSize: 24 }}>👥</Text>
+              <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: communityColor(community.nome) + "22", alignItems: "center", justifyContent: "center" }}>
+                <Text style={{ fontSize: 18, fontWeight: "800", color: communityColor(community.nome) }}>
+                  {communityInitials(community.nome)}
+                </Text>
               </View>
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4, gap: 4 }}>
@@ -344,7 +369,7 @@ export default function Communities() {
                   👥 {community.membros} membros
                 </Text>
               </View>
-              <Text style={{ color: theme.textTertiary, fontSize: 18, alignSelf: "center" }}>›</Text>
+              <Ionicons name="chevron-forward" size={18} color={theme.textTertiary} style={{ alignSelf: "center" }} />
             </Pressable>
           ))}
         </View>
@@ -356,6 +381,7 @@ export default function Communities() {
     <ScrollView
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
       style={{ flex: 1 }}
+      contentContainerStyle={{ paddingBottom: 120 }}
     >
       {communities.length === 0 ? (
         <View style={{ padding: 24, alignItems: "center", marginTop: 80 }}>
@@ -380,13 +406,15 @@ export default function Communities() {
                   borderRadius: 20,
                   padding: 16,
                   marginBottom: 12,
-                  overflow: "hidden",
+                  borderLeftWidth: 3,
+                  borderLeftColor: communityColor(community.nome),
                 }}
               >
-                <View style={{ width: 4, position: "absolute", left: 0, top: 0, bottom: 0, backgroundColor: theme.accent }} />
-                <View style={{ flexDirection: "row", gap: 12, marginBottom: isJoined ? 0 : 12, marginLeft: 8 }}>
-                  <View style={{ width: 56, height: 56, borderRadius: 14, backgroundColor: theme.backgroundTertiary, alignItems: "center", justifyContent: "center" }}>
-                    <Text style={{ fontSize: 26 }}>👥</Text>
+                <View style={{ flexDirection: "row", gap: 12, marginBottom: isJoined ? 0 : 12 }}>
+                  <View style={{ width: 56, height: 56, borderRadius: 14, backgroundColor: communityColor(community.nome) + "22", alignItems: "center", justifyContent: "center" }}>
+                    <Text style={{ fontSize: 20, fontWeight: "800", color: communityColor(community.nome) }}>
+                      {communityInitials(community.nome)}
+                    </Text>
                   </View>
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 2, gap: 4 }}>
@@ -436,7 +464,7 @@ export default function Communities() {
                       paddingVertical: 12,
                       borderRadius: 12,
                       alignItems: "center",
-                      marginLeft: 8,
+                      marginHorizontal: 0,
                       opacity: pressed ? 0.7 : 1,
                     })}
                   >
@@ -456,7 +484,7 @@ export default function Communities() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       {/* Header */}
-      <View style={{ paddingHorizontal: 24, paddingTop: 56, paddingBottom: 16 }}>
+      <View style={{ paddingHorizontal: 24, paddingTop: safeTop + 12, paddingBottom: 16 }}>
         <Text style={{ color: theme.textSecondary, fontSize: 13 }}>GoLift</Text>
         <Text
           style={{
@@ -561,7 +589,7 @@ export default function Communities() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: safeBottom + 20 }}>
 
               {/* Nome */}
               <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>
@@ -730,7 +758,7 @@ export default function Communities() {
                   keyExtractor={(item) => item.name}
                   keyboardShouldPersistTaps="handled"
                   showsVerticalScrollIndicator={false}
-                  contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}
+                  contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: safeBottom + 20 }}
                   renderItem={({ item }) => (
                     <TouchableOpacity
                       onPress={() => {

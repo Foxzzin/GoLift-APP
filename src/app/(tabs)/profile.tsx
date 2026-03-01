@@ -17,6 +17,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../../contexts/AuthContext";
 import { userApi, metricsApi, planoApi } from "../../services/api";
 import { useTheme } from "../../styles/theme";
+import { useAndroidInsets } from "../../hooks/useAndroidInsets";
 import { getIMCCategory } from "../../utils/imc";
 import { ProfileScreenSkeleton } from "../../components/ui/SkeletonLoader";
 
@@ -233,6 +234,7 @@ function OptionRow({ icon, iconBg, label, onPress, hasBorder, locked }: OptionRo
 export default function Profile() {
   const { user, logout } = useAuth();
   const theme = useTheme();
+  const { paddingTop: safeTop, paddingBottom: safeBottom } = useAndroidInsets();
 
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -377,7 +379,7 @@ export default function Profile() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* HEADER */}
-        <View style={{ paddingHorizontal: 24, paddingTop: 56, paddingBottom: 8, flexDirection: "row", alignItems: "center" }}>
+        <View style={{ paddingHorizontal: 24, paddingTop: safeTop + 12, paddingBottom: 8, flexDirection: "row", alignItems: "center" }}>
           <Text style={{ fontSize: 32, fontWeight: "800", color: theme.text, letterSpacing: -1, flex: 1 }}>
             Perfil
           </Text>
@@ -650,7 +652,11 @@ export default function Profile() {
               {unlockedBadges.length}/{badges.length} desbloqueadas
             </Text>
           </View>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 10, paddingHorizontal: 2, paddingVertical: 4 }}
+          >
             {orderedBadges.map((badge) => (
               <Pressable
                 key={badge.id}
@@ -658,22 +664,24 @@ export default function Profile() {
                 accessibilityRole="button"
                 accessibilityLabel={badge.name}
                 style={({ pressed }) => ({
-                  width: "30%",
+                  width: 100,
+                  height: 120,
                   backgroundColor: theme.backgroundSecondary,
                   borderRadius: 16,
                   paddingVertical: 16,
                   paddingHorizontal: 8,
                   alignItems: "center",
+                  justifyContent: "center",
                   opacity: pressed ? 0.75 : badge.unlocked ? 1 : 0.4,
                 })}
               >
                 <Text style={{ fontSize: 28, marginBottom: 8 }}>{badge.emoji}</Text>
-                <Text numberOfLines={1} style={{ fontSize: 11, fontWeight: "700", color: badge.unlocked ? theme.text : theme.textTertiary, textAlign: "center" }}>
+                <Text numberOfLines={2} style={{ fontSize: 11, fontWeight: "700", color: badge.unlocked ? theme.text : theme.textTertiary, textAlign: "center" }}>
                   {badge.name}
                 </Text>
               </Pressable>
             ))}
-          </View>
+          </ScrollView>
         </View>
 
         {/* INFO DA CONTA */}
@@ -712,7 +720,7 @@ export default function Profile() {
       {/* MODAL — Todos os recordes */}
       <Modal visible={showAllRecords} animationType="slide" transparent>
         <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "flex-end" }}>
-          <View style={{ backgroundColor: theme.backgroundSecondary, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingBottom: 40, maxHeight: "85%" }}>
+          <View style={{ backgroundColor: theme.backgroundSecondary, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingBottom: safeBottom + 20, maxHeight: "85%" }}>
             <View style={{ width: 36, height: 4, backgroundColor: theme.border, borderRadius: 2, alignSelf: "center", marginTop: 12, marginBottom: 20 }} />
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 24, paddingBottom: 16 }}>
               <Text style={{ fontSize: 22, fontWeight: "800", color: theme.text, letterSpacing: -0.5 }}>Todos os Recordes</Text>

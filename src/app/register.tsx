@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  ScrollView,
 } from "react-native";
 import { Link } from "expo-router";
 import { useAuth } from "../contexts/AuthContext";
@@ -306,9 +307,9 @@ export default function Register() {
               borderWidth: 1,
               paddingHorizontal: 18,
             }}>
-              <Ionicons name="person-outline" size={24} color={theme.textSecondary} />
+              <Ionicons name="person-outline" size={20} color={theme.textSecondary} />
               <TextInput
-                style={{ flex: 1, color: theme.text, paddingVertical: 20, paddingHorizontal: 14, fontSize: 18 }}
+                style={{ flex: 1, color: theme.text, paddingVertical: 15, paddingHorizontal: 12, fontSize: 16 }}
                 placeholder="O teu nome"
                 placeholderTextColor={theme.textSecondary}
                 value={nome}
@@ -331,9 +332,9 @@ export default function Register() {
               borderWidth: 1,
               paddingHorizontal: 18,
             }}>
-              <Ionicons name="mail-outline" size={24} color={theme.textSecondary} />
+              <Ionicons name="mail-outline" size={20} color={theme.textSecondary} />
               <TextInput
-                style={{ flex: 1, color: theme.text, paddingVertical: 20, paddingHorizontal: 14, fontSize: 18 }}
+                style={{ flex: 1, color: theme.text, paddingVertical: 15, paddingHorizontal: 12, fontSize: 16 }}
                 placeholder="exemplo@email.com"
                 placeholderTextColor={theme.textSecondary}
                 value={email}
@@ -369,9 +370,9 @@ export default function Register() {
               borderWidth: 1,
               paddingHorizontal: 18,
             }}>
-              <Ionicons name="lock-closed-outline" size={24} color={theme.textSecondary} />
+              <Ionicons name="lock-closed-outline" size={20} color={theme.textSecondary} />
               <TextInput
-                style={{ flex: 1, color: theme.text, paddingVertical: 20, paddingHorizontal: 14, fontSize: 18 }}
+                style={{ flex: 1, color: theme.text, paddingVertical: 15, paddingHorizontal: 12, fontSize: 16 }}
                 placeholder="Mínimo 8 caracteres"
                 placeholderTextColor={theme.textSecondary}
                 value={password}
@@ -433,34 +434,34 @@ export default function Register() {
       case "peso":
         return (
           <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: "row", justifyContent: "center", marginBottom: 32, gap: 12 }}>
+            <View style={{ flexDirection: "row", justifyContent: "center", marginBottom: 24, gap: 8 }}>
               <TouchableOpacity
                 onPress={() => setWeightUnit("kg")}
                 style={{
-                  paddingHorizontal: 28,
-                  paddingVertical: 14,
-                  borderRadius: 12,
+                  paddingHorizontal: 20,
+                  paddingVertical: 7,
+                  borderRadius: 20,
                   backgroundColor: weightUnit === "kg" ? theme.text : theme.backgroundSecondary,
-                  borderColor: theme.border,
+                  borderColor: weightUnit === "kg" ? theme.text : theme.border,
                   borderWidth: 1,
                 }}
               >
-                <Text style={{ color: weightUnit === "kg" ? theme.background : theme.text, fontWeight: "700", fontSize: 16 }}>
+                <Text style={{ color: weightUnit === "kg" ? theme.background : theme.textSecondary, fontWeight: "700", fontSize: 13 }}>
                   KG
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => setWeightUnit("lbs")}
                 style={{
-                  paddingHorizontal: 28,
-                  paddingVertical: 14,
-                  borderRadius: 12,
+                  paddingHorizontal: 20,
+                  paddingVertical: 7,
+                  borderRadius: 20,
                   backgroundColor: weightUnit === "lbs" ? theme.text : theme.backgroundSecondary,
-                  borderColor: theme.border,
+                  borderColor: weightUnit === "lbs" ? theme.text : theme.border,
                   borderWidth: 1,
                 }}
               >
-                <Text style={{ color: weightUnit === "lbs" ? theme.background : theme.text, fontWeight: "700", fontSize: 16 }}>
+                <Text style={{ color: weightUnit === "lbs" ? theme.background : theme.textSecondary, fontWeight: "700", fontSize: 13 }}>
                   LBS
                 </Text>
               </TouchableOpacity>
@@ -482,34 +483,34 @@ export default function Register() {
       case "altura":
         return (
           <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: "row", justifyContent: "center", marginBottom: 32, gap: 12 }}>
+            <View style={{ flexDirection: "row", justifyContent: "center", marginBottom: 24, gap: 8 }}>
               <TouchableOpacity
                 onPress={() => setHeightUnit("cm")}
                 style={{
-                  paddingHorizontal: 28,
-                  paddingVertical: 14,
-                  borderRadius: 12,
+                  paddingHorizontal: 20,
+                  paddingVertical: 7,
+                  borderRadius: 20,
                   backgroundColor: heightUnit === "cm" ? theme.text : theme.backgroundSecondary,
-                  borderColor: theme.border,
+                  borderColor: heightUnit === "cm" ? theme.text : theme.border,
                   borderWidth: 1,
                 }}
               >
-                <Text style={{ color: heightUnit === "cm" ? theme.background : theme.text, fontWeight: "700", fontSize: 16 }}>
+                <Text style={{ color: heightUnit === "cm" ? theme.background : theme.textSecondary, fontWeight: "700", fontSize: 13 }}>
                   CM
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => setHeightUnit("in")}
                 style={{
-                  paddingHorizontal: 28,
-                  paddingVertical: 14,
-                  borderRadius: 12,
+                  paddingHorizontal: 20,
+                  paddingVertical: 7,
+                  borderRadius: 20,
                   backgroundColor: heightUnit === "in" ? theme.text : theme.backgroundSecondary,
-                  borderColor: theme.border,
+                  borderColor: heightUnit === "in" ? theme.text : theme.border,
                   borderWidth: 1,
                 }}
               >
-                <Text style={{ color: heightUnit === "in" ? theme.background : theme.text, fontWeight: "700", fontSize: 16 }}>
+                <Text style={{ color: heightUnit === "in" ? theme.background : theme.textSecondary, fontWeight: "700", fontSize: 13 }}>
                   IN
                 </Text>
               </TouchableOpacity>
@@ -530,7 +531,7 @@ export default function Register() {
 
       case "objetivo":
         return (
-          <View style={{ flex: 1, justifyContent: "center", gap: 14 }}>
+          <View style={{ flex: 1, justifyContent: "center", gap: 10 }}>
             {objectives.map((obj) => (
               <TouchableOpacity
                 key={obj.id}
@@ -540,36 +541,36 @@ export default function Register() {
                   borderColor: objetivo === obj.id ? theme.text : theme.border,
                   borderWidth: 1.5,
                   borderRadius: 16,
-                  padding: 18,
+                  padding: 14,
                   flexDirection: "row",
                   alignItems: "center",
                 }}
               >
                 <View style={{
-                  width: 52,
-                  height: 52,
-                  borderRadius: 14,
-                  backgroundColor: objetivo === obj.id ? theme.background : theme.background,
+                  width: 44,
+                  height: 44,
+                  borderRadius: 12,
+                  backgroundColor: objetivo === obj.id ? theme.background + "22" : theme.background,
                   alignItems: "center",
                   justifyContent: "center",
-                  marginRight: 16,
+                  marginRight: 12,
                 }}>
                   <Ionicons
                     name={obj.icon as any}
-                    size={26}
+                    size={22}
                     color={objetivo === obj.id ? obj.color : theme.text}
                   />
                 </View>
                 <Text style={{
                   color: objetivo === obj.id ? theme.background : theme.text,
-                  fontSize: 17,
+                  fontSize: 16,
                   fontWeight: "600",
                   flex: 1,
                 }}>
                   {obj.label}
                 </Text>
                 {objetivo === obj.id && (
-                  <Ionicons name="checkmark-circle" size={24} color={theme.background} />
+                  <Ionicons name="checkmark-circle" size={22} color={theme.background} />
                 )}
               </TouchableOpacity>
             ))}
@@ -579,34 +580,34 @@ export default function Register() {
       case "pesoAlvo":
         return (
           <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: "row", justifyContent: "center", marginBottom: 32, gap: 12 }}>
+            <View style={{ flexDirection: "row", justifyContent: "center", marginBottom: 24, gap: 8 }}>
               <TouchableOpacity
                 onPress={() => setWeightUnit("kg")}
                 style={{
-                  paddingHorizontal: 28,
-                  paddingVertical: 14,
-                  borderRadius: 12,
+                  paddingHorizontal: 20,
+                  paddingVertical: 7,
+                  borderRadius: 20,
                   backgroundColor: weightUnit === "kg" ? theme.text : theme.backgroundSecondary,
-                  borderColor: theme.border,
+                  borderColor: weightUnit === "kg" ? theme.text : theme.border,
                   borderWidth: 1,
                 }}
               >
-                <Text style={{ color: weightUnit === "kg" ? theme.background : theme.text, fontWeight: "700", fontSize: 16 }}>
+                <Text style={{ color: weightUnit === "kg" ? theme.background : theme.textSecondary, fontWeight: "700", fontSize: 13 }}>
                   KG
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => setWeightUnit("lbs")}
                 style={{
-                  paddingHorizontal: 28,
-                  paddingVertical: 14,
-                  borderRadius: 12,
+                  paddingHorizontal: 20,
+                  paddingVertical: 7,
+                  borderRadius: 20,
                   backgroundColor: weightUnit === "lbs" ? theme.text : theme.backgroundSecondary,
-                  borderColor: theme.border,
+                  borderColor: weightUnit === "lbs" ? theme.text : theme.border,
                   borderWidth: 1,
                 }}
               >
-                <Text style={{ color: weightUnit === "lbs" ? theme.background : theme.text, fontWeight: "700", fontSize: 16 }}>
+                <Text style={{ color: weightUnit === "lbs" ? theme.background : theme.textSecondary, fontWeight: "700", fontSize: 13 }}>
                   LBS
                 </Text>
               </TouchableOpacity>
@@ -637,24 +638,24 @@ export default function Register() {
     >
       <View style={{ flex: 1 }}>
         {/* Conteúdo Principal */}
-        <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 60 }}>
+        <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 52 }}>
           {/* Header */}
-          <View style={{ alignItems: "center", marginBottom: 24 }}>
+          <View style={{ alignItems: "center", marginBottom: 16 }}>
             <View style={{
-              width: 72,
-              height: 72,
+              width: 56,
+              height: 56,
               backgroundColor: theme.accent + "18",
-              borderRadius: 20,
+              borderRadius: 16,
               alignItems: "center",
               justifyContent: "center",
-              marginBottom: 20,
+              marginBottom: 14,
             }}>
-              <Ionicons name="barbell" size={38} color={theme.accent} />
+              <Ionicons name="barbell" size={30} color={theme.accent} />
             </View>
-            <Text style={{ fontSize: 28, fontWeight: "800", color: theme.text, textAlign: "center", letterSpacing: -0.5 }}>
+            <Text style={{ fontSize: 26, fontWeight: "800", color: theme.text, textAlign: "center", letterSpacing: -0.5 }}>
               {stepTitles[step]}
             </Text>
-            <Text style={{ color: theme.textSecondary, marginTop: 8, fontSize: 14 }}>
+            <Text style={{ color: theme.textSecondary, marginTop: 6, fontSize: 13 }}>
               Passo {stepIndex + 1} de {steps.length}
             </Text>
           </View>
@@ -664,7 +665,7 @@ export default function Register() {
             height: 3,
             backgroundColor: theme.backgroundSecondary,
             borderRadius: 2,
-            marginBottom: 32,
+            marginBottom: 24,
             overflow: "hidden",
           }}>
             <View
@@ -678,26 +679,33 @@ export default function Register() {
           </View>
 
           {/* Conteúdo do Step */}
-          {renderContent()}
+          <ScrollView
+            style={{ flex: 1 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ flexGrow: 1 }}
+          >
+            {renderContent()}
+          </ScrollView>
         </View>
 
         {/* Botões Fixos na Base */}
-        <View style={{ paddingHorizontal: 24, paddingVertical: 20, backgroundColor: theme.background }}>
-          <View style={{ flexDirection: "row", gap: 12 }}>
+        <View style={{ paddingHorizontal: 24, paddingVertical: 16, backgroundColor: theme.background }}>
+          <View style={{ flexDirection: "row", gap: 10 }}>
             {stepIndex > 0 && (
               <TouchableOpacity
                 onPress={handlePrevStep}
                 style={{
                   flex: 1,
                   backgroundColor: theme.backgroundSecondary,
-                  paddingVertical: 18,
+                  paddingVertical: 14,
                   borderRadius: 14,
                   alignItems: "center",
                   borderColor: theme.border,
                   borderWidth: 1,
                 }}
               >
-                <Text style={{ color: theme.text, fontWeight: "700", fontSize: 17 }}>Voltar</Text>
+                <Text style={{ color: theme.text, fontWeight: "700", fontSize: 15 }}>Voltar</Text>
               </TouchableOpacity>
             )}
 
@@ -708,21 +716,21 @@ export default function Register() {
                 flex: stepIndex > 0 ? 1 : undefined,
                 width: stepIndex === 0 ? "100%" : undefined,
                 backgroundColor: theme.accent,
-                paddingVertical: 18,
+                paddingVertical: 14,
                 borderRadius: 14,
                 alignItems: "center",
                 opacity: loading ? 0.7 : 1,
                 shadowColor: theme.accent,
-                shadowOffset: { width: 0, height: 6 },
-                shadowOpacity: 0.3,
-                shadowRadius: 12,
-                elevation: 6,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.25,
+                shadowRadius: 8,
+                elevation: 4,
               }}
             >
               {loading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={{ color: "#fff", fontWeight: "700", fontSize: 17 }}>
+                <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>
                   {(step === "objetivo" && !needsTargetWeight) || step === "pesoAlvo" ? "Criar Conta" : "Continuar"}
                 </Text>
               )}
@@ -730,13 +738,13 @@ export default function Register() {
           </View>
 
           {/* Link Login */}
-          <View style={{ flexDirection: "row", justifyContent: "center", marginTop: 20 }}>
-            <Text style={{ color: theme.textSecondary, fontSize: 14 }}>
+          <View style={{ flexDirection: "row", justifyContent: "center", marginTop: 14 }}>
+            <Text style={{ color: theme.textSecondary, fontSize: 13 }}>
               Já tens conta?{" "}
             </Text>
             <Link href="/login" asChild>
               <TouchableOpacity>
-                <Text style={{ color: theme.accent, fontWeight: "700", fontSize: 14 }}>
+                <Text style={{ color: theme.accent, fontWeight: "700", fontSize: 13 }}>
                   Fazer Login
                 </Text>
               </TouchableOpacity>

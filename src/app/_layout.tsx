@@ -3,15 +3,17 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import * as NavigationBar from "expo-navigation-bar";
 import { Platform, View, ActivityIndicator } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "../contexts/AuthContext";
 import { CommunitiesProvider } from "../contexts/CommunitiesContext";
-import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
+import { ThemeProvider, useTheme, useThemePreference } from "../contexts/ThemeContext";
 import { loadSavedServerIP } from "../services/server-config";
 import "../styles/global.css";
 
 // Componente interno que usa o tema já resolvido pelo ThemeProvider
 function RootLayoutContent() {
   const theme = useTheme();
+  const { isDark } = useThemePreference();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -35,7 +37,7 @@ function RootLayoutContent() {
   return (
     <AuthProvider>
       <CommunitiesProvider>
-        <StatusBar style="light" />
+        <StatusBar style={isDark ? "light" : "dark"} />
         <Stack
           screenOptions={{
             headerShown: false,
@@ -121,8 +123,10 @@ function RootLayoutContent() {
 
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <RootLayoutContent />
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <RootLayoutContent />
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }

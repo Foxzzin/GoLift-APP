@@ -4,10 +4,13 @@ import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useRef } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../styles/theme";
 
 function CustomTabBar({ state, descriptors, navigation, hideTabBar }: any) {
   const theme = useTheme();
+  const { bottom: safeBottom } = useSafeAreaInsets();
+  const tabBarBottom = Math.max(safeBottom + 10, 30);
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const translateYAnim = useRef(new Animated.Value(0)).current;
 
@@ -77,7 +80,7 @@ function CustomTabBar({ state, descriptors, navigation, hideTabBar }: any) {
   };
 
   return (
-    <View style={[styles.tabBarContainer]}>
+    <View style={[styles.tabBarContainer, { bottom: tabBarBottom }]}>
       <BlurView intensity={35} style={[styles.blurContainer, { borderColor: theme.border }]}>
         <View style={[styles.tabBar, { backgroundColor: "rgba(0,0,0,0.1)" }]}>
       {/* Esquerda: Home */}
@@ -174,7 +177,7 @@ export default function TabsLayout() {
 const styles = StyleSheet.create({
   tabBarContainer: {
     position: "absolute",
-    bottom: 30,
+    bottom: 30, // overridden dynamically with safeBottom
     left: 20,
     right: 20,
   },

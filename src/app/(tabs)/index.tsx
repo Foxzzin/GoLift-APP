@@ -14,10 +14,12 @@ import * as Haptics from "expo-haptics";
 import { useAuth } from "../../contexts/AuthContext";
 import { metricsApi, workoutApi, planoApi } from "../../services/api";
 import { useTheme } from "../../styles/theme";
+import { useAndroidInsets } from "../../hooks/useAndroidInsets";
 
 export default function Home() {
   const { user } = useAuth();
   const theme = useTheme();
+  const { paddingTop: safeTop, paddingBottom: safeBottom } = useAndroidInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [streak, setStreak] = useState(0);
   const [streakHistory, setStreakHistory] = useState<Array<{day: string, date: string, completed: boolean}>>([]);
@@ -236,7 +238,7 @@ export default function Home() {
         }
       >
         {/* ── HEADER ── */}
-        <View style={{ paddingHorizontal: 24, paddingTop: 64, paddingBottom: 8 }}>
+        <View style={{ paddingHorizontal: 24, paddingTop: safeTop + 16, paddingBottom: 8 }}>
           <Text style={{ color: theme.textSecondary, fontSize: 15, fontWeight: "500", marginBottom: 4 }}>
             {getGreeting()},
           </Text>
@@ -464,7 +466,7 @@ export default function Home() {
             borderTopLeftRadius: 28,
             borderTopRightRadius: 28,
             padding: 28,
-            paddingBottom: 44,
+            paddingBottom: safeBottom + 24,
           }}>
             {/* handle */}
             <View style={{ width: 36, height: 4, backgroundColor: theme.border, borderRadius: 2, alignSelf: "center", marginBottom: 28 }} />

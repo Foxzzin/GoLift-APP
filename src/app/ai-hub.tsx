@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../contexts/AuthContext";
 import { planoApi } from "../services/api";
 import { useTheme } from "../styles/theme";
+import { useAndroidInsets } from "../hooks/useAndroidInsets";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -755,20 +756,14 @@ function ReportTab() {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-type Tab = "plano" | "relatorio";
-
 export default function AIHub() {
   const theme = useTheme();
-  const [activeTab, setActiveTab] = useState<Tab>("plano");
-
-  function switchTab(tab: Tab) {
-    setActiveTab(tab);
-  }
+  const { paddingTop: safeTop } = useAndroidInsets();
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       {/* Header */}
-      <View style={{ paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16 }}>
+      <View style={{ paddingHorizontal: 20, paddingTop: safeTop + 16, paddingBottom: 8 }}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Pressable
             onPress={() => router.back()}
@@ -793,91 +788,74 @@ export default function AIHub() {
             <Text style={{ color: "#8B5CF6", fontSize: 11, fontWeight: "700" }}>IA</Text>
           </View>
         </View>
+      </View>
 
-        {/* Tab switcher */}
-        <View
-          style={{
-            flexDirection: "row",
-            backgroundColor: theme.backgroundSecondary,
-            borderRadius: 18,
-            padding: 5,
-            marginTop: 16,
-          }}
+      {/* Entry Cards */}
+      <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }} showsVerticalScrollIndicator={false}>
+        {/* Card — Plano Mensal */}
+        <Pressable
+          onPress={() => router.push("/ai-plan")}
+          accessibilityRole="button"
+          accessibilityLabel="Gerar Plano Mensal com IA"
+          style={({ pressed }) => ({
+            backgroundColor: "#8B5CF6",
+            borderRadius: 24,
+            padding: 24,
+            opacity: pressed ? 0.85 : 1,
+            shadowColor: "#8B5CF6",
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.35,
+            shadowRadius: 16,
+            elevation: 8,
+          })}
         >
-          {/* Plano Mensal — esquerda */}
-          <Pressable
-            onPress={() => switchTab("plano")}
-            accessibilityRole="tab"
-            accessibilityLabel="Plano Mensal"
-            style={({ pressed }) => ({
-              flex: 1,
-              paddingVertical: 14,
-              borderRadius: 13,
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 5,
-              opacity: pressed && activeTab !== "plano" ? 0.7 : 1,
-              backgroundColor: activeTab === "plano" ? theme.background : "transparent",
-              shadowColor: activeTab === "plano" ? "#000" : "transparent",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: activeTab === "plano" ? 0.08 : 0,
-              shadowRadius: 6,
-              elevation: activeTab === "plano" ? 3 : 0,
-            })}
-          >
-            <Ionicons name="calendar-outline" size={18} color={activeTab === "plano" ? "#8B5CF6" : theme.textTertiary} />
-            <Text style={{
-              fontSize: 12,
-              fontWeight: activeTab === "plano" ? "700" : "500",
-              color: activeTab === "plano" ? "#8B5CF6" : theme.textTertiary,
-              letterSpacing: -0.1,
-            }}>
-              Plano Mensal
-            </Text>
-          </Pressable>
+          <View style={{ width: 52, height: 52, borderRadius: 16, backgroundColor: "rgba(255,255,255,0.2)", justifyContent: "center", alignItems: "center", marginBottom: 16 }}>
+            <Ionicons name="calendar" size={28} color="#fff" />
+          </View>
+          <Text style={{ fontSize: 22, fontWeight: "800", color: "#fff", letterSpacing: -0.5, marginBottom: 8 }}>
+            Plano Mensal
+          </Text>
+          <Text style={{ fontSize: 14, color: "rgba(255,255,255,0.8)", lineHeight: 20, marginBottom: 16 }}>
+            Gera um plano de treino personalizado para o mês com base nos teus objetivos e disponibilidade.
+          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 14, fontWeight: "700" }}>Criar plano</Text>
+            <Ionicons name="arrow-forward" size={16} color="rgba(255,255,255,0.9)" />
+          </View>
+        </Pressable>
 
-          {/* Divisor vertical */}
-          <View style={{ width: 1, backgroundColor: theme.backgroundTertiary, marginVertical: 8 }} />
-
-          {/* Relatório Semanal — direita */}
-          <Pressable
-            onPress={() => switchTab("relatorio")}
-            accessibilityRole="tab"
-            accessibilityLabel="Relatório Semanal"
-            style={({ pressed }) => ({
-              flex: 1,
-              paddingVertical: 14,
-              borderRadius: 13,
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 5,
-              opacity: pressed && activeTab !== "relatorio" ? 0.7 : 1,
-              backgroundColor: activeTab === "relatorio" ? theme.background : "transparent",
-              shadowColor: activeTab === "relatorio" ? "#000" : "transparent",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: activeTab === "relatorio" ? 0.08 : 0,
-              shadowRadius: 6,
-              elevation: activeTab === "relatorio" ? 3 : 0,
-            })}
-          >
-            <Ionicons name="bar-chart-outline" size={18} color={activeTab === "relatorio" ? "#30D158" : theme.textTertiary} />
-            <Text style={{
-              fontSize: 12,
-              fontWeight: activeTab === "relatorio" ? "700" : "500",
-              color: activeTab === "relatorio" ? "#30D158" : theme.textTertiary,
-              letterSpacing: -0.1,
-            }}>
-              Relatório Semanal
-            </Text>
-          </Pressable>
-        </View>
-      </View>
-
-      {/* Content */}
-      <View style={{ flex: 1 }}>
-        {activeTab === "plano" && <PlanTab />}
-        {activeTab === "relatorio" && <ReportTab />}
-      </View>
+        {/* Card — Relatório Semanal */}
+        <Pressable
+          onPress={() => router.push("/ai-report")}
+          accessibilityRole="button"
+          accessibilityLabel="Ver Relatório Semanal com IA"
+          style={({ pressed }) => ({
+            backgroundColor: "#30D158",
+            borderRadius: 24,
+            padding: 24,
+            opacity: pressed ? 0.85 : 1,
+            shadowColor: "#30D158",
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.35,
+            shadowRadius: 16,
+            elevation: 8,
+          })}
+        >
+          <View style={{ width: 52, height: 52, borderRadius: 16, backgroundColor: "rgba(255,255,255,0.2)", justifyContent: "center", alignItems: "center", marginBottom: 16 }}>
+            <Ionicons name="bar-chart" size={28} color="#fff" />
+          </View>
+          <Text style={{ fontSize: 22, fontWeight: "800", color: "#fff", letterSpacing: -0.5, marginBottom: 8 }}>
+            Relatório Semanal
+          </Text>
+          <Text style={{ fontSize: 14, color: "rgba(255,255,255,0.8)", lineHeight: 20, marginBottom: 16 }}>
+            Analisa o teu treino semanal e recebe feedback personalizado sobre progresso e equilíbrio muscular.
+          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 14, fontWeight: "700" }}>Ver relatório</Text>
+            <Ionicons name="arrow-forward" size={16} color="rgba(255,255,255,0.9)" />
+          </View>
+        </Pressable>
+      </ScrollView>
     </View>
   );
 }

@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../contexts/AuthContext";
 import { metricsApi, userApi, planoApi } from "../../services/api";
 import { useTheme } from "../../styles/theme";
+import { useAndroidInsets } from "../../hooks/useAndroidInsets";
 import { MetricsScreenSkeleton } from "../../components/ui/SkeletonLoader";
 
 const DAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
@@ -27,6 +28,7 @@ const MONTHS = [
 export default function Metrics() {
   const { user } = useAuth();
   const theme = useTheme();
+  const { paddingTop: safeTop, paddingBottom: safeBottom } = useAndroidInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [planoTipo, setPlanoTipo] = useState<"free" | "pago">("free");
@@ -448,7 +450,7 @@ export default function Metrics() {
       >
 
       {/* ── Header ── */}
-      <View style={{ paddingHorizontal: 24, paddingTop: 56, paddingBottom: 16 }}>
+      <View style={{ paddingHorizontal: 24, paddingTop: safeTop + 12, paddingBottom: 16 }}>
         <Text style={{ fontSize: 32, fontWeight: "800", color: theme.text, letterSpacing: -1 }}>
           Métricas
         </Text>
@@ -920,7 +922,7 @@ export default function Metrics() {
             </View>
           )}
 
-          <ScrollView showsVerticalScrollIndicator={false} style={{ flexShrink: 1 }} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}>
+          <ScrollView showsVerticalScrollIndicator={false} style={{ flexShrink: 1 }} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: safeBottom + 20 }}>
             {loadingDetails && (
               <View style={{ justifyContent: "center", alignItems: "center", padding: 24 }}>
                 <ActivityIndicator size="large" color={theme.accent} />
@@ -995,7 +997,7 @@ export default function Metrics() {
           borderTopLeftRadius: 28,
           borderTopRightRadius: 28,
           padding: 24,
-          paddingBottom: 40,
+          paddingBottom: safeBottom + 20,
         }}>
           <View style={{ width: 36, height: 4, backgroundColor: theme.border, borderRadius: 2, alignSelf: "center", marginBottom: 20 }} />
           {/* Título */}

@@ -19,11 +19,13 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useCommunities } from "../../contexts/CommunitiesContext";
 import { workoutApi, exerciseApi, planoApi } from "../../services/api";
 import { useTheme } from "../../styles/theme";
+import { useAndroidInsets } from "../../hooks/useAndroidInsets";
 import { WorkoutsScreenSkeleton } from "../../components/ui/SkeletonLoader";
 
 export default function Workouts() {
   const { user } = useAuth();
   const theme = useTheme();
+  const { paddingTop: safeTop, paddingBottom: safeBottom } = useAndroidInsets();
   const { userCommunities, sendMessage } = useCommunities();
   const [refreshing, setRefreshing] = useState(false);
   const [myWorkouts, setMyWorkouts] = useState<any[]>([]);
@@ -285,7 +287,7 @@ export default function Workouts() {
         }
       >
         {/* Header */}
-        <View style={{ paddingHorizontal: 24, paddingTop: 56, paddingBottom: 16 }}>
+        <View style={{ paddingHorizontal: 24, paddingTop: safeTop + 12, paddingBottom: 16 }}>
           <Text style={{ fontSize: 32, fontWeight: "800", color: theme.text, letterSpacing: -1 }}>
             Treinos
           </Text>
@@ -468,11 +470,11 @@ export default function Workouts() {
                       </View>
 
                       {/* Ações */}
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                         {!workout.is_ia && (
                           <TouchableOpacity
                             onPress={(e) => { e.stopPropagation?.(); handleShareTemplate(workout); }}
-                            style={{ padding: 8 }}
+                            style={{ padding: 10 }}
                             accessibilityLabel="Partilhar treino"
                           >
                             <Ionicons name="share-social-outline" size={19} color={theme.textSecondary} />
@@ -480,14 +482,14 @@ export default function Workouts() {
                         )}
                         <TouchableOpacity
                           onPress={(e) => { e.stopPropagation?.(); openEditModal(workout); }}
-                          style={{ padding: 8 }}
+                          style={{ padding: 10 }}
                           accessibilityLabel="Editar treino"
                         >
                           <Ionicons name="create-outline" size={19} color={theme.textSecondary} />
                         </TouchableOpacity>
                         <TouchableOpacity
                           onPress={(e) => { e.stopPropagation?.(); handleDeleteWorkout(workout); }}
-                          style={{ padding: 8 }}
+                          style={{ padding: 10 }}
                           accessibilityLabel="Apagar treino"
                         >
                           <Ionicons name="trash-outline" size={19} color={theme.textSecondary} />
@@ -870,7 +872,7 @@ export default function Workouts() {
               data={userCommunities}
               keyExtractor={(item) => String(item.id)}
               style={{ flexShrink: 1 }}
-              contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}
+              contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: safeBottom + 20 }}
               ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
               renderItem={({ item }) => (
                 <Pressable
