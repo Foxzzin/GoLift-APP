@@ -14,6 +14,7 @@ import {
 import { Link } from "expo-router";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../styles/theme";
+import { useAndroidInsets } from "../hooks/useAndroidInsets";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -187,6 +188,7 @@ function PickerWheel({ value, minValue, maxValue, step, onChange, unit, theme }:
 export default function Register() {
   const { register } = useAuth();
   const theme = useTheme();
+  const { safeTop } = useAndroidInsets();
   const [step, setStep] = useState<Step>("nome");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -638,7 +640,7 @@ export default function Register() {
     >
       <View style={{ flex: 1 }}>
         {/* Conteúdo Principal */}
-        <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 52 }}>
+        <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: safeTop + 12 }}>
           {/* Header */}
           <View style={{ alignItems: "center", marginBottom: 16 }}>
             <View style={{

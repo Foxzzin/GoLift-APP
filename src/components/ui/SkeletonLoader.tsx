@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Animated, View, ViewStyle } from "react-native";
 import { useTheme } from "../../styles/theme";
+import { useAndroidInsets } from "../../hooks/useAndroidInsets";
 
 interface SkeletonProps {
   width?: number | string;
@@ -44,8 +45,9 @@ export function Skeleton({ width = "100%", height = 16, borderRadius = 8, style 
 
 export function HomeScreenSkeleton() {
   const theme = useTheme();
+  const { safeTop } = useAndroidInsets();
   return (
-    <View style={{ flex: 1, backgroundColor: theme.background, paddingHorizontal: 24, paddingTop: 64 }}>
+    <View style={{ flex: 1, backgroundColor: theme.background, paddingHorizontal: 24, paddingTop: safeTop + 16 }}>
       {/* Greeting */}
       <Skeleton width={120} height={14} borderRadius={6} style={{ marginBottom: 10 }} />
       <Skeleton width={200} height={38} borderRadius={8} style={{ marginBottom: 24 }} />
@@ -80,8 +82,9 @@ export function HomeScreenSkeleton() {
 
 export function WorkoutsScreenSkeleton() {
   const theme = useTheme();
+  const { safeTop } = useAndroidInsets();
   return (
-    <View style={{ flex: 1, backgroundColor: theme.background, paddingHorizontal: 24, paddingTop: 56 }}>
+    <View style={{ flex: 1, backgroundColor: theme.background, paddingHorizontal: 24, paddingTop: safeTop + 16 }}>
       {/* Header */}
       <Skeleton width={140} height={36} borderRadius={8} style={{ marginBottom: 24 }} />
 
@@ -102,8 +105,9 @@ export function WorkoutsScreenSkeleton() {
 
 export function ProfileScreenSkeleton() {
   const theme = useTheme();
+  const { safeTop } = useAndroidInsets();
   return (
-    <View style={{ flex: 1, backgroundColor: theme.background, paddingTop: 56 }}>
+    <View style={{ flex: 1, backgroundColor: theme.background, paddingTop: safeTop + 16 }}>
       {/* Hero */}
       <View style={{ paddingHorizontal: 24, marginBottom: 28 }}>
         <Skeleton height={180} borderRadius={28} />
@@ -129,8 +133,9 @@ export function ProfileScreenSkeleton() {
 
 export function MetricsScreenSkeleton() {
   const theme = useTheme();
+  const { safeTop } = useAndroidInsets();
   return (
-    <View style={{ flex: 1, backgroundColor: theme.background, paddingHorizontal: 24, paddingTop: 56 }}>
+    <View style={{ flex: 1, backgroundColor: theme.background, paddingHorizontal: 24, paddingTop: safeTop + 16 }}>
       <Skeleton width={140} height={36} borderRadius={8} style={{ marginBottom: 24 }} />
 
       {/* Stats grid */}
