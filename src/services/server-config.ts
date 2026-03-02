@@ -2,8 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CACHED_IP_KEY = "@golift:server_ip";
 
-// IP do servidor de produção AWS EC2
-const PRODUCTION_IP = process.env.EXPO_PUBLIC_API_IP ?? "13.48.56.98";
+// Domínio do servidor de produção AWS EC2
+const PRODUCTION_IP = process.env.EXPO_PUBLIC_API_IP ?? "goliftapp.me";
 const PRODUCTION_PORT = "80";
 const IS_PRODUCTION = process.env.EXPO_PUBLIC_IS_PRODUCTION === "true";
 const DEV_PORT = "3000";
