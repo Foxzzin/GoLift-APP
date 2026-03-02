@@ -16,11 +16,13 @@ import { useTheme } from "../styles/theme";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { authApi } from "../services/api";
+import { useAndroidInsets } from "../hooks/useAndroidInsets";
 
 
 export default function Login() {
   const { login } = useAuth();
   const theme = useTheme();
+  const { safeTop } = useAndroidInsets();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -68,7 +70,7 @@ export default function Login() {
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={{ flex: 1, justifyContent: "space-between", paddingHorizontal: 28, paddingTop: 80, paddingBottom: 48 }}>
+        <View style={{ flex: 1, justifyContent: "space-between", paddingHorizontal: 28, paddingTop: safeTop + 24, paddingBottom: 48 }}>
 
           {/* Brand */}
           <View>

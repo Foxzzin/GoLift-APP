@@ -12,9 +12,11 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "../../styles/theme";
 import { useCommunities } from "../../contexts/CommunitiesContext";
+import { useAndroidInsets } from "../../hooks/useAndroidInsets";
 
 export default function WorkoutSummary() {
   const theme = useTheme();
+  const { safeTop } = useAndroidInsets();
   const params = useLocalSearchParams();
   const { userCommunities, sendMessage } = useCommunities();
 
@@ -68,7 +70,7 @@ export default function WorkoutSummary() {
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
 
         {/* ── Hero ── */}
-        <View style={{ alignItems: "center", paddingTop: 80, paddingBottom: 36, paddingHorizontal: 24 }}>
+        <View style={{ alignItems: "center", paddingTop: safeTop + 24, paddingBottom: 36, paddingHorizontal: 24 }}>
           {/* Checkmark circle */}
           <View style={{
             width: 100,
