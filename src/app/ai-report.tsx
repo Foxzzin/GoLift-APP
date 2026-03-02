@@ -147,11 +147,11 @@ export default function AIReport() {
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 36 }}>
           <View style={{
             width: 72, height: 72, borderRadius: 24,
-            backgroundColor: "#30D15822",
+            backgroundColor: theme.accent + "22",
             justifyContent: "center", alignItems: "center",
             marginBottom: 20,
           }}>
-            <Ionicons name="bar-chart" size={32} color="#30D158" />
+            <Ionicons name="bar-chart" size={32} color={theme.accent} />
           </View>
           <Text style={{ fontSize: 22, fontWeight: "800", color: theme.text, textAlign: "center", letterSpacing: -0.5, marginBottom: 10 }}>
             Funcionalidade Pro
@@ -179,10 +179,10 @@ export default function AIReport() {
   }
 
   const sections: ReportSection[] = relatorio ? [
-    { icon: "trophy-outline", label: "Avaliação Geral", value: relatorio.avaliacao, color: theme.accentGreen },
-    { icon: "body-outline", label: "Equilíbrio Muscular", value: relatorio.equilibrio, color: theme.accentBlue },
-    { icon: "trending-up-outline", label: "Progressão", value: relatorio.progressao, color: theme.accent },
-    { icon: "moon-outline", label: "Descanso & Recuperação", value: relatorio.descanso, color: "#a78bfa" },
+    { icon: "trophy-outline", label: "Avaliação Geral", value: relatorio.avaliacao, color: "#FF9500" },
+    { icon: "body-outline", label: "Equilíbrio Muscular", value: relatorio.equilibrio, color: theme.accent },
+    { icon: "trending-up-outline", label: "Progressão", value: relatorio.progressao, color: "#5856D6" },
+    { icon: "moon-outline", label: "Descanso & Recuperação", value: relatorio.descanso, color: "#5AC8FA" },
   ] : [];
 
   return (
@@ -216,9 +216,9 @@ export default function AIReport() {
           )}
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <View style={{ backgroundColor: "#30D15822", borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5, flexDirection: "row", alignItems: "center", gap: 5 }}>
-            <Ionicons name="sparkles" size={12} color="#30D158" />
-            <Text style={{ color: "#30D158", fontSize: 11, fontWeight: "700" }}>IA</Text>
+          <View style={{ backgroundColor: theme.accent + "18", borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5, flexDirection: "row", alignItems: "center", gap: 5 }}>
+            <Ionicons name="sparkles" size={12} color={theme.accent} />
+            <Text style={{ color: theme.accent, fontSize: 11, fontWeight: "700" }}>IA</Text>
           </View>
           <Pressable
             onPress={handleManualGenerate}
@@ -244,11 +244,11 @@ export default function AIReport() {
         <View style={{ alignItems: "center", paddingVertical: 80 }}>
           <View style={{
             width: 72, height: 72, borderRadius: 24,
-            backgroundColor: "#30D15822",
+            backgroundColor: theme.accent + "22",
             justifyContent: "center", alignItems: "center",
             marginBottom: 20,
           }}>
-            <ActivityIndicator size="large" color="#30D158" />
+            <ActivityIndicator size="large" color={theme.accent} />
           </View>
           <Text style={{ color: theme.text, fontWeight: "700", fontSize: 17, marginBottom: 6 }}>
             A analisar os teus treinos...
@@ -258,19 +258,24 @@ export default function AIReport() {
       )}
 
       {!relatorio && !generating && (
-        <View style={{ padding: 20 }}>
-          {/* Hero card */}
+        <View style={{ padding: 24 }}>
+          {/* Info card */}
           <View style={{
-            backgroundColor: "#30D158",
-            borderRadius: 24, padding: 24, marginBottom: 20,
+            backgroundColor: theme.backgroundSecondary,
+            borderRadius: 20,
+            padding: 20,
+            marginBottom: 16,
           }}>
-            <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 11, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 6 }}>
-              ANÁLISE SEMANAL
-            </Text>
-            <Text style={{ color: "#fff", fontSize: 22, fontWeight: "800", letterSpacing: -0.5, lineHeight: 28, marginBottom: 8 }}>
-              A IA analisa a tua{"\n"}semana de treino
-            </Text>
-            <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 14, lineHeight: 20 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
+              <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: theme.accent + "18", justifyContent: "center", alignItems: "center", marginRight: 12 }}>
+                <Ionicons name="analytics" size={20} color={theme.accent} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", color: theme.textSecondary }}>ANÁLISE SEMANAL</Text>
+                <Text style={{ fontSize: 17, fontWeight: "700", color: theme.text, letterSpacing: -0.3, marginTop: 2 }}>A IA analisa a tua semana</Text>
+              </View>
+            </View>
+            <Text style={{ color: theme.textSecondary, fontSize: 14, lineHeight: 21 }}>
               Desempenho, equilíbrio muscular, progressão e sugestões personalizadas.
             </Text>
           </View>
@@ -283,15 +288,27 @@ export default function AIReport() {
             accessibilityRole="button"
             accessibilityLabel="Gerar relatório"
             style={({ pressed }) => ({
-              backgroundColor: "#30D158",
-              borderRadius: 16, paddingVertical: 16,
-              alignItems: "center", flexDirection: "row",
-              justifyContent: "center", gap: 10,
-              opacity: pressed ? 0.85 : 1,
+              backgroundColor: theme.accent,
+              borderRadius: 20,
+              paddingVertical: 18,
+              paddingHorizontal: 24,
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: pressed ? 0.8 : 1,
+              shadowColor: theme.accent,
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.35,
+              shadowRadius: 12,
+              elevation: 8,
             })}
           >
-            <Ionicons name="sparkles" size={18} color="#fff" />
-            <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>Gerar Relatório</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 4 }}>
+              <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.2)", justifyContent: "center", alignItems: "center" }}>
+                <Ionicons name="sparkles" size={16} color="#fff" />
+              </View>
+              <Text style={{ color: "#fff", fontWeight: "800", fontSize: 17, letterSpacing: -0.3 }}>Gerar Relatório</Text>
+            </View>
+            <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, fontWeight: "500" }}>Análise completa da tua semana</Text>
           </Pressable>
         </View>
       )}
@@ -307,13 +324,11 @@ export default function AIReport() {
                 borderRadius: 20,
                 padding: 18,
                 marginBottom: 12,
-                borderLeftWidth: 3,
-                borderLeftColor: s.color,
               }}
             >
               <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10, gap: 10 }}>
-                <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: s.color + "22", justifyContent: "center", alignItems: "center" }}>
-                  <Ionicons name={s.icon} size={16} color={s.color} />
+                <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: s.color + "18", justifyContent: "center", alignItems: "center" }}>
+                  <Ionicons name={s.icon} size={18} color={s.color} />
                 </View>
                 <Text style={{ fontWeight: "700", color: theme.text, fontSize: 14 }}>{s.label}</Text>
               </View>
@@ -327,8 +342,8 @@ export default function AIReport() {
               backgroundColor: theme.backgroundSecondary, borderRadius: 20, padding: 18, marginTop: 4,
             }}>
               <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 14, gap: 10 }}>
-                <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: "#f59e0b22", justifyContent: "center", alignItems: "center" }}>
-                  <Ionicons name="bulb" size={16} color="#f59e0b" />
+                <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: "#f59e0b18", justifyContent: "center", alignItems: "center" }}>
+                  <Ionicons name="bulb" size={18} color="#f59e0b" />
                 </View>
                 <Text style={{ fontWeight: "700", color: theme.text, fontSize: 14 }}>Sugestões para esta semana</Text>
               </View>

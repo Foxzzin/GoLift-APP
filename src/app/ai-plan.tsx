@@ -184,11 +184,11 @@ export default function AIPlan() {
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 36 }}>
           <View style={{
             width: 72, height: 72, borderRadius: 24,
-            backgroundColor: "#8B5CF622",
+            backgroundColor: theme.accent + "22",
             justifyContent: "center", alignItems: "center",
             marginBottom: 20,
           }}>
-            <Ionicons name="sparkles" size={32} color="#8B5CF6" />
+            <Ionicons name="sparkles" size={32} color={theme.accent} />
           </View>
           <Text style={{ fontSize: 22, fontWeight: "800", color: theme.text, textAlign: "center", letterSpacing: -0.5, marginBottom: 10 }}>
             Funcionalidade Pro
@@ -245,29 +245,32 @@ export default function AIPlan() {
             </Text>
           )}
         </View>
-        <View style={{ backgroundColor: "#8B5CF622", borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5, flexDirection: "row", alignItems: "center", gap: 5 }}>
-          <Ionicons name="sparkles" size={12} color="#8B5CF6" />
-          <Text style={{ color: "#8B5CF6", fontSize: 11, fontWeight: "700" }}>IA</Text>
+        <View style={{ backgroundColor: theme.accent + "18", borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5, flexDirection: "row", alignItems: "center", gap: 5 }}>
+          <Ionicons name="sparkles" size={12} color={theme.accent} />
+          <Text style={{ color: theme.accent, fontSize: 11, fontWeight: "700" }}>IA</Text>
         </View>
       </View>
 
       {/* Gerar plano — estado disponível */}
       {podeGerar && !generating && (
         <View style={{ padding: 20 }}>
-          {/* Hero IA card */}
+          {/* Info card */}
           <View style={{
-            backgroundColor: "#8B5CF6",
-            borderRadius: 24,
-            padding: 24,
+            backgroundColor: theme.backgroundSecondary,
+            borderRadius: 20,
+            padding: 20,
             marginBottom: 16,
           }}>
-            <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 11, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 6 }}>
-              PLANO PERSONALIZADO
-            </Text>
-            <Text style={{ color: "#fff", fontSize: 22, fontWeight: "800", letterSpacing: -0.5, lineHeight: 28, marginBottom: 8 }}>
-              A IA cria o teu plano{"\n"}mensal de treino
-            </Text>
-            <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 14, lineHeight: 20 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
+              <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: theme.accent + "18", justifyContent: "center", alignItems: "center", marginRight: 12 }}>
+                <Ionicons name="sparkles" size={20} color={theme.accent} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", color: theme.textSecondary }}>PLANO PERSONALIZADO</Text>
+                <Text style={{ fontSize: 17, fontWeight: "700", color: theme.text, letterSpacing: -0.3, marginTop: 2 }}>A IA cria o teu plano mensal</Text>
+              </View>
+            </View>
+            <Text style={{ color: theme.textSecondary, fontSize: 14, lineHeight: 21 }}>
               Baseado no teu objetivo, nível e frequência semanal que escolheres.
             </Text>
           </View>
@@ -310,16 +313,30 @@ export default function AIPlan() {
             accessibilityRole="button"
             accessibilityLabel="Gerar plano com IA"
             style={({ pressed }) => ({
-              backgroundColor: isAdmin ? theme.accentGreen : "#8B5CF6",
-              borderRadius: 16, paddingVertical: 16,
-              alignItems: "center", flexDirection: "row",
-              justifyContent: "center", gap: 10,
-              opacity: pressed ? 0.85 : 1,
+              backgroundColor: theme.accent,
+              borderRadius: 20,
+              paddingVertical: 18,
+              paddingHorizontal: 24,
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: pressed ? 0.8 : 1,
+              shadowColor: theme.accent,
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.35,
+              shadowRadius: 12,
+              elevation: 8,
             })}
           >
-            <Ionicons name="sparkles" size={18} color="#fff" />
-            <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>
-              {isAdmin ? "Gerar novo plano (Admin)" : "Gerar Plano com IA"}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 4 }}>
+              <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.2)", justifyContent: "center", alignItems: "center" }}>
+                <Ionicons name="sparkles" size={16} color="#fff" />
+              </View>
+              <Text style={{ color: "#fff", fontWeight: "800", fontSize: 17, letterSpacing: -0.3 }}>
+                {isAdmin ? "Gerar novo plano" : "Gerar Plano com IA"}
+              </Text>
+            </View>
+            <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, fontWeight: "500" }}>
+              {isAdmin ? "Sem limites como admin" : "Personalizado para ti"}
             </Text>
           </Pressable>
           <Text style={{ color: theme.textTertiary, fontSize: 11, textAlign: "center", marginTop: 10 }}>
@@ -333,11 +350,11 @@ export default function AIPlan() {
         <View style={{ alignItems: "center", paddingVertical: 80 }}>
           <View style={{
             width: 72, height: 72, borderRadius: 24,
-            backgroundColor: "#8B5CF622",
+            backgroundColor: theme.accent + "22",
             justifyContent: "center", alignItems: "center",
             marginBottom: 20,
           }}>
-            <ActivityIndicator size="large" color="#8B5CF6" />
+            <ActivityIndicator size="large" color={theme.accent} />
           </View>
           <Text style={{ color: theme.text, fontWeight: "700", fontSize: 17, marginBottom: 6 }}>
             A criar o teu plano...
@@ -357,12 +374,12 @@ export default function AIPlan() {
             borderRadius: 20,
             padding: 18,
             marginBottom: 16,
-            borderLeftWidth: 3,
-            borderLeftColor: "#8B5CF6",
           }}>
-            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8, gap: 8 }}>
-              <Ionicons name="information-circle" size={16} color="#8B5CF6" />
-              <Text style={{ fontWeight: "700", color: theme.text, fontSize: 14 }}>Método</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10, gap: 10 }}>
+              <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: theme.accent + "18", justifyContent: "center", alignItems: "center" }}>
+                <Ionicons name="information-circle" size={18} color={theme.accent} />
+              </View>
+              <Text style={{ fontWeight: "700", color: theme.text, fontSize: 15 }}>Método</Text>
             </View>
             <Text style={{ color: theme.textSecondary, lineHeight: 22, fontSize: 14 }}>{plano.descricao}</Text>
           </View>
@@ -373,12 +390,10 @@ export default function AIPlan() {
             const aberto = diaExpandido === idx;
             return (
               <View key={idx} style={{
-                backgroundColor: theme.backgroundSecondary,
+                backgroundColor: aberto ? theme.backgroundTertiary : theme.backgroundSecondary,
                 borderRadius: 20,
                 marginBottom: 10,
                 overflow: "hidden",
-                borderWidth: 1,
-                borderColor: aberto ? cor + "55" : "transparent",
               }}>
                 <Pressable
                   onPress={() => setDiaExpandido(aberto ? null : idx)}
@@ -455,16 +470,14 @@ export default function AIPlan() {
                         accessibilityRole="button"
                         accessibilityLabel={importedDays.has(idx) ? "Treino já adicionado" : "Adicionar aos meus treinos"}
                         style={({ pressed }) => ({
-                          backgroundColor: importedDays.has(idx) ? "#22c55e15" : cor + "15",
-                          borderColor: importedDays.has(idx) ? "#22c55e" : cor,
-                          borderWidth: 1,
-                          borderRadius: 12,
+                          backgroundColor: importedDays.has(idx) ? "#22c55e18" : cor + "15",
+                          borderRadius: 14,
                           paddingVertical: 12,
                           alignItems: "center",
                           flexDirection: "row",
                           justifyContent: "center",
                           gap: 8,
-                          opacity: pressed ? 0.8 : 1,
+                          opacity: pressed ? 0.7 : 1,
                         })}
                       >
                         {importingDay === idx ? (

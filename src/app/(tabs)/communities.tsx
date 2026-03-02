@@ -128,7 +128,9 @@ export default function Communities() {
     >
       {userCommunities.length === 0 ? (
         <View style={{ padding: 24, alignItems: "center", marginTop: 80 }}>
-          <Text style={{ fontSize: 52, marginBottom: 16 }}>👥</Text>
+          <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: theme.backgroundSecondary, alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+            <Ionicons name="people-outline" size={32} color={theme.textTertiary} />
+          </View>
           <Text style={{ color: theme.text, fontSize: 18, fontWeight: "700", textAlign: "center", marginBottom: 8 }}>
             Sem comunidades ainda
           </Text>
@@ -158,7 +160,7 @@ export default function Communities() {
           </Pressable>
         </View>
       ) : (
-        <View style={{ padding: 16 }}>
+        <View style={{ paddingHorizontal: 24 }}>
           {userCommunities.map((community) => (
             <Pressable
               key={community.id}
@@ -172,8 +174,6 @@ export default function Communities() {
                 marginBottom: 12,
                 flexDirection: "row",
                 gap: 12,
-                borderLeftWidth: 3,
-                borderLeftColor: communityColor(community.nome),
                 opacity: pressed ? 0.75 : 1,
               })}
             >
@@ -194,9 +194,12 @@ export default function Communities() {
                 <Text style={{ color: theme.textSecondary, fontSize: 12, marginBottom: 6 }} numberOfLines={1}>
                   {community.descricao}
                 </Text>
-                <Text style={{ color: theme.textTertiary, fontSize: 11 }}>
-                  👥 {community.membros} membros
-                </Text>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <Ionicons name="people-outline" size={13} color={theme.textTertiary} />
+                  <Text style={{ color: theme.textTertiary, fontSize: 11 }}>
+                    {community.membros} membros
+                  </Text>
+                </View>
               </View>
               <Ionicons name="chevron-forward" size={18} color={theme.textTertiary} style={{ alignSelf: "center" }} />
             </Pressable>
@@ -214,7 +217,9 @@ export default function Communities() {
     >
       {communities.length === 0 ? (
         <View style={{ padding: 24, alignItems: "center", marginTop: 80 }}>
-          <Text style={{ fontSize: 52, marginBottom: 16 }}>🔍</Text>
+          <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: theme.backgroundSecondary, alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+            <Ionicons name="search-outline" size={32} color={theme.textTertiary} />
+          </View>
           <Text style={{ color: theme.text, fontSize: 18, fontWeight: "700", textAlign: "center" }}>
             Nenhuma comunidade disponível
           </Text>
@@ -223,7 +228,7 @@ export default function Communities() {
           </Text>
         </View>
       ) : (
-        <View style={{ padding: 16 }}>
+        <View style={{ paddingHorizontal: 24 }}>
           {communities.map((community) => {
             const isJoined = userCommunities.some((c) => c.id === community.id);
 
@@ -235,8 +240,6 @@ export default function Communities() {
                   borderRadius: 20,
                   padding: 16,
                   marginBottom: 12,
-                  borderLeftWidth: 3,
-                  borderLeftColor: communityColor(community.nome),
                 }}
               >
                 <View style={{ flexDirection: "row", gap: 12, marginBottom: isJoined ? 0 : 12 }}>
@@ -271,13 +274,19 @@ export default function Communities() {
                       {community.descricao}
                     </Text>
                     <View style={{ flexDirection: "row", gap: 8 }}>
-                      <Text style={{ color: theme.textTertiary, fontSize: 11 }}>
-                        👥 {community.membros}
-                      </Text>
-                      {community.pais && (
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                        <Ionicons name="people-outline" size={13} color={theme.textTertiary} />
                         <Text style={{ color: theme.textTertiary, fontSize: 11 }}>
-                          📍 {community.pais}
+                          {community.membros}
                         </Text>
+                      </View>
+                      {community.pais && (
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                          <Ionicons name="location-outline" size={13} color={theme.textTertiary} />
+                          <Text style={{ color: theme.textTertiary, fontSize: 11 }}>
+                            {community.pais}
+                          </Text>
+                        </View>
                       )}
                     </View>
                   </View>
@@ -291,7 +300,7 @@ export default function Communities() {
                     style={({ pressed }) => ({
                       backgroundColor: theme.accent,
                       paddingVertical: 12,
-                      borderRadius: 12,
+                      borderRadius: 14,
                       alignItems: "center",
                       marginHorizontal: 0,
                       opacity: pressed ? 0.7 : 1,

@@ -1,14 +1,16 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
   Pressable,
   Animated,
+  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "../contexts/AuthContext";
+import { planoApi } from "../services/api";
 import { useTheme } from "../styles/theme";
 import { useAndroidInsets } from "../hooks/useAndroidInsets";
 
@@ -21,13 +23,46 @@ export default function AIHub() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const isAdmin = user?.tipo === 1;
 
+  const [planStatus, setPlanStatus] = useState<string | null>(null);
+  const [reportStatus, setReportStatus] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 400,
       useNativeDriver: true,
     }).start();
+    if (user?.id) loadStatus();
   }, []);
+
+  async function loadStatus() {
+    setLoading(true);
+    try {
+      const [planData, reportData] = await Promise.all([
+        planoApi.getPlan(user!.id).catch(() => null),
+        planoApi.getReport(user!.id).catch(() => null),
+      ]);
+      if (planData?.plano) {
+        setPlanStatus(planData.mes ? formatMes(planData.mes) : "Ativo");
+      } else {
+        setPlanStatus(planData?.pode_gerar ? "Disponível" : null);
+      }
+      if (reportData?.relatorio) {
+        setReportStatus("Disponível");
+      } else {
+        setReportStatus(null);
+      }
+    } catch { }
+    finally { setLoading(false); }
+  }
+
+  function formatMes(mesStr: string) {
+    if (!mesStr) return "";
+    const [ano, m] = mesStr.split("-");
+    const d = new Date(Number(ano), Number(m) - 1, 1);
+    return d.toLocaleDateString("pt-PT", { month: "long" }).replace(/^./, (c) => c.toUpperCase());
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
@@ -52,15 +87,45 @@ export default function AIHub() {
           Assistente IA
         </Text>
         <Text style={{ color: theme.textSecondary, fontSize: 15, marginTop: 6, lineHeight: 22 }}>
-          Planos e análises personalizadas com inteligência artificial.
+          O diferencial do teu treino.
         </Text>
       </View>
 
       <Animated.ScrollView
         style={{ opacity: fadeAnim }}
-        contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 28, paddingBottom: 40 }}
+        contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
+        {/* Hero Card — Estado IA */}
+        <View style={{
+          backgroundColor: theme.backgroundSecondary,
+          borderRadius: 24,
+          padding: 22,
+          marginBottom: 24,
+        }}>
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
+            <View style={{
+              width: 44, height: 44, borderRadius: 14,
+              backgroundColor: theme.accent + "18",
+              justifyContent: "center", alignItems: "center",
+              marginRight: 12,
+            }}>
+              <Ionicons name="sparkles" size={20} color={theme.accent} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", color: theme.textSecondary }}>
+                INTELIGÊNCIA ARTIFICIAL
+              </Text>
+              <Text style={{ fontSize: 17, fontWeight: "700", color: theme.text, letterSpacing: -0.3, marginTop: 2 }}>
+                Potenciado por IA
+              </Text>
+            </View>
+          </View>
+          <Text style={{ fontSize: 14, color: theme.textSecondary, lineHeight: 21 }}>
+            Planos de treino mensais e relatórios semanais criados à medida com inteligência artificial, adaptados ao teu nível e objetivos.
+          </Text>
+        </View>
+
         {/* Section Label */}
         <Text style={{
           fontSize: 11, fontWeight: "700", letterSpacing: 1,
@@ -88,16 +153,23 @@ export default function AIHub() {
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <View style={{
               width: 48, height: 48, borderRadius: 14,
-              backgroundColor: "#8B5CF618",
+              backgroundColor: theme.accent + "18",
               justifyContent: "center", alignItems: "center",
               marginRight: 14,
             }}>
-              <Ionicons name="calendar" size={22} color="#8B5CF6" />
+              <Ionicons name="calendar" size={22} color={theme.accent} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 17, fontWeight: "700", color: theme.text, letterSpacing: -0.3 }}>
-                Plano Mensal
-              </Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <Text style={{ fontSize: 17, fontWeight: "700", color: theme.text, letterSpacing: -0.3 }}>
+                  Plano Mensal
+                </Text>
+                {!loading && planStatus && (
+                  <View style={{ backgroundColor: theme.accent + "18", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
+                    <Text style={{ fontSize: 10, fontWeight: "700", color: theme.accent }}>{planStatus}</Text>
+                  </View>
+                )}
+              </View>
               <Text style={{ color: theme.textSecondary, fontSize: 13, marginTop: 3, lineHeight: 18 }}>
                 Treino completo criado à medida dos teus objetivos e disponibilidade.
               </Text>
@@ -118,23 +190,30 @@ export default function AIHub() {
             backgroundColor: theme.backgroundSecondary,
             borderRadius: 20,
             padding: 20,
-            marginBottom: 28,
+            marginBottom: 24,
             opacity: pressed ? 0.85 : 1,
           })}
         >
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <View style={{
               width: 48, height: 48, borderRadius: 14,
-              backgroundColor: theme.accentGreen + "18",
+              backgroundColor: theme.accent + "18",
               justifyContent: "center", alignItems: "center",
               marginRight: 14,
             }}>
-              <Ionicons name="bar-chart" size={22} color={theme.accentGreen} />
+              <Ionicons name="bar-chart" size={22} color={theme.accent} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 17, fontWeight: "700", color: theme.text, letterSpacing: -0.3 }}>
-                Relatório Semanal
-              </Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <Text style={{ fontSize: 17, fontWeight: "700", color: theme.text, letterSpacing: -0.3 }}>
+                  Relatório Semanal
+                </Text>
+                {!loading && reportStatus && (
+                  <View style={{ backgroundColor: theme.accent + "18", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
+                    <Text style={{ fontSize: 10, fontWeight: "700", color: theme.accent }}>{reportStatus}</Text>
+                  </View>
+                )}
+              </View>
               <Text style={{ color: theme.textSecondary, fontSize: 13, marginTop: 3, lineHeight: 18 }}>
                 Análise de progresso, equilíbrio muscular e sugestões de melhoria.
               </Text>
@@ -143,31 +222,47 @@ export default function AIHub() {
           </View>
         </Pressable>
 
-        {/* Info Banner */}
-        <View style={{
-          backgroundColor: theme.accent + "0A",
-          borderRadius: 16,
-          padding: 16,
-          flexDirection: "row",
-          alignItems: "flex-start",
-          gap: 12,
-          marginBottom: 20,
+        {/* Quick Stats */}
+        <Text style={{
+          fontSize: 11, fontWeight: "700", letterSpacing: 1,
+          textTransform: "uppercase", color: theme.textSecondary, marginBottom: 12,
         }}>
-          <View style={{
-            width: 32, height: 32, borderRadius: 10,
-            backgroundColor: theme.accent + "18",
-            justifyContent: "center", alignItems: "center",
-            marginTop: 1,
-          }}>
-            <Ionicons name="sparkles" size={16} color={theme.accent} />
+          RESUMO
+        </Text>
+        <View style={{ flexDirection: "row", gap: 12, marginBottom: 24 }}>
+          <View style={{ flex: 1, backgroundColor: theme.backgroundSecondary, borderRadius: 20, padding: 18 }}>
+            <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 8 }}>
+              Plano
+            </Text>
+            {loading ? (
+              <ActivityIndicator size="small" color={theme.accent} style={{ marginTop: 8 }} />
+            ) : (
+              <>
+                <Text style={{ color: theme.text, fontSize: 22, fontWeight: "800", letterSpacing: -0.5 }}>
+                  {planStatus || "—"}
+                </Text>
+                <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 4 }}>
+                  {planStatus && planStatus !== "Disponível" ? "ativo" : "sem plano"}
+                </Text>
+              </>
+            )}
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 13, fontWeight: "600", color: theme.text, letterSpacing: -0.1, marginBottom: 4 }}>
-              Potenciado por IA
+          <View style={{ flex: 1, backgroundColor: theme.backgroundSecondary, borderRadius: 20, padding: 18 }}>
+            <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 8 }}>
+              Relatório
             </Text>
-            <Text style={{ fontSize: 13, color: theme.textSecondary, lineHeight: 19 }}>
-              Os planos e relatórios são gerados com inteligência artificial, adaptados ao teu nível e objetivos.
-            </Text>
+            {loading ? (
+              <ActivityIndicator size="small" color={theme.accent} style={{ marginTop: 8 }} />
+            ) : (
+              <>
+                <Text style={{ color: theme.text, fontSize: 22, fontWeight: "800", letterSpacing: -0.5 }}>
+                  {reportStatus || "—"}
+                </Text>
+                <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 4 }}>
+                  {reportStatus ? "esta semana" : "sem dados"}
+                </Text>
+              </>
+            )}
           </View>
         </View>
 

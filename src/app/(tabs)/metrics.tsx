@@ -432,7 +432,7 @@ export default function Metrics() {
   const weekProgress = getWeeklyProgress();
   const weightProg = getWeightProgress();
   const weeklyBarData = useMemo(() => getWeeklyBarData(), [workoutDates]);
-  const MEDALS = ["🥇", "🥈", "🥉"];
+  const MEDAL_COLORS = ["#f59e0b", "#94a3b8", "#cd7f32"];
 
   if (loading) {
     return <MetricsScreenSkeleton />;
@@ -742,7 +742,14 @@ export default function Metrics() {
                   opacity: pressed ? 0.7 : 1,
                 })}
               >
-                <Text style={{ fontSize: 24, marginRight: 14 }}>{MEDALS[index] ?? "🏅"}</Text>
+                <View style={{
+                  width: 36, height: 36, borderRadius: 12,
+                  backgroundColor: (MEDAL_COLORS[index] ?? "#94a3b8") + "18",
+                  justifyContent: "center", alignItems: "center",
+                  marginRight: 14,
+                }}>
+                  <Ionicons name="trophy" size={18} color={MEDAL_COLORS[index] ?? "#94a3b8"} />
+                </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: theme.text, fontWeight: "700", fontSize: 15, letterSpacing: -0.2 }}>
                     {record.nome_exercicio || record.exercicio || record.exercise}

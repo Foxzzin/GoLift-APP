@@ -178,13 +178,13 @@ export default function Settings() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       {/* Header */}
-      <View style={{ paddingHorizontal: 20, paddingTop: safeTop + 16, paddingBottom: 16, flexDirection: "row", alignItems: "center" }}>
+      <View style={{ paddingHorizontal: 24, paddingTop: safeTop + 16, paddingBottom: 16, flexDirection: "row", alignItems: "center" }}>
         <Pressable
           onPress={() => router.back()}
           accessibilityRole="button"
           accessibilityLabel="Voltar"
           style={({ pressed }) => ({
-            width: 36, height: 36, borderRadius: 12,
+            width: 40, height: 40, borderRadius: 14,
             backgroundColor: theme.backgroundSecondary,
             justifyContent: "center", alignItems: "center",
             marginRight: 14, opacity: pressed ? 0.7 : 1,
@@ -197,7 +197,7 @@ export default function Settings() {
         </Text>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 60 }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 60 }}>
 
         {/* ── APARÊNCIA ── */}
         <SectionHeader title="Aparência" />

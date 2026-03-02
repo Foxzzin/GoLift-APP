@@ -167,10 +167,10 @@ export default function AdminCommunities() {
                 {community.nome}
               </Text>
               {!!community.verificada && (
-                <Text style={{ fontSize: 12, color: theme.accent }}>✓</Text>
+                <Ionicons name="checkmark-circle" size={14} color={theme.accent} />
               )}
               {!!community.privada && (
-                <Text style={{ fontSize: 12, color: theme.textTertiary }}>🔒</Text>
+                <Ionicons name="lock-closed" size={12} color={theme.textTertiary} />
               )}
             </View>
             <Ionicons
@@ -226,7 +226,7 @@ export default function AdminCommunities() {
               </View>
               <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                 <Text style={{ color: theme.textTertiary, fontSize: 11 }}>Tipo</Text>
-                <Text style={{ color: theme.textSecondary, fontSize: 11 }}>{community.privada ? "🔒 Privada" : "🌍 Pública"}</Text>
+                <Text style={{ color: theme.textSecondary, fontSize: 11 }}>{community.privada ? "Privada" : "Pública"}</Text>
               </View>
               <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                 <Text style={{ color: theme.textTertiary, fontSize: 11 }}>País</Text>
@@ -315,7 +315,7 @@ export default function AdminCommunities() {
             accessibilityLabel="Voltar"
             accessibilityRole="button"
             style={({ pressed }) => ({
-              width: 36, height: 36, borderRadius: 12,
+              width: 40, height: 40, borderRadius: 14,
               backgroundColor: theme.backgroundSecondary,
               justifyContent: "center", alignItems: "center",
               marginRight: 14, opacity: pressed ? 0.7 : 1,
@@ -343,11 +343,13 @@ export default function AdminCommunities() {
         </View>
       ) : communities.length === 0 ? (
         <View style={{ paddingHorizontal: 24, paddingVertical: 60, alignItems: "center" }}>
-          <Text style={{ fontSize: 52, marginBottom: 16 }}>👥</Text>
+          <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: theme.backgroundSecondary, alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+            <Ionicons name="people-outline" size={32} color={theme.textTertiary} />
+          </View>
           <Text style={{ color: theme.text, fontSize: 18, fontWeight: "700" }}>Sem comunidades</Text>
         </View>
       ) : (
-        <View style={{ paddingHorizontal: 20, paddingBottom: 40 }}>
+        <View style={{ paddingHorizontal: 24, paddingBottom: 40 }}>
           {/* Unverified section */}
           {unverified.length > 0 && (
             <>
