@@ -25,7 +25,8 @@ import { ProfileScreenSkeleton } from "../../components/ui/SkeletonLoader";
 
 interface Badge {
   id: string;
-  emoji: string;
+  icon: string;
+  color: string;
   name: string;
   description: string;
   unlocked: boolean;
@@ -101,16 +102,16 @@ function computeBadges(
   planoTipo: "free" | "pago"
 ): Omit<Badge, "unlockedAt">[] {
   return [
-    { id: "first_step",   emoji: "🏁", name: "Primeiro Passo",    description: "Completaste o teu primeiro treino",    unlocked: totalWorkouts >= 1,   lockHint: "Completa 1 treino" },
-    { id: "perfect_week", emoji: "🔥", name: "Semana Perfeita",    description: "7 dias consecutivos de treino",        unlocked: maxStreak >= 7,       lockHint: "Treina 7 dias seguidos" },
-    { id: "unstoppable",  emoji: "⚡", name: "Imparável",          description: "14 dias consecutivos de treino",       unlocked: maxStreak >= 14,      lockHint: "Treina 14 dias seguidos" },
-    { id: "dedicated",    emoji: "💪", name: "Dedicado",            description: "25 treinos completados",              unlocked: totalWorkouts >= 25,  lockHint: "Completa 25 treinos" },
-    { id: "veteran",      emoji: "🏆", name: "Veterano",            description: "50 treinos completados",              unlocked: totalWorkouts >= 50,  lockHint: "Completa 50 treinos" },
-    { id: "centurion",    emoji: "👑", name: "Centenário",          description: "100 treinos completados",             unlocked: totalWorkouts >= 100, lockHint: "Completa 100 treinos" },
-    { id: "marathoner",   emoji: "⏱", name: "Maratonista",         description: "50 horas de treino acumuladas",       unlocked: totalTimeSec >= 50 * 3600, lockHint: "Acumula 50h de treino" },
-    { id: "elite",        emoji: "🥇", name: "Atleta de Elite",     description: "Primeiro recorde pessoal registado",  unlocked: recordsCount >= 1,    lockHint: "Regista um recorde pessoal" },
-    { id: "progress",     emoji: "📈", name: "Em Progresso",        description: "3 recordes pessoais diferentes",      unlocked: recordsCount >= 3,    lockHint: "Regista 3 recordes diferentes" },
-    { id: "pro",          emoji: "⭐", name: "Membro Pro",          description: "Subscrição GoLift Pro activa",         unlocked: planoTipo === "pago", lockHint: "Activa o GoLift Pro" },
+    { id: "first_step",   icon: "flag",         color: "#10b981", name: "Primeiro Passo",    description: "Completaste o teu primeiro treino",    unlocked: totalWorkouts >= 1,   lockHint: "Completa 1 treino" },
+    { id: "perfect_week", icon: "flame",        color: "#f59e0b", name: "Semana Perfeita",    description: "7 dias consecutivos de treino",        unlocked: maxStreak >= 7,       lockHint: "Treina 7 dias seguidos" },
+    { id: "unstoppable",  icon: "flash",        color: "#8B5CF6", name: "Imparável",          description: "14 dias consecutivos de treino",       unlocked: maxStreak >= 14,      lockHint: "Treina 14 dias seguidos" },
+    { id: "dedicated",    icon: "fitness",      color: "#0A84FF", name: "Dedicado",            description: "25 treinos completados",              unlocked: totalWorkouts >= 25,  lockHint: "Completa 25 treinos" },
+    { id: "veteran",      icon: "trophy",       color: "#30D158", name: "Veterano",            description: "50 treinos completados",              unlocked: totalWorkouts >= 50,  lockHint: "Completa 50 treinos" },
+    { id: "centurion",    icon: "ribbon",       color: "#FF9500", name: "Centenário",          description: "100 treinos completados",             unlocked: totalWorkouts >= 100, lockHint: "Completa 100 treinos" },
+    { id: "marathoner",   icon: "timer",        color: "#a78bfa", name: "Maratonista",         description: "50 horas de treino acumuladas",       unlocked: totalTimeSec >= 50 * 3600, lockHint: "Acumula 50h de treino" },
+    { id: "elite",        icon: "medal",        color: "#FFD700", name: "Atleta de Elite",     description: "Primeiro recorde pessoal registado",  unlocked: recordsCount >= 1,    lockHint: "Regista um recorde pessoal" },
+    { id: "progress",     icon: "trending-up",  color: "#FF6B6B", name: "Em Progresso",        description: "3 recordes pessoais diferentes",      unlocked: recordsCount >= 3,    lockHint: "Regista 3 recordes diferentes" },
+    { id: "pro",          icon: "star",         color: "#8B5CF6", name: "Membro Pro",          description: "Subscrição GoLift Pro activa",         unlocked: planoTipo === "pago", lockHint: "Activa o GoLift Pro" },
   ];
 }
 
@@ -602,7 +603,6 @@ export default function Profile() {
           ) : (
             <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 20, overflow: "hidden" }}>
               {records.slice(0, 3).map((record, i) => {
-                const medals = ["🥇", "🥈", "🥉"];
                 const mc = ["#f59e0b", "#94a3b8", "#cd7f32"];
                 const dateStr = relativeDate(record.data_recorde || record.data || record.created_at);
                 return (
@@ -621,7 +621,9 @@ export default function Profile() {
                       opacity: pressed ? 0.75 : 1,
                     })}
                   >
-                    <Text style={{ fontSize: 22, marginRight: 14 }}>{medals[i] || "🏅"}</Text>
+                    <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: mc[i] + "18", justifyContent: "center", alignItems: "center", marginRight: 14 }}>
+                      <Ionicons name="trophy" size={16} color={mc[i]} />
+                    </View>
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: theme.text, fontSize: 14, fontWeight: "600", marginBottom: 2 }}>
                         {record.nome_exercicio || record.exercicio || record.exercise}
@@ -675,7 +677,9 @@ export default function Profile() {
                   opacity: pressed ? 0.75 : badge.unlocked ? 1 : 0.4,
                 })}
               >
-                <Text style={{ fontSize: 28, marginBottom: 8 }}>{badge.emoji}</Text>
+                <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: badge.color + "18", justifyContent: "center", alignItems: "center", marginBottom: 8 }}>
+                  <Ionicons name={badge.icon as any} size={22} color={badge.color} />
+                </View>
                 <Text numberOfLines={2} style={{ fontSize: 11, fontWeight: "700", color: badge.unlocked ? theme.text : theme.textTertiary, textAlign: "center" }}>
                   {badge.name}
                 </Text>
@@ -736,7 +740,6 @@ export default function Profile() {
             <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 16 }}>
               <View style={{ backgroundColor: theme.background, borderRadius: 20, overflow: "hidden" }}>
                 {records.map((record, i) => {
-                  const medals = ["🥇", "🥈", "🥉"];
                   const mc = ["#f59e0b", "#94a3b8", "#cd7f32"];
                   const dateStr = relativeDate(record.data_recorde || record.data || record.created_at);
                   return (
@@ -753,7 +756,13 @@ export default function Profile() {
                         opacity: pressed ? 0.75 : 1,
                       })}
                     >
-                      <Text style={{ fontSize: 18, marginRight: 14 }}>{medals[i] || `#${i + 1}`}</Text>
+                      <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: (mc[i] || theme.accent) + "18", justifyContent: "center", alignItems: "center", marginRight: 14 }}>
+                        {i < 3 ? (
+                          <Ionicons name="trophy" size={14} color={mc[i]} />
+                        ) : (
+                          <Text style={{ fontSize: 11, fontWeight: "800", color: theme.textSecondary }}>#{i + 1}</Text>
+                        )}
+                      </View>
                       <View style={{ flex: 1 }}>
                         <Text style={{ color: theme.text, fontSize: 14, fontWeight: "500", marginBottom: 2 }}>
                           {record.nome_exercicio || record.exercicio || record.exercise}
@@ -784,7 +793,9 @@ export default function Profile() {
         >
           <Pressable onPress={(e) => e.stopPropagation()}>
             <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 24, padding: 28, alignItems: "center", width: 280 }}>
-              <Text style={{ fontSize: 52, marginBottom: 12 }}>{selectedBadge?.emoji}</Text>
+              <View style={{ width: 72, height: 72, borderRadius: 22, backgroundColor: (selectedBadge?.color || "#888") + "18", justifyContent: "center", alignItems: "center", marginBottom: 12 }}>
+                <Ionicons name={(selectedBadge?.icon as any) || "help"} size={36} color={selectedBadge?.color || "#888"} />
+              </View>
               <Text style={{ fontSize: 20, fontWeight: "800", color: theme.text, letterSpacing: -0.5, marginBottom: 6, textAlign: "center" }}>
                 {selectedBadge?.name}
               </Text>

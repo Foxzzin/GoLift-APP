@@ -150,13 +150,18 @@ export default function AdminExercises() {
       <View style={{ paddingHorizontal: 24, paddingTop: safeTop + 16, paddingBottom: 16, flexDirection: "row", alignItems: "center" }}>
         <Pressable
           onPress={() => router.back()}
-          style={{ marginRight: 16, padding: 4 }}
           accessibilityLabel="Voltar"
           accessibilityRole="button"
+          style={({ pressed }) => ({
+            width: 40, height: 40, borderRadius: 14,
+            backgroundColor: theme.backgroundSecondary,
+            justifyContent: "center", alignItems: "center",
+            marginRight: 14, opacity: pressed ? 0.7 : 1,
+          })}
         >
-          <Ionicons name="arrow-back" size={24} color={theme.text} />
+          <Ionicons name="arrow-back" size={20} color={theme.text} />
         </Pressable>
-        <Text style={{ fontSize: 28, fontWeight: "800", flex: 1, color: theme.text, letterSpacing: -0.5 }}>Exercícios</Text>
+        <Text style={{ fontSize: 22, fontWeight: "800", flex: 1, color: theme.text, letterSpacing: -0.5 }}>Exercícios</Text>
         <Pressable
           onPress={() => setShowModal(true)}
           accessibilityLabel="Criar exercício"

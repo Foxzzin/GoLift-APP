@@ -97,20 +97,19 @@ export default function ExerciseProgress() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       {/* Header */}
-      <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingTop: safeTop + 20, paddingBottom: 20 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 24, paddingTop: safeTop + 20, paddingBottom: 20 }}>
         <Pressable
           onPress={() => router.back()}
           accessibilityLabel="Voltar"
           accessibilityRole="button"
           style={({ pressed }) => ({
-            opacity: pressed ? 0.6 : 1,
-            padding: 8,
-            borderRadius: 12,
+            width: 40, height: 40, borderRadius: 14,
             backgroundColor: theme.backgroundSecondary,
-            marginRight: 14,
+            justifyContent: "center", alignItems: "center",
+            marginRight: 14, opacity: pressed ? 0.7 : 1,
           })}
         >
-          <Ionicons name="arrow-back" size={22} color={theme.text} />
+          <Ionicons name="arrow-back" size={20} color={theme.text} />
         </Pressable>
         <View style={{ flex: 1 }}>
           <Text style={{ color: theme.text, fontSize: 22, fontWeight: "800", letterSpacing: -0.6 }} numberOfLines={1}>

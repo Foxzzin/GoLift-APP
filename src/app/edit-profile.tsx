@@ -3,7 +3,7 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
@@ -100,10 +100,20 @@ export default function EditProfile() {
       >
         {/* Header */}
         <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 24, paddingTop: safeTop + 16, paddingBottom: 24 }}>
-          <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
-            <Ionicons name="chevron-back" size={28} color={theme.text} />
-          </TouchableOpacity>
-          <Text style={{ fontSize: 24, fontWeight: "bold", color: theme.text, flex: 1 }}>
+          <Pressable
+            onPress={() => router.back()}
+            accessibilityRole="button"
+            accessibilityLabel="Voltar"
+            style={({ pressed }) => ({
+              width: 40, height: 40, borderRadius: 14,
+              backgroundColor: theme.backgroundSecondary,
+              justifyContent: "center", alignItems: "center",
+              marginRight: 14, opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <Ionicons name="arrow-back" size={20} color={theme.text} />
+          </Pressable>
+          <Text style={{ fontSize: 22, fontWeight: "800", color: theme.text, flex: 1, letterSpacing: -0.5 }}>
             Editar Perfil
           </Text>
         </View>
@@ -112,29 +122,27 @@ export default function EditProfile() {
         <View style={{ paddingHorizontal: 24, paddingBottom: 40 }}>
           {/* Nome */}
           <View style={{ marginBottom: 20 }}>
-            <Text style={{ color: theme.text, marginBottom: 8, fontSize: 13, fontWeight: "500" }}>
+            <Text style={{ color: theme.textSecondary, marginBottom: 8, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase" }}>
               Nome
             </Text>
             <View style={{
               flexDirection: "row",
               alignItems: "center",
               backgroundColor: theme.backgroundSecondary,
-              borderRadius: 10,
-              borderColor: theme.border,
-              borderWidth: 1,
+              borderRadius: 14,
               paddingHorizontal: 16,
             }}>
-              <Ionicons name="person-outline" size={20} color={theme.textSecondary} />
+              <Ionicons name="person-outline" size={18} color={theme.textSecondary} />
               <TextInput
                 style={{
                   flex: 1,
                   color: theme.text,
-                  paddingVertical: 12,
+                  paddingVertical: 14,
                   paddingHorizontal: 12,
                   fontSize: 16,
                 }}
                 placeholder="O teu nome"
-                placeholderTextColor={theme.textSecondary}
+                placeholderTextColor={theme.textTertiary}
                 value={nome}
                 onChangeText={setNome}
               />
@@ -143,29 +151,27 @@ export default function EditProfile() {
 
           {/* Idade */}
           <View style={{ marginBottom: 20 }}>
-            <Text style={{ color: theme.text, marginBottom: 8, fontSize: 13, fontWeight: "500" }}>
+            <Text style={{ color: theme.textSecondary, marginBottom: 8, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase" }}>
               Idade
             </Text>
             <View style={{
               flexDirection: "row",
               alignItems: "center",
               backgroundColor: theme.backgroundSecondary,
-              borderRadius: 10,
-              borderColor: theme.border,
-              borderWidth: 1,
+              borderRadius: 14,
               paddingHorizontal: 16,
             }}>
-              <Ionicons name="calendar-outline" size={20} color={theme.textSecondary} />
+              <Ionicons name="calendar-outline" size={18} color={theme.textSecondary} />
               <TextInput
                 style={{
                   flex: 1,
                   color: theme.text,
-                  paddingVertical: 12,
+                  paddingVertical: 14,
                   paddingHorizontal: 12,
                   fontSize: 16,
                 }}
                 placeholder="Ex: 25"
-                placeholderTextColor={theme.textSecondary}
+                placeholderTextColor={theme.textTertiary}
                 value={idade}
                 onChangeText={setIdade}
                 keyboardType="numeric"
@@ -175,29 +181,27 @@ export default function EditProfile() {
 
           {/* Peso */}
           <View style={{ marginBottom: 20 }}>
-            <Text style={{ color: theme.text, marginBottom: 8, fontSize: 13, fontWeight: "500" }}>
+            <Text style={{ color: theme.textSecondary, marginBottom: 8, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase" }}>
               Peso (kg)
             </Text>
             <View style={{
               flexDirection: "row",
               alignItems: "center",
               backgroundColor: theme.backgroundSecondary,
-              borderRadius: 10,
-              borderColor: theme.border,
-              borderWidth: 1,
+              borderRadius: 14,
               paddingHorizontal: 16,
             }}>
-              <Ionicons name="scale-outline" size={20} color={theme.textSecondary} />
+              <Ionicons name="scale-outline" size={18} color={theme.textSecondary} />
               <TextInput
                 style={{
                   flex: 1,
                   color: theme.text,
-                  paddingVertical: 12,
+                  paddingVertical: 14,
                   paddingHorizontal: 12,
                   fontSize: 16,
                 }}
                 placeholder="Ex: 70"
-                placeholderTextColor={theme.textSecondary}
+                placeholderTextColor={theme.textTertiary}
                 value={peso}
                 onChangeText={setPeso}
                 keyboardType="decimal-pad"
@@ -207,29 +211,27 @@ export default function EditProfile() {
 
           {/* Altura */}
           <View style={{ marginBottom: 32 }}>
-            <Text style={{ color: theme.text, marginBottom: 8, fontSize: 13, fontWeight: "500" }}>
+            <Text style={{ color: theme.textSecondary, marginBottom: 8, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase" }}>
               Altura (cm)
             </Text>
             <View style={{
               flexDirection: "row",
               alignItems: "center",
               backgroundColor: theme.backgroundSecondary,
-              borderRadius: 10,
-              borderColor: theme.border,
-              borderWidth: 1,
+              borderRadius: 14,
               paddingHorizontal: 16,
             }}>
-              <Ionicons name="resize-outline" size={20} color={theme.textSecondary} />
+              <Ionicons name="resize-outline" size={18} color={theme.textSecondary} />
               <TextInput
                 style={{
                   flex: 1,
                   color: theme.text,
-                  paddingVertical: 12,
+                  paddingVertical: 14,
                   paddingHorizontal: 12,
                   fontSize: 16,
                 }}
                 placeholder="Ex: 175"
-                placeholderTextColor={theme.textSecondary}
+                placeholderTextColor={theme.textTertiary}
                 value={altura}
                 onChangeText={setAltura}
                 keyboardType="decimal-pad"
@@ -239,42 +241,46 @@ export default function EditProfile() {
 
           {/* Botões */}
           <View style={{ flexDirection: "row", gap: 12 }}>
-            <TouchableOpacity
+            <Pressable
               onPress={() => router.back()}
-              style={{
+              accessibilityRole="button"
+              accessibilityLabel="Cancelar"
+              style={({ pressed }) => ({
                 flex: 1,
                 backgroundColor: theme.backgroundSecondary,
                 paddingVertical: 16,
-                borderRadius: 10,
+                borderRadius: 14,
                 alignItems: "center",
-                borderColor: theme.border,
-                borderWidth: 1,
-              }}
+                opacity: pressed ? 0.7 : 1,
+              })}
             >
               <Text style={{ color: theme.text, fontWeight: "600" }}>
                 Cancelar
               </Text>
-            </TouchableOpacity>
+            </Pressable>
 
-            <TouchableOpacity
+            <Pressable
               onPress={handleSave}
               disabled={saving}
-              style={{
+              accessibilityRole="button"
+              accessibilityLabel="Guardar alterações"
+              style={({ pressed }) => ({
                 flex: 1,
-                backgroundColor: theme.text,
+                backgroundColor: theme.accent,
                 paddingVertical: 16,
-                borderRadius: 10,
+                borderRadius: 14,
                 alignItems: "center",
-              }}
+                opacity: pressed || saving ? 0.8 : 1,
+              })}
             >
               {saving ? (
-                <ActivityIndicator color={theme.background} />
+                <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={{ color: theme.background, fontWeight: "600" }}>
+                <Text style={{ color: "#fff", fontWeight: "700" }}>
                   Guardar
                 </Text>
               )}
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
       </ScrollView>

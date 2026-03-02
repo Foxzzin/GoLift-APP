@@ -366,48 +366,66 @@ export default function WorkoutActive() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
 
-      {/* ── Header compacto ── */}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: safeTop + 16, paddingBottom: 12 }}>
+      {/* ── Header ── */}
+      <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 24, paddingTop: safeTop + 16, paddingBottom: 8 }}>
         <Pressable
           onPress={cancelarTreino}
           accessibilityLabel="Cancelar treino"
           accessibilityRole="button"
-          style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, padding: 8, borderRadius: 12, backgroundColor: theme.backgroundSecondary })}
+          style={({ pressed }) => ({
+            opacity: pressed ? 0.6 : 1,
+            width: 40, height: 40, borderRadius: 14,
+            backgroundColor: theme.backgroundSecondary,
+            alignItems: "center", justifyContent: "center",
+          })}
         >
           <Ionicons name="close" size={22} color={theme.textSecondary} />
         </Pressable>
 
-        <View style={{ alignItems: "center", flex: 1, marginHorizontal: 12 }}>
+        <View style={{ alignItems: "center", flex: 1, marginHorizontal: 14 }}>
           <Text
             numberOfLines={1}
-            style={{ color: theme.text, fontSize: 15, fontWeight: "700", letterSpacing: -0.3 }}
+            style={{ color: theme.text, fontSize: 17, fontWeight: "700", letterSpacing: -0.3 }}
           >
             {workout?.nome || "Treino"}
           </Text>
-          <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 1 }}>
-            {exercicios.length} exercícios
+          <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>
+            {seriesConcluidas}/{totalSeries} séries · {exercicios.length} exercícios
           </Text>
         </View>
 
-        <Pressable
-          onPress={concluirTreino}
-          accessibilityLabel="Concluir treino"
-          accessibilityRole="button"
-          style={({ pressed }) => ({
-            opacity: pressed ? 0.85 : 1,
-            backgroundColor: theme.accent,
-            paddingHorizontal: 16,
-            paddingVertical: 10,
-            borderRadius: 12,
-          })}
-        >
-          <Text style={{ color: "#fff", fontSize: 13, fontWeight: "700" }}>Concluir</Text>
-        </Pressable>
+        <View style={{ width: 40 }} />
       </View>
 
+      {/* ── Timer Herói ── */}
+      <Pressable
+        onPress={() => setTimerPaused(!timerPaused)}
+        accessibilityLabel={timerPaused ? "Retomar cronómetro" : "Pausar cronómetro"}
+        accessibilityRole="button"
+        style={({ pressed }) => ({
+          alignItems: "center",
+          paddingVertical: 16,
+          opacity: pressed ? 0.7 : 1,
+        })}
+      >
+        <Text style={{ color: theme.text, fontSize: 52, fontWeight: "800", letterSpacing: -2, lineHeight: 56 }}>
+          {formatarTempo(tempoDecorrido)}
+        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", marginTop: 6 }}>
+          <Ionicons
+            name={timerPaused ? "play-circle" : "pause-circle"}
+            size={16}
+            color={timerPaused ? theme.accent : theme.textSecondary}
+          />
+          <Text style={{ color: timerPaused ? theme.accent : theme.textSecondary, fontSize: 12, fontWeight: "600", marginLeft: 4 }}>
+            {timerPaused ? "PAUSADO" : "EM CURSO"}
+          </Text>
+        </View>
+      </Pressable>
+
       {/* ── Barra de progresso global ── */}
-      <View style={{ height: 3, backgroundColor: theme.backgroundTertiary, marginHorizontal: 20, borderRadius: 2, marginBottom: 4 }}>
-        <View style={{ height: 3, width: `${progressoPct * 100}%` as any, backgroundColor: theme.accent, borderRadius: 2 }} />
+      <View style={{ height: 4, backgroundColor: theme.backgroundTertiary, marginHorizontal: 24, borderRadius: 2, marginBottom: 6 }}>
+        <View style={{ height: 4, width: `${progressoPct * 100}%` as any, backgroundColor: theme.accent, borderRadius: 2 }} />
       </View>
 
       {/* ── Banner de descanso ── */}
@@ -417,8 +435,9 @@ export default function WorkoutActive() {
           accessibilityLabel={`Descanso: ${restTimer} segundos restantes. Toca para saltar.`}
           accessibilityRole="button"
           style={({ pressed }) => ({
-            marginHorizontal: 20,
-            marginTop: 8,
+            marginHorizontal: 24,
+            marginTop: 6,
+            marginBottom: 4,
             borderRadius: 16,
             backgroundColor: "#1E3A5F",
             padding: 14,
@@ -447,36 +466,10 @@ export default function WorkoutActive() {
         </Pressable>
       )}
 
-      {/* ── Timer Herói ── */}
-      <Pressable
-        onPress={() => setTimerPaused(!timerPaused)}
-        accessibilityLabel={timerPaused ? "Retomar cronómetro" : "Pausar cronómetro"}
-        accessibilityRole="button"
-        style={({ pressed }) => ({
-          alignItems: "center",
-          paddingVertical: 20,
-          opacity: pressed ? 0.7 : 1,
-        })}
-      >
-        <Text style={{ color: theme.text, fontSize: 52, fontWeight: "800", letterSpacing: -2, lineHeight: 56 }}>
-          {formatarTempo(tempoDecorrido)}
-        </Text>
-        <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4 }}>
-          <Ionicons
-            name={timerPaused ? "play-circle" : "pause-circle"}
-            size={16}
-            color={timerPaused ? theme.accent : theme.textSecondary}
-          />
-          <Text style={{ color: timerPaused ? theme.accent : theme.textSecondary, fontSize: 12, fontWeight: "600", marginLeft: 4 }}>
-            {timerPaused ? "PAUSADO" : "EM CURSO"}
-          </Text>
-        </View>
-      </Pressable>
-
       {/* ── Lista de exercícios (sempre aberta) ── */}
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}
+        contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 24 }}
         keyboardShouldPersistTaps="handled"
       >
         {exercicios.map((exercicio: any, index: number) => {
@@ -521,9 +514,10 @@ export default function WorkoutActive() {
 
                 {/* Header da tabela */}
                 <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
-                  <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase", width: 36 }}>Nº</Text>
-                  <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase", flex: 1, textAlign: "center" }}>KG</Text>
-                  <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase", flex: 1, textAlign: "center" }}>REPS</Text>
+                  <Text style={{ color: theme.textSecondary, fontSize: 10, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase", width: 32 }}>SÉRIE</Text>
+                  <Text style={{ color: theme.textSecondary, fontSize: 10, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase", width: 50, textAlign: "center" }}>ANT.</Text>
+                  <Text style={{ color: theme.textSecondary, fontSize: 10, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase", flex: 1, textAlign: "center" }}>KG</Text>
+                  <Text style={{ color: theme.textSecondary, fontSize: 10, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase", flex: 1, textAlign: "center" }}>REPS</Text>
                   <View style={{ width: 44 }} />
                 </View>
 
@@ -538,16 +532,23 @@ export default function WorkoutActive() {
                       opacity: serie.concluida ? 0.55 : 1,
                     }}
                   >
-                    <Text style={{ color: theme.textTertiary, fontSize: 13, fontWeight: "600", width: 36 }}>
+                    <Text style={{ color: theme.textTertiary, fontSize: 13, fontWeight: "600", width: 32 }}>
                       {serie.numero}
+                    </Text>
+                    <Text style={{ color: theme.textTertiary, fontSize: 11, fontWeight: "500", width: 50, textAlign: "center" }}>
+                      {(() => {
+                        const pP = getPlaceholder(exercicio.id, serieIndex, "peso");
+                        const pR = getPlaceholder(exercicio.id, serieIndex, "repeticoes");
+                        return pP !== "-" ? `${pP}×${pR}` : "—";
+                      })()}
                     </Text>
                     <View style={{ flex: 1, paddingRight: 6 }}>
                       <TextInput
                         style={{
                           backgroundColor: theme.backgroundTertiary,
-                          borderRadius: 10,
-                          paddingHorizontal: 10,
-                          paddingVertical: 9,
+                          borderRadius: 12,
+                          paddingHorizontal: 8,
+                          height: 44,
                           color: theme.text,
                           textAlign: "center",
                           fontSize: 15,
@@ -567,9 +568,9 @@ export default function WorkoutActive() {
                       <TextInput
                         style={{
                           backgroundColor: theme.backgroundTertiary,
-                          borderRadius: 10,
-                          paddingHorizontal: 10,
-                          paddingVertical: 9,
+                          borderRadius: 12,
+                          paddingHorizontal: 8,
+                          height: 44,
                           color: theme.text,
                           textAlign: "center",
                           fontSize: 15,
@@ -637,33 +638,59 @@ export default function WorkoutActive() {
         })}
       </ScrollView>
 
-      {/* ── Botão flutuante: Concluir Treino ── */}
-      <View style={{ position: "absolute", bottom: 32, left: 20, right: 20 }}>
+      {/* ── Footer fixo ── */}
+      <View style={{
+        flexDirection: "row",
+        paddingHorizontal: 24,
+        paddingTop: 12,
+        paddingBottom: 28,
+        gap: 12,
+        backgroundColor: theme.background,
+        borderTopWidth: 1,
+        borderTopColor: theme.backgroundTertiary,
+      }}>
+        <Pressable
+          onPress={cancelarTreino}
+          accessibilityLabel="Cancelar treino"
+          accessibilityRole="button"
+          style={({ pressed }) => ({
+            flex: 1,
+            backgroundColor: theme.backgroundSecondary,
+            paddingVertical: 16,
+            borderRadius: 16,
+            alignItems: "center",
+            opacity: pressed ? 0.7 : 1,
+          })}
+        >
+          <Text style={{ color: theme.text, fontWeight: "700", fontSize: 16 }}>Cancelar</Text>
+        </Pressable>
         <Pressable
           onPress={concluirTreino}
           accessibilityLabel="Concluir treino"
           accessibilityRole="button"
           style={({ pressed }) => ({
+            flex: 2,
             backgroundColor: theme.accent,
-            paddingVertical: 18,
-            borderRadius: 18,
+            paddingVertical: 16,
+            borderRadius: 16,
             alignItems: "center",
             flexDirection: "row",
             justifyContent: "center",
+            gap: 8,
             opacity: pressed ? 0.88 : 1,
             shadowColor: theme.accent,
-            shadowOffset: { width: 0, height: 6 },
-            shadowOpacity: 0.38,
-            shadowRadius: 14,
-            elevation: 8,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 10,
+            elevation: 6,
           })}
         >
-          <Ionicons name="checkmark-circle" size={22} color="#fff" />
-          <Text style={{ color: "#fff", fontWeight: "700", fontSize: 17, marginLeft: 8, letterSpacing: -0.3 }}>
+          <Ionicons name="checkmark-circle" size={20} color="#fff" />
+          <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>
             Concluir Treino
           </Text>
           {totalSeries > 0 && (
-            <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: "600", marginLeft: 8 }}>
+            <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: "600" }}>
               {seriesConcluidas}/{totalSeries}
             </Text>
           )}

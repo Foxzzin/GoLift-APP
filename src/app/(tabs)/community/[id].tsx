@@ -3,7 +3,7 @@ import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
   TextInput,
   Platform,
   Keyboard,
@@ -15,11 +15,13 @@ import {
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useAndroidInsets } from "../../../hooks/useAndroidInsets";
 import { useCommunities } from "../../../contexts/CommunitiesContext";
 import { useAuth } from "../../../contexts/AuthContext";
 import { workoutApi } from "../../../services/api";
 import { useTheme } from "../../../styles/theme";
+import { PAISES_EDIT } from "../../../utils/countries";
 
 export default function CommunityDetail() {
   const theme = useTheme();
@@ -96,29 +98,10 @@ export default function CommunityDetail() {
   const isJoined = userCommunities.some((c) => c.id === communityId);
   const isOwner = community?.criador_id === user?.id;
 
-  const EDIT_PAISES = [
-    { flag: "🌍", name: "Internacional" }, { flag: "🇦🇴", name: "Angola" },
-    { flag: "🇦🇷", name: "Argentina" }, { flag: "🇦🇺", name: "Austrália" },
-    { flag: "🇦🇹", name: "Áustria" }, { flag: "🇧🇷", name: "Brasil" },
-    { flag: "🇨🇦", name: "Canadá" }, { flag: "🇨🇱", name: "Chile" },
-    { flag: "🇨🇳", name: "China" }, { flag: "🇨🇴", name: "Colômbia" },
-    { flag: "🇩🇰", name: "Dinamarca" }, { flag: "🇪🇬", name: "Egito" },
-    { flag: "🇪🇸", name: "Espanha" }, { flag: "🇺🇸", name: "Estados Unidos" },
-    { flag: "🇫🇷", name: "França" }, { flag: "🇬🇷", name: "Grécia" },
-    { flag: "🇮🇳", name: "India" }, { flag: "🇮🇪", name: "Irlanda" },
-    { flag: "🇮🇹", name: "Itália" }, { flag: "🇯🇵", name: "Japão" },
-    { flag: "🇲🇽", name: "México" }, { flag: "🇲🇿", name: "Moçambique" },
-    { flag: "🇳🇱", name: "Países Baixos" }, { flag: "🇵🇪", name: "Peru" },
-    { flag: "🇵🇱", name: "Polônia" }, { flag: "🇵🇹", name: "Portugal" },
-    { flag: "🇬🇧", name: "Reino Unido" }, { flag: "🇷🇺", name: "Rússia" },
-    { flag: "🇿🇦", name: "Sul-áfrica" }, { flag: "🇨🇭", name: "Suíça" },
-    { flag: "🇹🇷", name: "Turquia" }, { flag: "🇺🇦", name: "Ucrânia" },
-    { flag: "🇺🇾", name: "Uruguai" }, { flag: "🇻🇪", name: "Venezuela" },
-  ].sort((a, b) => a.name.localeCompare(b.name));
-  const filteredEditPaises = EDIT_PAISES.filter((p) =>
+  const filteredEditPaises = PAISES_EDIT.filter((p) =>
     p.name.toLowerCase().includes(editCountrySearch.toLowerCase())
   );
-  const selectedEditCountry = EDIT_PAISES.find((p) => p.name === editPais);
+  const selectedEditCountry = PAISES_EDIT.find((p) => p.name === editPais);
 
   useEffect(() => {
     if (communityId) {
@@ -260,23 +243,33 @@ export default function CommunityDetail() {
       {/* Header */}
       <View
         style={{
-          paddingHorizontal: 16,
+          paddingHorizontal: 24,
           paddingTop: safeTop + 16,
           paddingBottom: 16,
-          borderBottomWidth: 1,
-          borderBottomColor: theme.border,
         }}
       >
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={28} color={theme.text} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={{ flex: 1, marginLeft: 12 }}
+          <Pressable
+            onPress={() => router.back()}
+            accessibilityRole="button"
+            accessibilityLabel="Voltar"
+            style={({ pressed }) => ({
+              width: 40, height: 40, borderRadius: 14,
+              backgroundColor: theme.backgroundSecondary,
+              justifyContent: "center", alignItems: "center",
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <Ionicons name="arrow-back" size={20} color={theme.text} />
+          </Pressable>
+          <Pressable
+            style={{ flex: 1, marginLeft: 14 }}
             onPress={() => setShowCommunityModal(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Ver detalhes da comunidade"
           >
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-              <Text style={{ color: theme.text, fontSize: 18, fontWeight: "bold" }}>
+              <Text style={{ color: theme.text, fontSize: 18, fontWeight: "800", letterSpacing: -0.3 }}>
                 {community.nome}
               </Text>
               {!!community.verificada && (
@@ -284,19 +277,39 @@ export default function CommunityDetail() {
               )}
             </View>
             <Text style={{ color: theme.textSecondary, fontSize: 13 }}>
-              👥 {members.length} membros · <Text style={{ color: theme.accent, fontSize: 13 }}>ver detalhes</Text>
+              {members.length} membros · <Text style={{ color: theme.accent, fontSize: 13 }}>ver detalhes</Text>
             </Text>
-          </TouchableOpacity>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          </Pressable>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             {isOwner && (
-              <TouchableOpacity onPress={handleOpenEdit}>
-                <Ionicons name="create-outline" size={24} color={theme.accent} />
-              </TouchableOpacity>
+              <Pressable
+                onPress={handleOpenEdit}
+                accessibilityRole="button"
+                accessibilityLabel="Editar comunidade"
+                style={({ pressed }) => ({
+                  width: 40, height: 40, borderRadius: 14,
+                  backgroundColor: theme.backgroundSecondary,
+                  justifyContent: "center", alignItems: "center",
+                  opacity: pressed ? 0.7 : 1,
+                })}
+              >
+                <Ionicons name="create-outline" size={20} color={theme.accent} />
+              </Pressable>
             )}
             {isJoined && (
-              <TouchableOpacity onPress={handleLeave}>
-                <Ionicons name="exit-outline" size={24} color={theme.accent} />
-              </TouchableOpacity>
+              <Pressable
+                onPress={handleLeave}
+                accessibilityRole="button"
+                accessibilityLabel="Sair da comunidade"
+                style={({ pressed }) => ({
+                  width: 40, height: 40, borderRadius: 14,
+                  backgroundColor: theme.backgroundSecondary,
+                  justifyContent: "center", alignItems: "center",
+                  opacity: pressed ? 0.7 : 1,
+                })}
+              >
+                <Ionicons name="exit-outline" size={20} color="#EF4444" />
+              </Pressable>
             )}
           </View>
         </View>
@@ -335,7 +348,7 @@ export default function CommunityDetail() {
                   >
                     {/* Sender */}
                     {!isOwn && (
-                      <TouchableOpacity onPress={() => handleOpenUserProfile(msg.user_id, msg.user_nome)}>
+                      <Pressable onPress={() => handleOpenUserProfile(msg.user_id, msg.user_nome)} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 8 }}>
                           <Text style={{ color: theme.accent, fontSize: 12, fontWeight: "600" }}>
                             {msg.user_nome}
@@ -344,7 +357,7 @@ export default function CommunityDetail() {
                             <Ionicons name="shield-checkmark" size={12} color="#f5a623" />
                           )}
                         </View>
-                      </TouchableOpacity>
+                      </Pressable>
                     )}
 
                     {/* Header colorido com badge + nome + contagem */}
@@ -399,15 +412,15 @@ export default function CommunityDetail() {
 
                     {/* Botão copiar — apenas em templates de outros users */}
                     {workoutShare.tipo === "template" && !isOwn && (
-                      <TouchableOpacity
+                      <Pressable
                         onPress={() => handleCopyWorkout(workoutShare)}
                         disabled={copyingWorkout === workoutShare.nome}
-                        style={{
+                        style={({ pressed }) => ({
                           flexDirection: "row", alignItems: "center", justifyContent: "center",
-                          backgroundColor: theme.backgroundTertiary, borderRadius: 10, paddingVertical: 10,
-                          marginTop: 4, gap: 6, borderWidth: 1, borderColor: theme.accent,
-                          opacity: copyingWorkout === workoutShare.nome ? 0.6 : 1,
-                        }}
+                          backgroundColor: theme.accent + "18", borderRadius: 10, paddingVertical: 10,
+                          marginTop: 4, gap: 6,
+                          opacity: pressed || copyingWorkout === workoutShare.nome ? 0.6 : 1,
+                        })}
                       >
                         {copyingWorkout === workoutShare.nome ? (
                           <ActivityIndicator size="small" color={theme.accent} />
@@ -417,7 +430,7 @@ export default function CommunityDetail() {
                             <Text style={{ color: theme.accent, fontWeight: "700", fontSize: 13 }}>Copiar treino</Text>
                           </>
                         )}
-                      </TouchableOpacity>
+                      </Pressable>
                     )}
 
                     {/* Timestamp */}
@@ -449,7 +462,7 @@ export default function CommunityDetail() {
                   }}
                 >
                   {!isOwn && (
-                    <TouchableOpacity onPress={() => handleOpenUserProfile(msg.user_id, msg.user_nome)}>
+                    <Pressable onPress={() => handleOpenUserProfile(msg.user_id, msg.user_nome)} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 4 }}>
                         <Text style={{ color: theme.accent, fontSize: 12, fontWeight: "600" }}>
                           {msg.user_nome}
@@ -458,7 +471,7 @@ export default function CommunityDetail() {
                           <Ionicons name="shield-checkmark" size={12} color="#f5a623" />
                         )}
                       </View>
-                    </TouchableOpacity>
+                    </Pressable>
                   )}
                   <Text
                     style={{
@@ -491,10 +504,8 @@ export default function CommunityDetail() {
       {isJoined ? (
         <View
           style={{
-            paddingHorizontal: 16,
+            paddingHorizontal: 24,
             paddingVertical: 12,
-            borderTopWidth: 1,
-            borderTopColor: theme.border,
             flexDirection: "row",
             gap: 8,
           }}
@@ -511,23 +522,27 @@ export default function CommunityDetail() {
               borderRadius: 20,
               paddingHorizontal: 16,
               paddingVertical: 10,
-              borderWidth: 1,
-              borderColor: theme.border,
             }}
           />
-          <TouchableOpacity
-            onPress={handleSendMessage}
-            style={{
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              handleSendMessage();
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Enviar mensagem"
+            style={({ pressed }) => ({
               backgroundColor: theme.accent,
               width: 40,
               height: 40,
               borderRadius: 20,
               justifyContent: "center",
               alignItems: "center",
-            }}
+              opacity: pressed ? 0.8 : 1,
+            })}
           >
-            <Ionicons name="send" size={20} color="white" />
-          </TouchableOpacity>
+            <Ionicons name="send" size={18} color="white" />
+          </Pressable>
         </View>
       ) : (
         <View
@@ -546,15 +561,14 @@ export default function CommunityDetail() {
 
       {/* Modal: Detalhes da Comunidade */}
       <Modal visible={showCommunityModal} transparent animationType="slide" onRequestClose={() => setShowCommunityModal(false)}>
-        <TouchableOpacity
+        <Pressable
           style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}
-          activeOpacity={1}
           onPress={() => setShowCommunityModal(false)}
         >
-          <TouchableOpacity activeOpacity={1} onPress={() => {}}>
-            <View style={{ backgroundColor: theme.background, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, paddingBottom: 40 }}>
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <View style={{ backgroundColor: theme.background, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 40 }}>
               {/* Handle */}
-              <View style={{ width: 40, height: 4, backgroundColor: theme.border, borderRadius: 2, alignSelf: "center", marginBottom: 20 }} />
+              <View style={{ width: 36, height: 4, backgroundColor: theme.backgroundTertiary, borderRadius: 2, alignSelf: "center", marginBottom: 20 }} />
 
               {/* Icon + nome */}
               <View style={{ alignItems: "center", marginBottom: 20 }}>
@@ -562,7 +576,7 @@ export default function CommunityDetail() {
                   <Ionicons name="people" size={40} color={theme.accent} />
                 </View>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                  <Text style={{ color: theme.text, fontSize: 22, fontWeight: "bold" }}>{community.nome}</Text>
+                  <Text style={{ color: theme.text, fontSize: 22, fontWeight: "800", letterSpacing: -0.5 }}>{community.nome}</Text>
                   {!!community.verificada && <Ionicons name="checkmark-circle" size={20} color={theme.accent} />}
                 </View>
                 {!!community.verificada && (
@@ -572,14 +586,14 @@ export default function CommunityDetail() {
 
               {/* Descrição */}
               {!!community.descricao && (
-                <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 12, padding: 14, marginBottom: 14 }}>
+                <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 16, padding: 14, marginBottom: 14 }}>
                   <Text style={{ color: theme.textSecondary, fontSize: 13, lineHeight: 20 }}>{community.descricao}</Text>
                 </View>
               )}
 
               {/* Stats */}
               <View style={{ flexDirection: "row", gap: 10 }}>
-                <View style={{ flex: 1, backgroundColor: theme.backgroundSecondary, borderRadius: 12, padding: 14, alignItems: "center" }}>
+                <View style={{ flex: 1, backgroundColor: theme.backgroundSecondary, borderRadius: 16, padding: 14, alignItems: "center" }}>
                   <Text style={{ color: theme.text, fontSize: 20, fontWeight: "bold" }}>{members.length}</Text>
                   <Text style={{ color: theme.textTertiary, fontSize: 12, marginTop: 2 }}>Membros</Text>
                 </View>
@@ -591,30 +605,30 @@ export default function CommunityDetail() {
                 )}
               </View>
             </View>
-          </TouchableOpacity>
-        </TouchableOpacity>
+          </Pressable>
+        </Pressable>
       </Modal>
 
       {/* Modal: Editar Comunidade (apenas para o dono) */}
       <Modal visible={showEditModal} transparent animationType="slide" onRequestClose={() => { setShowEditModal(false); setShowEditCountryPicker(false); }}>
         <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" }}>
           <View style={{ backgroundColor: theme.background, borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: "92%" }}>
-            <View style={{ width: 40, height: 4, backgroundColor: theme.border, borderRadius: 2, alignSelf: "center", marginTop: 12, marginBottom: 4 }} />
+            <View style={{ width: 36, height: 4, backgroundColor: theme.backgroundTertiary, borderRadius: 2, alignSelf: "center", marginTop: 12, marginBottom: 4 }} />
 
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 24, paddingVertical: 16 }}>
               <View>
-                <Text style={{ color: theme.text, fontSize: 22, fontWeight: "bold" }}>Editar Comunidade</Text>
+                <Text style={{ color: theme.text, fontSize: 22, fontWeight: "800", letterSpacing: -0.5 }}>Editar Comunidade</Text>
                 <Text style={{ color: theme.textTertiary, fontSize: 13, marginTop: 2 }}>Altera os detalhes da comunidade</Text>
               </View>
-              <TouchableOpacity onPress={() => { setShowEditModal(false); setShowEditCountryPicker(false); }} style={{ backgroundColor: theme.backgroundTertiary, borderRadius: 20, padding: 8 }}>
-                <Ionicons name="close" size={20} color={theme.text} />
-              </TouchableOpacity>
+              <Pressable onPress={() => { setShowEditModal(false); setShowEditCountryPicker(false); }} style={({ pressed }) => ({ backgroundColor: theme.backgroundTertiary, borderRadius: 14, padding: 8, opacity: pressed ? 0.7 : 1 })}>
+                <Ionicons name="close" size={18} color={theme.text} />
+              </Pressable>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}>
               {/* Nome */}
               <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Nome</Text>
-              <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: theme.backgroundSecondary, borderRadius: 14, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 14, marginBottom: 20 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: theme.backgroundSecondary, borderRadius: 14, paddingHorizontal: 14, marginBottom: 20 }}>
                 <Ionicons name="people-outline" size={18} color={theme.textTertiary} style={{ marginRight: 10 }} />
                 <TextInput
                   placeholder="Nome da comunidade"
@@ -627,7 +641,7 @@ export default function CommunityDetail() {
 
               {/* Descrição */}
               <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Descrição</Text>
-              <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 14, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 14, paddingTop: 14, paddingBottom: 10, marginBottom: 20 }}>
+              <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 14, paddingHorizontal: 14, paddingTop: 14, paddingBottom: 10, marginBottom: 20 }}>
                 <TextInput
                   placeholder="Descrição da comunidade..."
                   placeholderTextColor={theme.textTertiary}
@@ -641,17 +655,17 @@ export default function CommunityDetail() {
 
               {/* País */}
               <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>País</Text>
-              <TouchableOpacity
+              <Pressable
                 onPress={() => setShowEditCountryPicker(true)}
-                style={{ flexDirection: "row", alignItems: "center", backgroundColor: theme.backgroundSecondary, borderRadius: 14, borderWidth: 1, borderColor: showEditCountryPicker ? theme.accent : theme.border, paddingHorizontal: 14, paddingVertical: 14, marginBottom: 20 }}
+                style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", backgroundColor: theme.backgroundSecondary, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 14, marginBottom: 20, opacity: pressed ? 0.8 : 1 })}
               >
                 <Text style={{ fontSize: 20, marginRight: 10 }}>{selectedEditCountry ? selectedEditCountry.flag : "🌍"}</Text>
                 <Text style={{ flex: 1, color: editPais ? theme.text : theme.textTertiary, fontSize: 15 }}>{editPais || "Selecionar país..."}</Text>
                 <Ionicons name="chevron-down" size={18} color={theme.textTertiary} />
-              </TouchableOpacity>
+              </Pressable>
 
               {/* Privada */}
-              <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: theme.backgroundSecondary, borderRadius: 14, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 14, paddingVertical: 14, marginBottom: 28 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: theme.backgroundSecondary, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 14, marginBottom: 28 }}>
                 <View style={{ backgroundColor: theme.backgroundTertiary, borderRadius: 10, padding: 8, marginRight: 12 }}>
                   <Ionicons name={editPrivada ? "lock-closed" : "lock-open-outline"} size={18} color={theme.accent} />
                 </View>
@@ -663,35 +677,40 @@ export default function CommunityDetail() {
               </View>
 
               {/* Guardar */}
-              <TouchableOpacity
-                onPress={handleSaveEdit}
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  handleSaveEdit();
+                }}
                 disabled={editSaving}
-                style={{ backgroundColor: theme.accent, paddingVertical: 16, borderRadius: 14, alignItems: "center", flexDirection: "row", justifyContent: "center", gap: 8, opacity: editSaving ? 0.7 : 1 }}
+                accessibilityRole="button"
+                accessibilityLabel="Guardar alterações"
+                style={({ pressed }) => ({ backgroundColor: theme.accent, paddingVertical: 16, borderRadius: 14, alignItems: "center", flexDirection: "row", justifyContent: "center", gap: 8, opacity: pressed || editSaving ? 0.8 : 1 })}
               >
                 {editSaving ? <ActivityIndicator color="white" /> : (
                   <>
                     <Ionicons name="checkmark-outline" size={20} color="white" />
-                    <Text style={{ color: "white", fontWeight: "bold", fontSize: 16 }}>Guardar Alterações</Text>
+                    <Text style={{ color: "white", fontWeight: "700", fontSize: 16 }}>Guardar Alterações</Text>
                   </>
                 )}
-              </TouchableOpacity>
+              </Pressable>
             </ScrollView>
 
             {/* Country picker overlay */}
             {showEditCountryPicker && (
               <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: theme.background, borderTopLeftRadius: 28, borderTopRightRadius: 28 }}>
-                <View style={{ width: 40, height: 4, backgroundColor: theme.border, borderRadius: 2, alignSelf: "center", marginTop: 12, marginBottom: 4 }} />
+                <View style={{ width: 36, height: 4, backgroundColor: theme.backgroundTertiary, borderRadius: 2, alignSelf: "center", marginTop: 12, marginBottom: 4 }} />
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 24, paddingVertical: 14 }}>
-                  <TouchableOpacity onPress={() => { setShowEditCountryPicker(false); setEditCountrySearch(""); }} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <Pressable onPress={() => { setShowEditCountryPicker(false); setEditCountrySearch(""); }} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 6, opacity: pressed ? 0.7 : 1 })}>
                     <Ionicons name="chevron-back" size={22} color={theme.text} />
                     <Text style={{ color: theme.text, fontSize: 16 }}>Voltar</Text>
-                  </TouchableOpacity>
-                  <Text style={{ color: theme.text, fontSize: 18, fontWeight: "bold" }}>Selecionar País</Text>
-                  <TouchableOpacity onPress={() => { setShowEditCountryPicker(false); setEditCountrySearch(""); }}>
+                  </Pressable>
+                  <Text style={{ color: theme.text, fontSize: 18, fontWeight: "800", letterSpacing: -0.3 }}>Selecionar País</Text>
+                  <Pressable onPress={() => { setShowEditCountryPicker(false); setEditCountrySearch(""); }} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
                     <Ionicons name="close" size={22} color={theme.textTertiary} />
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
-                <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: theme.backgroundSecondary, borderRadius: 12, marginHorizontal: 24, marginBottom: 8, paddingHorizontal: 12, borderWidth: 1, borderColor: theme.border }}>
+                <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: theme.backgroundSecondary, borderRadius: 14, marginHorizontal: 24, marginBottom: 8, paddingHorizontal: 12 }}>
                   <Ionicons name="search" size={16} color={theme.textTertiary} style={{ marginRight: 8 }} />
                   <TextInput
                     autoFocus
@@ -702,9 +721,9 @@ export default function CommunityDetail() {
                     style={{ flex: 1, color: theme.text, fontSize: 14, paddingVertical: 10 }}
                   />
                   {editCountrySearch.length > 0 && (
-                    <TouchableOpacity onPress={() => setEditCountrySearch("")}>
+                    <Pressable onPress={() => setEditCountrySearch("")} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
                       <Ionicons name="close-circle" size={16} color={theme.textTertiary} />
-                    </TouchableOpacity>
+                    </Pressable>
                   )}
                 </View>
                 <FlatList
@@ -714,14 +733,14 @@ export default function CommunityDetail() {
                   showsVerticalScrollIndicator={false}
                   contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}
                   renderItem={({ item }) => (
-                    <TouchableOpacity
+                    <Pressable
                       onPress={() => { setEditPais(item.name); setShowEditCountryPicker(false); setEditCountrySearch(""); }}
-                      style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 12, borderRadius: 10, marginBottom: 2, backgroundColor: editPais === item.name ? theme.backgroundTertiary : "transparent" }}
+                      style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 12, borderRadius: 10, marginBottom: 2, backgroundColor: editPais === item.name ? theme.backgroundTertiary : "transparent", opacity: pressed ? 0.7 : 1 })}
                     >
                       <Text style={{ fontSize: 22, marginRight: 12 }}>{item.flag}</Text>
                       <Text style={{ color: theme.text, fontSize: 15, flex: 1 }}>{item.name}</Text>
                       {editPais === item.name && <Ionicons name="checkmark-circle" size={18} color={theme.accent} />}
-                    </TouchableOpacity>
+                    </Pressable>
                   )}
                 />
               </View>

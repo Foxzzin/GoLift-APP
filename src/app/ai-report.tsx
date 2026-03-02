@@ -126,13 +126,13 @@ export default function AIReport() {
   if (semPlano) {
     return (
       <View style={{ flex: 1, backgroundColor: theme.background }}>
-        <View style={{ paddingHorizontal: 20, paddingTop: safeTop + 16, paddingBottom: 8, flexDirection: "row", alignItems: "center" }}>
+        <View style={{ paddingHorizontal: 24, paddingTop: safeTop + 16, paddingBottom: 8, flexDirection: "row", alignItems: "center" }}>
           <Pressable
             onPress={() => router.back()}
             accessibilityRole="button"
             accessibilityLabel="Voltar"
             style={({ pressed }) => ({
-              width: 36, height: 36, borderRadius: 12,
+              width: 40, height: 40, borderRadius: 14,
               backgroundColor: theme.backgroundSecondary,
               justifyContent: "center", alignItems: "center",
               marginRight: 14, opacity: pressed ? 0.7 : 1,
@@ -191,13 +191,13 @@ export default function AIReport() {
       contentContainerStyle={{ paddingBottom: 60 }}
     >
       {/* Header */}
-      <View style={{ paddingHorizontal: 20, paddingTop: safeTop + 16, paddingBottom: 4, flexDirection: "row", alignItems: "center" }}>
+      <View style={{ paddingHorizontal: 24, paddingTop: safeTop + 16, paddingBottom: 4, flexDirection: "row", alignItems: "center" }}>
         <Pressable
           onPress={() => router.back()}
           accessibilityRole="button"
           accessibilityLabel="Voltar"
           style={({ pressed }) => ({
-            width: 36, height: 36, borderRadius: 12,
+            width: 40, height: 40, borderRadius: 14,
             backgroundColor: theme.backgroundSecondary,
             justifyContent: "center", alignItems: "center",
             marginRight: 14, opacity: pressed ? 0.7 : 1,
@@ -226,7 +226,7 @@ export default function AIReport() {
             accessibilityRole="button"
             accessibilityLabel="Gerar novo relatório"
             style={({ pressed }) => ({
-              width: 36, height: 36, borderRadius: 12,
+              width: 40, height: 40, borderRadius: 14,
               backgroundColor: theme.backgroundSecondary,
               justifyContent: "center", alignItems: "center",
               opacity: pressed ? 0.7 : 1,
@@ -297,7 +297,7 @@ export default function AIReport() {
       )}
 
       {relatorio && !generating && (
-        <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
+        <View style={{ paddingHorizontal: 24, paddingTop: 16 }}>
           {/* Cards de secções */}
           {sections.map((s, i) => (
             <View

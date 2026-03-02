@@ -3,7 +3,7 @@ import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
   ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
@@ -12,6 +12,8 @@ import { userApi, metricsApi, planoApi } from "../../services/api";
 import { useTheme } from "../../styles/theme";
 import { useAndroidInsets } from "../../hooks/useAndroidInsets";
 import { getIMCCategory } from "../../utils/imc";
+
+const MEDAL_COLORS = ["#FFD700", "#C0C0C0", "#CD7F32"] as const;
 
 export default function UserProfile() {
   const theme = useTheme();
@@ -66,20 +68,27 @@ export default function UserProfile() {
       {/* Header */}
       <View
         style={{
-          paddingHorizontal: 16,
+          paddingHorizontal: 24,
           paddingTop: safeTop + 16,
           paddingBottom: 16,
-          borderBottomWidth: 1,
-          borderBottomColor: theme.border,
           flexDirection: "row",
           alignItems: "center",
-          gap: 12,
         }}
       >
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={28} color={theme.text} />
-        </TouchableOpacity>
-        <Text style={{ color: theme.text, fontSize: 18, fontWeight: "bold" }}>
+        <Pressable
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Voltar"
+          style={({ pressed }) => ({
+            width: 40, height: 40, borderRadius: 14,
+            backgroundColor: theme.backgroundSecondary,
+            justifyContent: "center", alignItems: "center",
+            marginRight: 14, opacity: pressed ? 0.7 : 1,
+          })}
+        >
+          <Ionicons name="arrow-back" size={20} color={theme.text} />
+        </Pressable>
+        <Text style={{ color: theme.text, fontSize: 22, fontWeight: "800", letterSpacing: -0.5 }}>
           {loading ? "Perfil" : profile?.nome || "Perfil"}
         </Text>
       </View>
@@ -96,29 +105,27 @@ export default function UserProfile() {
               style={{
                 width: 96,
                 height: 96,
-                borderRadius: 48,
-                backgroundColor: theme.backgroundTertiary,
-                borderColor: theme.border,
-                borderWidth: 2,
+                borderRadius: 26,
+                backgroundColor: theme.backgroundSecondary,
                 alignItems: "center",
                 justifyContent: "center",
                 marginBottom: 16,
               }}
             >
-              <Text style={{ color: planoTipo === "pago" ? "#f59e0b" : theme.accent, fontSize: 40, fontWeight: "bold" }}>
+              <Text style={{ color: planoTipo === "pago" ? "#f59e0b" : theme.accent, fontSize: 40, fontWeight: "800" }}>
                 {(profile?.nome || "?")[0].toUpperCase()}
               </Text>
             </View>
-            <Text style={{ color: theme.text, fontSize: 24, fontWeight: "bold" }}>
+            <Text style={{ color: theme.text, fontSize: 24, fontWeight: "800", letterSpacing: -0.5 }}>
               {profile?.nome}
             </Text>
             {planoTipo === "pago" ? (
-              <View style={{ flexDirection: "row", alignItems: "center", marginTop: 6, backgroundColor: "#f59e0b22", paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, borderColor: "#f59e0b", borderWidth: 1 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8, backgroundColor: "#f59e0b18", paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20 }}>
                 <Ionicons name="star" size={13} color="#f59e0b" style={{ marginRight: 5 }} />
                 <Text style={{ color: "#f59e0b", fontWeight: "700", fontSize: 13 }}>GoLift Pro</Text>
               </View>
             ) : (
-              <View style={{ flexDirection: "row", alignItems: "center", marginTop: 6, backgroundColor: theme.backgroundSecondary, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, borderColor: theme.border, borderWidth: 1 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8, backgroundColor: theme.backgroundSecondary, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20 }}>
                 <Text style={{ color: theme.textSecondary, fontWeight: "600", fontSize: 13 }}>Free</Text>
               </View>
             )}
@@ -128,16 +135,14 @@ export default function UserProfile() {
           {(profile?.idade || profile?.peso || profile?.altura) && (
             <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
               <Text
-                style={{ fontSize: 16, fontWeight: "bold", color: theme.text, marginBottom: 12 }}
+                style={{ fontSize: 11, fontWeight: "700", color: theme.textSecondary, marginBottom: 12, letterSpacing: 1, textTransform: "uppercase" }}
               >
-                Dados Físicos
+                Dados Fisicos
               </Text>
               <View
                 style={{
                   backgroundColor: theme.backgroundSecondary,
-                  borderRadius: 16,
-                  borderWidth: 1,
-                  borderColor: theme.border,
+                  borderRadius: 20,
                   overflow: "hidden",
                 }}
               >
@@ -148,8 +153,8 @@ export default function UserProfile() {
                       alignItems: "center",
                       paddingHorizontal: 16,
                       paddingVertical: 14,
-                      borderBottomWidth: 1,
-                      borderBottomColor: theme.border,
+                      borderBottomWidth: (profile?.peso || profile?.altura) ? 0.5 : 0,
+                      borderBottomColor: theme.backgroundTertiary,
                     }}
                   >
                     <View
@@ -157,13 +162,13 @@ export default function UserProfile() {
                         backgroundColor: theme.backgroundTertiary,
                         width: 40,
                         height: 40,
-                        borderRadius: 10,
+                        borderRadius: 12,
                         justifyContent: "center",
                         alignItems: "center",
                         marginRight: 12,
                       }}
                     >
-                      <Ionicons name="calendar" size={20} color={theme.text} />
+                      <Ionicons name="calendar" size={18} color={theme.accent} />
                     </View>
                     <Text style={{ color: theme.textSecondary, flex: 1, fontSize: 14 }}>Idade</Text>
                     <Text style={{ color: theme.text, fontWeight: "600", fontSize: 14 }}>
@@ -178,8 +183,8 @@ export default function UserProfile() {
                       alignItems: "center",
                       paddingHorizontal: 16,
                       paddingVertical: 14,
-                      borderBottomWidth: profile?.altura ? 1 : 0,
-                      borderBottomColor: theme.border,
+                      borderBottomWidth: profile?.altura ? 0.5 : 0,
+                      borderBottomColor: theme.backgroundTertiary,
                     }}
                   >
                     <View
@@ -187,13 +192,13 @@ export default function UserProfile() {
                         backgroundColor: theme.backgroundTertiary,
                         width: 40,
                         height: 40,
-                        borderRadius: 10,
+                        borderRadius: 12,
                         justifyContent: "center",
                         alignItems: "center",
                         marginRight: 12,
                       }}
                     >
-                      <Ionicons name="scale" size={20} color={theme.text} />
+                      <Ionicons name="scale" size={18} color={theme.accent} />
                     </View>
                     <Text style={{ color: theme.textSecondary, flex: 1, fontSize: 14 }}>Peso</Text>
                     <Text style={{ color: theme.text, fontWeight: "600", fontSize: 14 }}>
@@ -215,13 +220,13 @@ export default function UserProfile() {
                         backgroundColor: theme.backgroundTertiary,
                         width: 40,
                         height: 40,
-                        borderRadius: 10,
+                        borderRadius: 12,
                         justifyContent: "center",
                         alignItems: "center",
                         marginRight: 12,
                       }}
                     >
-                      <Ionicons name="resize" size={20} color={theme.text} />
+                      <Ionicons name="resize" size={18} color={theme.accent} />
                     </View>
                     <Text style={{ color: theme.textSecondary, flex: 1, fontSize: 14 }}>Altura</Text>
                     <Text style={{ color: theme.text, fontWeight: "600", fontSize: 14 }}>
@@ -239,9 +244,7 @@ export default function UserProfile() {
               <View
                 style={{
                   backgroundColor: theme.backgroundSecondary,
-                  borderRadius: 16,
-                  borderWidth: 1,
-                  borderColor: theme.border,
+                  borderRadius: 20,
                   paddingHorizontal: 16,
                   paddingVertical: 14,
                   flexDirection: "row",
@@ -253,13 +256,13 @@ export default function UserProfile() {
                     backgroundColor: theme.backgroundTertiary,
                     width: 40,
                     height: 40,
-                    borderRadius: 10,
+                    borderRadius: 12,
                     justifyContent: "center",
                     alignItems: "center",
                     marginRight: 12,
                   }}
                 >
-                  <Ionicons name="heart" size={20} color={theme.text} />
+                  <Ionicons name="heart" size={18} color={theme.accent} />
                 </View>
                 <Text style={{ color: theme.textSecondary, flex: 1, fontSize: 14 }}>IMC</Text>
                 <View style={{ alignItems: "flex-end" }}>
@@ -278,20 +281,18 @@ export default function UserProfile() {
           {!!profile?.objetivo && (
             <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
               <Text
-                style={{ fontSize: 16, fontWeight: "bold", color: theme.text, marginBottom: 12 }}
+                style={{ fontSize: 11, fontWeight: "700", color: theme.textSecondary, marginBottom: 12, letterSpacing: 1, textTransform: "uppercase" }}
               >
                 Objetivo
               </Text>
               <View
                 style={{
                   backgroundColor: theme.backgroundSecondary,
-                  borderRadius: 16,
-                  borderWidth: 1,
-                  borderColor: theme.border,
-                  padding: 16,
+                  borderRadius: 20,
+                  padding: 18,
                 }}
               >
-                <Text style={{ color: theme.text, fontSize: 14, lineHeight: 20 }}>
+                <Text style={{ color: theme.text, fontSize: 14, lineHeight: 22 }}>
                   {profile.objetivo}
                 </Text>
               </View>
@@ -302,16 +303,14 @@ export default function UserProfile() {
           {records.length > 0 && (
             <View style={{ paddingHorizontal: 24 }}>
               <Text
-                style={{ fontSize: 16, fontWeight: "bold", color: theme.text, marginBottom: 12 }}
+                style={{ fontSize: 11, fontWeight: "700", color: theme.textSecondary, marginBottom: 12, letterSpacing: 1, textTransform: "uppercase" }}
               >
-                🏆 Melhores Recordes
+                Melhores Recordes
               </Text>
               <View
                 style={{
                   backgroundColor: theme.backgroundSecondary,
-                  borderRadius: 16,
-                  borderWidth: 1,
-                  borderColor: theme.accent,
+                  borderRadius: 20,
                   overflow: "hidden",
                 }}
               >
@@ -323,17 +322,22 @@ export default function UserProfile() {
                       alignItems: "center",
                       paddingHorizontal: 16,
                       paddingVertical: 14,
-                      borderBottomWidth: index < Math.min(records.length, 3) - 1 ? 1 : 0,
-                      borderBottomColor: theme.border,
+                      borderBottomWidth: index < Math.min(records.length, 3) - 1 ? 0.5 : 0,
+                      borderBottomColor: theme.backgroundTertiary,
                     }}
                   >
-                    <Text style={{ fontSize: 20, marginRight: 12 }}>
-                      {["🥇","🥈","🥉"][index]}
-                    </Text>
-                    <Text style={{ color: theme.textSecondary, flex: 1, fontSize: 14 }}>
+                    <View style={{
+                      width: 32, height: 32, borderRadius: 10,
+                      backgroundColor: MEDAL_COLORS[index] + "22",
+                      justifyContent: "center", alignItems: "center",
+                      marginRight: 12,
+                    }}>
+                      <Ionicons name="trophy" size={16} color={MEDAL_COLORS[index]} />
+                    </View>
+                    <Text style={{ color: theme.text, flex: 1, fontSize: 14, fontWeight: "500" }}>
                       {record.nome_exercicio || record.exercicio || record.exercise}
                     </Text>
-                    <Text style={{ color: theme.accent, fontWeight: "bold", fontSize: 14 }}>
+                    <Text style={{ color: theme.accent, fontWeight: "700", fontSize: 14 }}>
                       {record.peso || record.weight} kg
                     </Text>
                   </View>

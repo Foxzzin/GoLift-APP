@@ -51,8 +51,6 @@ function ItemRow({ icon, iconBg, label, onPress, destructive }: ItemRowProps) {
         borderRadius: 14,
         paddingHorizontal: 18,
         paddingVertical: 17,
-        borderWidth: 0.5,
-        borderColor: theme.backgroundTertiary,
         marginBottom: 12,
       }}>
         <View style={{ width: 26, alignItems: "center", marginRight: 16 }}>
@@ -134,13 +132,13 @@ export default function Account() {
     <>
       <View style={{ flex: 1, backgroundColor: theme.background }}>
         {/* Header */}
-        <View style={{ paddingHorizontal: 20, paddingTop: safeTop + 16, paddingBottom: 16, flexDirection: "row", alignItems: "center" }}>
+        <View style={{ paddingHorizontal: 24, paddingTop: safeTop + 16, paddingBottom: 16, flexDirection: "row", alignItems: "center" }}>
           <Pressable
             onPress={() => router.back()}
             accessibilityRole="button"
             accessibilityLabel="Voltar"
             style={({ pressed }) => ({
-              width: 36, height: 36, borderRadius: 12,
+              width: 40, height: 40, borderRadius: 14,
               backgroundColor: theme.backgroundSecondary,
               justifyContent: "center", alignItems: "center",
               marginRight: 14, opacity: pressed ? 0.7 : 1,
@@ -148,12 +146,12 @@ export default function Account() {
           >
             <Ionicons name="arrow-back" size={20} color={theme.text} />
           </Pressable>
-          <Text style={{ fontSize: 22, fontWeight: "800", color: theme.text, letterSpacing: -0.6, flex: 1 }}>
+          <Text style={{ fontSize: 22, fontWeight: "800", color: theme.text, letterSpacing: -0.5, flex: 1 }}>
             Minha Conta
           </Text>
         </View>
 
-        <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 60 }}>
+        <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 60 }}>
 
           {/* ── User card ── */}
           <View style={{ alignItems: "center", paddingTop: 8, paddingBottom: 36 }}>
@@ -186,12 +184,12 @@ export default function Account() {
           </View>
 
           {/* ── Perfil ── */}
-          <Text style={{ fontSize: 20, fontWeight: "700", color: theme.text, marginBottom: 14, letterSpacing: -0.4 }}>Perfil</Text>
+          <Text style={{ fontSize: 11, fontWeight: "700", color: theme.textSecondary, marginBottom: 14, letterSpacing: 1, textTransform: "uppercase" }}>Perfil</Text>
           <ItemRow icon="person-outline" iconBg="#0A84FF" label="Editar Perfil" onPress={openEditModal} />
           <ItemRow icon="settings-outline" iconBg="#636366" label="Definições" onPress={() => router.push("/settings")} />
 
           {/* ── Suporte ── */}
-          <Text style={{ fontSize: 20, fontWeight: "700", color: theme.text, marginBottom: 14, marginTop: 28, letterSpacing: -0.4 }}>Suporte</Text>
+          <Text style={{ fontSize: 11, fontWeight: "700", color: theme.textSecondary, marginBottom: 14, marginTop: 28, letterSpacing: 1, textTransform: "uppercase" }}>Suporte</Text>
           <ItemRow icon="help-circle-outline" iconBg="#F97316" label="Centro de Ajuda" onPress={() => Alert.alert("Ajuda", "Centro de ajuda em breve. Contacta-nos em suporte@golift.pt")} />
           <ItemRow icon="shield-checkmark-outline" iconBg="#10B981" label="Política de Privacidade" onPress={() => Alert.alert("Privacidade", "Política de privacidade disponível em golift.pt/privacidade")} />
           <ItemRow icon="document-text-outline" iconBg="#8B5CF6" label="Termos de Serviço" onPress={() => Alert.alert("Termos", "Termos de serviço disponíveis em golift.pt/termos")} />
@@ -200,7 +198,7 @@ export default function Account() {
           {/* ── Admin ── */}
           {isAdmin && (
             <>
-              <Text style={{ fontSize: 20, fontWeight: "700", color: theme.text, marginBottom: 14, marginTop: 28, letterSpacing: -0.4 }}>Administração</Text>
+              <Text style={{ fontSize: 11, fontWeight: "700", color: theme.textSecondary, marginBottom: 14, marginTop: 28, letterSpacing: 1, textTransform: "uppercase" }}>Administração</Text>
               <ItemRow icon="shield-outline" iconBg="#EF4444" label="Painel de Admin" onPress={() => router.push("/admin")} />
             </>
           )}
@@ -218,8 +216,6 @@ export default function Account() {
                 borderRadius: 14,
                 paddingVertical: 17,
                 alignItems: "center",
-                borderWidth: 0.5,
-                borderColor: theme.backgroundTertiary,
               }}>
                 <Text style={{ color: "#EF4444", fontSize: 17, fontWeight: "500" }}>Terminar Sessão</Text>
               </View>

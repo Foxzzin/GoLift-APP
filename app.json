@@ -2,7 +2,7 @@
   "expo": {
     "name": "GoLift",
     "slug": "GoLift",
-    "version": "1.1.0",
+    "version": "1.1.2",
     "orientation": "portrait",
     "icon": "./assets/images/faviconGoLift.png",
     "scheme": "golift",

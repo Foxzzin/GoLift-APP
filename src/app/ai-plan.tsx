@@ -163,13 +163,13 @@ export default function AIPlan() {
     return (
       <View style={{ flex: 1, backgroundColor: theme.background }}>
         {/* Header */}
-        <View style={{ paddingHorizontal: 20, paddingTop: safeTop + 16, paddingBottom: 8, flexDirection: "row", alignItems: "center" }}>
+        <View style={{ paddingHorizontal: 24, paddingTop: safeTop + 16, paddingBottom: 8, flexDirection: "row", alignItems: "center" }}>
           <Pressable
             onPress={() => router.back()}
             accessibilityRole="button"
             accessibilityLabel="Voltar"
             style={({ pressed }) => ({
-              width: 36, height: 36, borderRadius: 12,
+              width: 40, height: 40, borderRadius: 14,
               backgroundColor: theme.backgroundSecondary,
               justifyContent: "center", alignItems: "center",
               marginRight: 14, opacity: pressed ? 0.7 : 1,
@@ -221,13 +221,13 @@ export default function AIPlan() {
       contentContainerStyle={{ paddingBottom: 60 }}
     >
       {/* Header */}
-      <View style={{ paddingHorizontal: 20, paddingTop: safeTop + 16, paddingBottom: 4, flexDirection: "row", alignItems: "center" }}>
+      <View style={{ paddingHorizontal: 24, paddingTop: safeTop + 16, paddingBottom: 4, flexDirection: "row", alignItems: "center" }}>
         <Pressable
           onPress={() => router.back()}
           accessibilityRole="button"
           accessibilityLabel="Voltar"
           style={({ pressed }) => ({
-            width: 36, height: 36, borderRadius: 12,
+            width: 40, height: 40, borderRadius: 14,
             backgroundColor: theme.backgroundSecondary,
             justifyContent: "center", alignItems: "center",
             marginRight: 14, opacity: pressed ? 0.7 : 1,
@@ -350,7 +350,7 @@ export default function AIPlan() {
 
       {/* Plano gerado */}
       {plano && !generating && (
-        <View style={{ paddingHorizontal: 20 }}>
+        <View style={{ paddingHorizontal: 24 }}>
           {/* Método */}
           <View style={{
             backgroundColor: theme.backgroundSecondary,
