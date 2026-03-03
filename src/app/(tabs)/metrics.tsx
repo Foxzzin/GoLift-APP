@@ -768,75 +768,86 @@ export default function Metrics() {
       {activeMetricsTab === 'recordes' && (<>
 
       {/* ── Recordes Pessoais ── */}
-      <View style={{ paddingHorizontal: 24, marginBottom: 20 }}>
-        <Text style={{ fontSize: 11, fontWeight: "700", color: theme.textSecondary, letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>
-          Recordes Pessoais
-        </Text>
+          <View style={{ paddingHorizontal: 24, marginBottom: 20 }}>
+          <Text style={{ fontSize: 11, fontWeight: "700", color: theme.textSecondary, letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>
+            Recordes Pessoais
+          </Text>
 
-        {records.length === 0 ? (
-          <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 20, paddingVertical: 36, alignItems: "center" }}>
-            <Text style={{ fontSize: 36 }}>🏆</Text>
-            <Text style={{ color: theme.textSecondary, marginTop: 12, fontSize: 14 }}>
-              Ainda não tens recordes registados
-            </Text>
-          </View>
-        ) : (
-          <View>
-            {records.slice(0, 3).map((record, index) => (
-              <Pressable
-                key={index}
-                onPress={() => {
-                  const exercicioId = record.id_exercicio || record.exercicio_id;
-                  const nome = record.nome_exercicio || record.exercicio || record.exercise || "";
-                  if (exercicioId) {
-                    router.push({ pathname: "/exercise-progress/[id]", params: { id: String(exercicioId), nome } });
-                  }
-                }}
-                accessibilityLabel={`Ver progressão de ${record.nome_exercicio || record.exercicio || ""}`}
-                accessibilityRole="button"
-                style={({ pressed }) => ({
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingHorizontal: 18,
-                  paddingVertical: 16,
-                  backgroundColor: theme.backgroundSecondary,
-                  borderRadius: 20,
-                  marginBottom: 10,
-                  opacity: pressed ? 0.7 : 1,
-                })}
-              >
-                <View style={{
-                  width: 44, height: 44, borderRadius: 14,
-                  backgroundColor: (MEDAL_COLORS[index] ?? "#94a3b8") + "18",
-                  justifyContent: "center", alignItems: "center",
-                  marginRight: 14,
-                }}>
-                  <Ionicons name="trophy" size={20} color={MEDAL_COLORS[index] ?? "#94a3b8"} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: theme.text, fontWeight: "700", fontSize: 15, letterSpacing: -0.2 }}>
-                    {record.nome_exercicio || record.exercicio || record.exercise}
-                  </Text>
-                  {(record.data_serie || record.data) && (
-                    <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>
-                      {formatDate(record.data_serie || record.data)}
-                    </Text>
-                  )}
-                </View>
-                <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 8 }}>
-                  <View style={{ alignItems: "flex-end" }}>
-                    <Text style={{ color: theme.accent, fontSize: 26, fontWeight: "800", letterSpacing: -0.8 }}>
-                      {record.peso || record.weight}
-                    </Text>
-                    <Text style={{ color: theme.textSecondary, fontSize: 12, fontWeight: "600" }}>kg</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color={theme.textTertiary} style={{ marginTop: 4 }} />
-                </View>
-              </Pressable>
-            ))}
-          </View>
-        )}
-      </View>
+          {records.length === 0 ? (
+            <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 20, paddingVertical: 36, alignItems: "center" }}>
+              <Ionicons name="medal" size={40} color={theme.textSecondary} />
+              <Text style={{ color: theme.textSecondary, marginTop: 12, fontSize: 14 }}>
+                Ainda não tens recordes registados
+              </Text>
+            </View>
+          ) : (
+            <View>
+              {records.slice(0, 3).map((record, index) => {
+                const medalColors = ["#f59e0b", "#94a3b8", "#cd7f32"];
+                const color = medalColors[index] ?? "#94a3b8";
+
+                return (
+                  <Pressable
+                    key={index}
+                    onPress={() => {
+                      const exercicioId = record.id_exercicio || record.exercicio_id;
+                      const nome = record.nome_exercicio || record.exercicio || record.exercise || "";
+                      if (exercicioId) {
+                        router.push({ pathname: "/exercise-progress/[id]", params: { id: String(exercicioId), nome } });
+                      }
+                    }}
+                    accessibilityLabel={`Ver progressão de ${record.nome_exercicio || record.exercicio || ""}`}
+                    accessibilityRole="button"
+                    style={({ pressed }) => ({
+                      flexDirection: "row",
+                      alignItems: "center",
+                      paddingHorizontal: 18,
+                      paddingVertical: 16,
+                      backgroundColor: theme.backgroundSecondary,
+                      borderRadius: 20,
+                      marginBottom: 10,
+                      borderWidth: 1,
+                      borderColor: color + "30",
+                      opacity: pressed ? 0.7 : 1,
+                    })}
+                  >
+                    <View style={{
+                      width: 44, height: 44, borderRadius: 14,
+                      backgroundColor: color + "18",
+                      justifyContent: "center", alignItems: "center",
+                      marginRight: 14,
+                      borderWidth: 1,
+                      borderColor: color + "35",
+                    }}>
+                      <Ionicons name="medal" size={22} color={color} />
+                    </View>
+
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: theme.text, fontWeight: "700", fontSize: 15, letterSpacing: -0.2 }}>
+                        {record.nome_exercicio || record.exercicio || record.exercise}
+                      </Text>
+                      {(record.data_serie || record.data) && (
+                        <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>
+                          {formatDate(record.data_serie || record.data)}
+                        </Text>
+                      )}
+                    </View>
+
+                    <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 8 }}>
+                      <View style={{ alignItems: "flex-end" }}>
+                        <Text style={{ color: color, fontSize: 26, fontWeight: "800", letterSpacing: -0.8 }}>
+                          {record.peso || record.weight}
+                        </Text>
+                        <Text style={{ color: theme.textSecondary, fontSize: 12, fontWeight: "600" }}>kg</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color={color + "80"} style={{ marginTop: 4 }} />
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
+        </View>
 
       </>
       )}
