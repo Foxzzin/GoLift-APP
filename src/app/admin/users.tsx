@@ -30,7 +30,14 @@ export default function AdminUsers() {
   async function handleGeneratePlan(user: any) {
     setGenerating((prev) => ({ ...prev, [user.id]: true }));
     try {
-      const resp = await planoApi.generatePlan(user.id, 4);
+      const resp = await planoApi.generatePlan(user.id, {
+        diasPorSemana: 4,
+        tempoTreino: 60,
+        objetivo: user.objetivo || "musculo",
+        targets: ["Peito", "Costas", "Pernas", "Braços"],
+        condicoes: "",
+        descansoEntreSeriesSegundos: 90,
+      });
       if (resp.sucesso) {
         Alert.alert("Plano gerado!", `Plano de ${resp.mes} criado para ${user.userName}.`);
       } else {

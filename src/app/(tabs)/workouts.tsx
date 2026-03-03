@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -17,7 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "../../contexts/AuthContext";
 import { useCommunities } from "../../contexts/CommunitiesContext";
-import { workoutApi, exerciseApi } from "../../services/api";
+import { workoutApi, exerciseApi, planoApi } from "../../services/api";
 import { useTheme } from "../../styles/theme";
 import { useAndroidInsets } from "../../hooks/useAndroidInsets";
 import { WorkoutsScreenSkeleton } from "../../components/ui/SkeletonLoader";
@@ -90,7 +90,7 @@ export default function Workouts() {
       const exercises = await exerciseApi.getAll();
       setAvailableExercises(exercises || []);
     } catch (error) {
-      console.error("Erro ao carregar exercícios:", error);
+      console.error("Erro ao carregar exerc├¡cios:", error);
     } finally {
       setLoadingExercises(false);
     }
@@ -110,12 +110,12 @@ export default function Workouts() {
       ]);
       const allExs = exercises || [];
       setAvailableExercises(allExs);
-      // Pré-selecionar os exercícios atuais do treino
+      // Pr├⌐-selecionar os exerc├¡cios atuais do treino
       const currentIds = new Set((workoutExs?.exercicios || []).map((e: any) => e.id_exercicio));
       const preSelected = allExs.filter((e: any) => currentIds.has(e.id));
       setSelectedExercises(preSelected);
     } catch (error) {
-      console.error("Erro ao carregar exercícios:", error);
+      console.error("Erro ao carregar exerc├¡cios:", error);
     } finally {
       setLoadingExercises(false);
     }
@@ -135,16 +135,16 @@ export default function Workouts() {
       return;
     }
     if (selectedExercises.length === 0) {
-      Alert.alert("Erro", "Seleciona pelo menos um exercício");
+      Alert.alert("Erro", "Seleciona pelo menos um exerc├¡cio");
       return;
     }
 
-    // Verificar se treino com este nome já existe
+    // Verificar se treino com este nome j├í existe
     const treinoExistente = myWorkouts.find(
       (w: any) => w.nome.toLowerCase() === workoutName.trim().toLowerCase()
     );
     if (treinoExistente) {
-      Alert.alert("Treino Duplicado", `Já existe um treino chamado "${workoutName}". Escolhe um nome diferente.`);
+      Alert.alert("Treino Duplicado", `J├í existe um treino chamado "${workoutName}". Escolhe um nome diferente.`);
       return;
     }
 
@@ -170,7 +170,7 @@ export default function Workouts() {
       return;
     }
     if (selectedExercises.length === 0) {
-      Alert.alert("Erro", "Seleciona pelo menos um exercício");
+      Alert.alert("Erro", "Seleciona pelo menos um exerc├¡cio");
       return;
     }
     setSavingWorkout(true);
@@ -179,7 +179,7 @@ export default function Workouts() {
       const upperName = workoutName.charAt(0).toUpperCase() + workoutName.slice(1);
       await workoutApi.updateWorkout(user!.id, editingWorkout.id_treino, upperName, exerciseIds);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert("Guardado! ✅", "Treino atualizado com sucesso.");
+      Alert.alert("Guardado! Γ£à", "Treino atualizado com sucesso.");
       setShowCreateModal(false);
       setEditingWorkout(null);
       loadData();
@@ -192,8 +192,8 @@ export default function Workouts() {
 
   async function handleStartWorkout(workout: any) {
     Alert.alert(
-      "Começar Treino",
-      `Deseja começar: ${workout.nome}?`,
+      "Come├ºar Treino",
+      `Deseja come├ºar: ${workout.nome}?`,
       [
         { text: "Cancelar", style: "cancel" },
         {
@@ -204,7 +204,7 @@ export default function Workouts() {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               router.push(`/workout/${workout.id_treino}`);
             } catch (error) {
-              Alert.alert("Erro", "Não foi possível iniciar o treino");
+              Alert.alert("Erro", "N├úo foi poss├¡vel iniciar o treino");
             }
           },
         },
@@ -215,7 +215,7 @@ export default function Workouts() {
   async function handleDeleteWorkout(workout: any) {
     Alert.alert(
       "Apagar Treino",
-      `Tens a certeza que queres apagar "${workout.nome}"? O histórico de sessões também será apagado.`,
+      `Tens a certeza que queres apagar "${workout.nome}"? O hist├│rico de sess├╡es tamb├⌐m ser├í apagado.`,
       [
         { text: "Cancelar", style: "cancel" },
         {
@@ -227,7 +227,7 @@ export default function Workouts() {
               await workoutApi.deleteWorkout(user!.id, workout.id_treino);
               loadData();
             } catch (error: any) {
-              Alert.alert("Erro", error.message || "Não foi possível apagar o treino");
+              Alert.alert("Erro", error.message || "N├úo foi poss├¡vel apagar o treino");
             }
           },
         },
@@ -235,22 +235,12 @@ export default function Workouts() {
     );
   }
 
-  async function handleShareTemplate(workout: any) {
+  function handleShareTemplate(workout: any) {
     if (userCommunities.length === 0) {
       Alert.alert("Sem comunidades", "Entra numa comunidade para poderes partilhar treinos.");
       return;
     }
-    try {
-      const resp = await workoutApi.getWorkoutExercises(workout.id_treino).catch(() => ({ exercicios: [] }));
-      const exercicios = (resp?.exercicios || []).map((ex: any) => ({
-        id: ex.id_exercicio,
-        nome: ex.nome,
-        grupo_tipo: ex.grupo_tipo || null,
-      }));
-      setShareWorkoutData({ ...workout, exercicios });
-    } catch {
-      setShareWorkoutData(workout);
-    }
+    setShareWorkoutData(workout);
     setShowShareModal(true);
   }
 
@@ -269,37 +259,35 @@ export default function Workouts() {
         nome: shareWorkoutData.nome,
         exercicios,
       });
-      await sendMessage(community.id, `🏋️__SHARE__${payload}`);
+      await sendMessage(community.id, `≡ƒÅï∩╕Å__SHARE__${payload}`);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setShowShareModal(false);
-      Alert.alert("Partilhado! 💪", `Treino enviado para ${community.nome}`);
+      Alert.alert("Partilhado! ≡ƒÆ¬", `Treino enviado para ${community.nome}`);
     } catch {
-      Alert.alert("Erro", "Não foi possível partilhar o treino");
+      Alert.alert("Erro", "N├úo foi poss├¡vel partilhar o treino");
     } finally {
+      setSharingToComm(false);
+    }
+  }
 
-                  <Text style={{ fontSize: 13, color: theme.textSecondary, marginBottom: 16 }}>
-                    {workout.exercicios?.length || 0} exercícios
-                  </Text>
-                  <TouchableOpacity
-                    style={{
-                      backgroundColor: theme.accent,
-                      paddingVertical: 12,
-                      borderRadius: 10,
-                      justifyContent: "center",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Text style={{ color: "white", fontWeight: "600", fontSize: 14 }}>
-                      Começar
-                    </Text>
-                  </TouchableOpacity>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        )}
+  if (loading) {
+    return <WorkoutsScreenSkeleton />;
+  }
 
-
+  return (
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 120 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {/* Header */}
+        <View style={{ paddingHorizontal: 24, paddingTop: safeTop + 12, paddingBottom: 16 }}>
+          <Text style={{ fontSize: 32, fontWeight: "800", color: theme.text, letterSpacing: -1 }}>
+            Treinos
+          </Text>
+        </View>
 
         {/* Meus Treinos */}
         <View style={{ paddingHorizontal: 24 }}>
@@ -327,7 +315,7 @@ export default function Workouts() {
 
           {myWorkouts.length === 0 ? (
             <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 20, paddingVertical: 44, paddingHorizontal: 24, alignItems: "center" }}>
-              <Text style={{ fontSize: 36, marginBottom: 12 }}>🏋️</Text>
+              <Text style={{ fontSize: 36, marginBottom: 12 }}>≡ƒÅï∩╕Å</Text>
               <Text style={{ color: theme.text, fontWeight: "700", fontSize: 16, letterSpacing: -0.3 }}>Sem treinos ainda</Text>
               <Text style={{ color: theme.textSecondary, fontSize: 14, marginTop: 6, textAlign: "center" }}>Cria o teu primeiro treino personalizado</Text>
               <Pressable
@@ -357,7 +345,7 @@ export default function Workouts() {
                 <Pressable
                   key={workout.id_treino || index}
                   onPress={() => handleStartWorkout(workout)}
-                  accessibilityLabel={`Começar treino ${workout.nome}`}
+                  accessibilityLabel={`Come├ºar treino ${workout.nome}`}
                   accessibilityRole="button"
                   style={({ pressed }) => ({
                     backgroundColor: theme.backgroundSecondary,
@@ -378,14 +366,14 @@ export default function Workouts() {
                           {workout.nome}
                         </Text>
                         <Text style={{ fontSize: 13, color: theme.textSecondary, marginTop: 3 }}>
-                          {workout.num_exercicios ?? 0} exercícios
+                          {workout.num_exercicios ?? 0} exerc├¡cios
                           {workout.is_ia && (
-                            <Text style={{ color: "#f59e0b" }}> · IA</Text>
+                            <Text style={{ color: "#f59e0b" }}> ┬╖ IA</Text>
                           )}
                         </Text>
                       </View>
 
-                      {/* Ações */}
+                      {/* A├º├╡es */}
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                         {!workout.is_ia && (
                           <TouchableOpacity
@@ -411,19 +399,19 @@ export default function Workouts() {
                           <Ionicons name="trash-outline" size={19} color={theme.textSecondary} />
                         </TouchableOpacity>
 
-                        {/* Botão play */}
+                        {/* Bot├úo play */}
                         <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: workout.is_ia ? "#f59e0b" : theme.accent, justifyContent: "center", alignItems: "center", marginLeft: 4 }}>
                           <Ionicons name="play" size={18} color="#fff" />
                         </View>
                       </View>
                     </View>
 
-                    {/* Exercícios preview */}
+                    {/* Exerc├¡cios preview */}
                     {workout.exercicios?.length > 0 && (
                       <View style={{ marginTop: 12, gap: 4 }}>
                         {workout.exercicios.slice(0, 3).map((ex: any, i: number) => (
                           <Text key={i} style={{ fontSize: 12, color: theme.textSecondary }}>
-                            · {ex.nome || ex.name}
+                            ┬╖ {ex.nome || ex.name}
                           </Text>
                         ))}
                         {workout.exercicios.length > 3 && (
@@ -501,10 +489,10 @@ export default function Workouts() {
                 />
               </View>
 
-              {/* Exercícios selecionados */}
+              {/* Exerc├¡cios selecionados */}
               <View style={{ marginBottom: 20 }}>
                 <Text style={{ color: theme.text, marginBottom: 8, fontWeight: "500", fontSize: 14 }}>
-                  Exercícios Selecionados ({selectedExercises.length})
+                  Exerc├¡cios Selecionados ({selectedExercises.length})
                 </Text>
                 {selectedExercises.length > 0 && (
                   <View
@@ -542,9 +530,9 @@ export default function Workouts() {
                 )}
               </View>
 
-              {/* Lista de exercícios disponíveis */}
+              {/* Lista de exerc├¡cios dispon├¡veis */}
               <Text style={{ color: theme.text, marginBottom: 12, fontWeight: "500", fontSize: 14 }}>
-                Adicionar Exercícios
+                Adicionar Exerc├¡cios
               </Text>
 
               {/* Carrossel de Filtro de Body Parts */}
@@ -719,7 +707,7 @@ export default function Workouts() {
               )}
             </ScrollView>
 
-            {/* Botão Criar */}
+            {/* Bot├úo Criar */}
             <View
               style={{
                 paddingHorizontal: 24,
@@ -743,7 +731,7 @@ export default function Workouts() {
                   <ActivityIndicator color="white" />
                 ) : (
                   <Text style={{ color: "white", fontWeight: "bold", fontSize: 16 }}>
-                    {editingWorkout ? "Guardar Alterações" : "Criar Treino"}
+                    {editingWorkout ? "Guardar Altera├º├╡es" : "Criar Treino"}
                   </Text>
                 )}
               </TouchableOpacity>
@@ -760,7 +748,7 @@ export default function Workouts() {
         onRequestClose={() => setShowShareModal(false)}
       >
         <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.55)" }}>
-          <View style={{ backgroundColor: theme.backgroundSecondary, borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: "82%" }}>
+          <View style={{ backgroundColor: theme.backgroundSecondary, borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: "70%" }}>
             <View style={{ width: 36, height: 4, backgroundColor: theme.border, borderRadius: 2, alignSelf: "center", marginTop: 12, marginBottom: 20 }} />
 
             <View style={{ flexDirection: "row", alignItems: "flex-start", paddingHorizontal: 24, marginBottom: 20 }}>
@@ -783,24 +771,6 @@ export default function Workouts() {
             <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginHorizontal: 24, marginBottom: 10 }}>
               Escolhe uma comunidade
             </Text>
-
-            {Array.isArray(shareWorkoutData?.exercicios) && shareWorkoutData.exercicios.length > 0 && (
-              <View style={{ marginHorizontal: 24, marginBottom: 12, backgroundColor: theme.backgroundTertiary, borderRadius: 14, padding: 12 }}>
-                <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 8 }}>
-                  Exercícios incluídos
-                </Text>
-                {shareWorkoutData.exercicios.slice(0, 6).map((ex: any, idx: number) => (
-                  <Text key={`${ex.id || idx}`} style={{ color: theme.text, fontSize: 13, lineHeight: 19, marginBottom: 2 }} numberOfLines={2}>
-                    • {ex.nome || ex.name || `Exercício ${idx + 1}`}
-                  </Text>
-                ))}
-                {shareWorkoutData.exercicios.length > 6 && (
-                  <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 4 }}>
-                    +{shareWorkoutData.exercicios.length - 6} exercícios
-                  </Text>
-                )}
-              </View>
-            )}
 
             <FlatList
               data={userCommunities}

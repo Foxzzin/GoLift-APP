@@ -124,7 +124,7 @@ export default function Communities() {
     <ScrollView
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
       style={{ flex: 1 }}
-      contentContainerStyle={{ paddingBottom: 120 }}
+      contentContainerStyle={{ paddingBottom: safeBottom + 100 }}
     >
       {userCommunities.length === 0 ? (
         <View style={{ padding: 24, alignItems: "center", marginTop: 80 }}>
@@ -215,7 +215,7 @@ export default function Communities() {
     <ScrollView
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
       style={{ flex: 1 }}
-      contentContainerStyle={{ paddingBottom: 120 }}
+      contentContainerStyle={{ paddingBottom: safeBottom + 100 }}
     >
       {communities.length === 0 ? (
         <View style={{ padding: 24, alignItems: "center", marginTop: 80 }}>

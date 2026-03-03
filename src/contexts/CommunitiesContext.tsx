@@ -54,7 +54,6 @@ export function CommunitiesProvider({ children }: { children: ReactNode }) {
       const newCommunity = await communitiesApi.createCommunity({
         nome,
         descricao,
-        criador_id: user?.id || 0,
         pais,
         privada,
       });
@@ -68,7 +67,7 @@ export function CommunitiesProvider({ children }: { children: ReactNode }) {
 
   async function updateCommunity(comunidadeId: number, data: { nome?: string; descricao?: string; pais?: string; privada?: boolean }) {
     try {
-      await communitiesApi.updateCommunity(comunidadeId, { criador_id: user?.id || 0, ...data });
+      await communitiesApi.updateCommunity(comunidadeId, data);
       const update = (list: Community[]) =>
         list.map((c) => c.id === comunidadeId ? { ...c, ...data } : c);
       setCommunities((prev) => update(prev));
