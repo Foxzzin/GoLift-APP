@@ -9,6 +9,11 @@ export const metricsApi = {
   getRecords: (userId: number) =>
     request<any[]>(`/api/recordes/${userId}`),
 
+  getExerciseHistory: (userId: number, exercicioId: number) =>
+    request<Array<{ peso: number; repeticoes: number; data_serie: string }>>(
+      `/api/recordes/${userId}/exercicio/${exercicioId}`
+    ),
+
   getStreak: (userId: number) =>
     request<{ sucesso: boolean; streak: number; maxStreak: number; totalDays: number }>(`/api/streak/${userId}`),
 

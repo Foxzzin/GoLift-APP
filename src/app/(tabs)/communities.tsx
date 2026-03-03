@@ -175,6 +175,8 @@ export default function Communities() {
                 flexDirection: "row",
                 gap: 12,
                 opacity: pressed ? 0.75 : 1,
+                borderWidth: 2,
+                borderColor: theme.accent,
               })}
             >
               <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: communityColor(community.nome) + "22", alignItems: "center", justifyContent: "center" }}>
@@ -292,25 +294,66 @@ export default function Communities() {
                   </View>
                 </View>
 
-                {!isJoined && (
+                <View style={{ flexDirection: "row", gap: 8, marginTop: isJoined ? 0 : 0 }}>
                   <Pressable
-                    onPress={() => handleJoinCommunity(community.id)}
-                    accessibilityLabel={`Entrar na comunidade ${community.nome}`}
+                    onPress={() => router.push(`/(tabs)/community/${community.id}`)}
+                    accessibilityLabel={`Ver detalhes de ${community.nome}`}
                     accessibilityRole="button"
                     style={({ pressed }) => ({
-                      backgroundColor: theme.accent,
-                      paddingVertical: 12,
+                      width: 44,
+                      height: 44,
                       borderRadius: 14,
+                      backgroundColor: theme.backgroundTertiary,
                       alignItems: "center",
-                      marginHorizontal: 0,
+                      justifyContent: "center",
                       opacity: pressed ? 0.7 : 1,
                     })}
                   >
-                    <Text style={{ color: "white", fontWeight: "700", fontSize: 14 }}>
-                      Entrar
-                    </Text>
+                    <Ionicons name="information-circle-outline" size={22} color={theme.textSecondary} />
                   </Pressable>
-                )}
+                  {!isJoined && (
+                    <Pressable
+                      onPress={() => handleJoinCommunity(community.id)}
+                      accessibilityLabel={`Entrar na comunidade ${community.nome}`}
+                      accessibilityRole="button"
+                      style={({ pressed }) => ({
+                        flex: 1,
+                        backgroundColor: theme.accent,
+                        paddingVertical: 12,
+                        borderRadius: 14,
+                        alignItems: "center",
+                        opacity: pressed ? 0.7 : 1,
+                      })}
+                    >
+                      <Text style={{ color: "white", fontWeight: "700", fontSize: 14 }}>
+                        Entrar
+                      </Text>
+                    </Pressable>
+                  )}
+                  {isJoined && (
+                    <Pressable
+                      onPress={() => router.push(`/(tabs)/community/${community.id}`)}
+                      accessibilityLabel={`Abrir comunidade ${community.nome}`}
+                      accessibilityRole="button"
+                      style={({ pressed }) => ({
+                        flex: 1,
+                        backgroundColor: theme.accent + "18",
+                        paddingVertical: 12,
+                        borderRadius: 14,
+                        alignItems: "center",
+                        flexDirection: "row",
+                        justifyContent: "center",
+                        gap: 6,
+                        opacity: pressed ? 0.7 : 1,
+                      })}
+                    >
+                      <Ionicons name="checkmark-circle" size={16} color={theme.accent} />
+                      <Text style={{ color: theme.accent, fontWeight: "700", fontSize: 14 }}>
+                        Membro
+                      </Text>
+                    </Pressable>
+                  )}
+                </View>
               </View>
             );
           })}

@@ -63,7 +63,14 @@ export default function Upgrade() {
       const data = await planoApi.createCheckoutSession(user.id);
       if (data.url) {
         const result = await WebBrowser.openBrowserAsync(data.url);
-        // Após fechar o browser, recarregar o plano
+        // Após fechar o browser, verificar sessão como fallback (webhook pode demorar)
+        if (data.sessionId) {
+          try {
+            await planoApi.verifySession(data.sessionId);
+          } catch {
+            // ignora — webhook tratará
+          }
+        }
         loadPlan();
       }
     } catch (err: any) {

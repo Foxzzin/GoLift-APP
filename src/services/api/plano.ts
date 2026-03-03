@@ -46,12 +46,25 @@ export const planoApi = {
       pode_gerar: boolean;
     }>(`/api/ai/plan/${userId}`),
 
-  generatePlan: (userId: number, diasPorSemana: number = 4) =>
-    request<{ sucesso: boolean; plano: object; mes: string }>(`/api/ai/plan/${userId}/generate`, {
-      method: "POST",
-      body: JSON.stringify({ diasPorSemana }),
-      timeout: 60000,
-    }),
+  generatePlan: (
+    userId: number,
+    params: {
+      diasPorSemana: number;
+      tempoTreino: number;
+      objetivo: string;
+      targets: string[];
+      condicoes: string;
+      descansoEntreSeriesSegundos: number;
+    }
+  ) =>
+    request<{ sucesso: boolean; plano: object; mes: string; descanso_segundos: number }>(
+      `/api/ai/plan/${userId}/generate`,
+      {
+        method: "POST",
+        body: JSON.stringify(params),
+        timeout: 60000,
+      }
+    ),
 
   importPlanDay: (
     userId: number,
@@ -77,5 +90,11 @@ export const planoApi = {
     request<{ url: string }>("/api/stripe/portal", {
       method: "POST",
       body: JSON.stringify({ userId }),
+    }),
+
+  verifySession: (sessionId: string) =>
+    request<{ sucesso: boolean; plano?: string; status?: string }>("/api/stripe/verify-session", {
+      method: "POST",
+      body: JSON.stringify({ sessionId }),
     }),
 };

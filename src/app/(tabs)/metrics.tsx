@@ -503,34 +503,6 @@ export default function Metrics() {
       {/* ── TAB: Progresso ── */}
       {activeMetricsTab === 'progresso' && (<>
 
-      {/* ── Banner IA ── */}
-      {planoTipo === "pago" && (
-        <View style={{ paddingHorizontal: 24, marginBottom: 20 }}>
-          <TouchableOpacity
-            onPress={() => router.push("/ai-hub")}
-            style={{
-              backgroundColor: "#30D15818",
-              borderRadius: 18,
-              paddingHorizontal: 18,
-              paddingVertical: 14,
-              flexDirection: "row",
-              alignItems: "center",
-              borderWidth: 1,
-              borderColor: "#30D15840",
-            }}
-          >
-            <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: "#30D15822", justifyContent: "center", alignItems: "center", marginRight: 12 }}>
-              <Ionicons name="sparkles" size={18} color="#30D158" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: theme.text, fontWeight: "700", fontSize: 14 }}>Relatório Semanal IA</Text>
-              <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>Análise personalizada da tua semana</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color="#30D158" />
-          </TouchableOpacity>
-        </View>
-      )}
-
       {/* ── Hero — Meta Semanal ── */}
       <View style={{ paddingHorizontal: 24, marginBottom: 14 }}>
         <View style={{ backgroundColor: theme.accent, borderRadius: 24, padding: 22 }}>
@@ -719,7 +691,7 @@ export default function Metrics() {
             </Text>
           </View>
         ) : (
-          <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 20, overflow: "hidden" }}>
+          <View>
             {records.slice(0, 3).map((record, index) => (
               <Pressable
                 key={index}
@@ -737,18 +709,19 @@ export default function Metrics() {
                   alignItems: "center",
                   paddingHorizontal: 18,
                   paddingVertical: 16,
-                  borderBottomWidth: index < Math.min(records.length, 3) - 1 ? 1 : 0,
-                  borderBottomColor: theme.backgroundTertiary,
+                  backgroundColor: theme.backgroundSecondary,
+                  borderRadius: 20,
+                  marginBottom: 10,
                   opacity: pressed ? 0.7 : 1,
                 })}
               >
                 <View style={{
-                  width: 36, height: 36, borderRadius: 12,
+                  width: 44, height: 44, borderRadius: 14,
                   backgroundColor: (MEDAL_COLORS[index] ?? "#94a3b8") + "18",
                   justifyContent: "center", alignItems: "center",
                   marginRight: 14,
                 }}>
-                  <Ionicons name="trophy" size={18} color={MEDAL_COLORS[index] ?? "#94a3b8"} />
+                  <Ionicons name="trophy" size={20} color={MEDAL_COLORS[index] ?? "#94a3b8"} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: theme.text, fontWeight: "700", fontSize: 15, letterSpacing: -0.2 }}>

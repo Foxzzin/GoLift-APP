@@ -27,7 +27,7 @@ export default function CommunityDetail() {
   const theme = useTheme();
   const { user } = useAuth();
   const { id } = useLocalSearchParams();
-  const { safeTop } = useAndroidInsets();
+  const { safeTop, safeBottom } = useAndroidInsets();
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   useEffect(() => {
@@ -505,7 +505,8 @@ export default function CommunityDetail() {
         <View
           style={{
             paddingHorizontal: 24,
-            paddingVertical: 12,
+            paddingTop: 12,
+            paddingBottom: Platform.OS === "android" ? safeBottom + 12 : 12,
             flexDirection: "row",
             gap: 8,
           }}

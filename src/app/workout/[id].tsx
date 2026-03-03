@@ -15,7 +15,7 @@ import * as Haptics from "expo-haptics";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../styles/theme";
 import { useAndroidInsets } from "../../hooks/useAndroidInsets";
-import { workoutApi, metricsApi } from "../../services/api";
+import { workoutApi, metricsApi, planoApi } from "../../services/api";
 
 interface Serie {
   numero: number;
@@ -41,18 +41,30 @@ export default function WorkoutActive() {
   const [exercicios, setExercicios] = useState<ExercicioAtivo[]>([]);
   const [tempoDecorrido, setTempoDecorrido] = useState(0);
   const [timerPaused, setTimerPaused] = useState(false);
+  const timerPausedRef = useRef(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const timerRef = useRef<number | null>(null);
   const restTimerRef = useRef<number | null>(null);
   const [restTimer, setRestTimer] = useState<number | null>(null);
-  const REST_DEFAULT = 90; // segundos
+  const [restDefault, setRestDefault] = useState(90); // segundos
 
   // Partilha de resultados — gerida no ecrã summary
 
+  // Sync timerPaused state → ref so the interval closure always reads current value
+  useEffect(() => {
+    timerPausedRef.current = timerPaused;
+  }, [timerPaused]);
+
   useEffect(() => {
     loadWorkout();
+    // Try to load rest duration from active plan
+    planoApi
+      .getPlan(user!.id)
+      .then((d: any) => {
+        if (d?.descanso_segundos) setRestDefault(d.descanso_segundos);
+      })
+      .catch(() => {});
     startTimer();
-
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
       if (restTimerRef.current) clearInterval(restTimerRef.current);
@@ -61,7 +73,7 @@ export default function WorkoutActive() {
 
   function startTimer() {
     timerRef.current = setInterval(() => {
-      if (!timerPaused) {
+      if (!timerPausedRef.current) {
         setTempoDecorrido((prev: number) => prev + 1);
       }
     }, 1000) as unknown as number;
@@ -137,7 +149,7 @@ export default function WorkoutActive() {
 
   function startRestTimer() {
     if (restTimerRef.current) clearInterval(restTimerRef.current);
-    setRestTimer(REST_DEFAULT);
+    setRestTimer(restDefault);
     restTimerRef.current = setInterval(() => {
       setRestTimer((prev) => {
         if (prev === null || prev <= 1) {
@@ -446,7 +458,7 @@ export default function WorkoutActive() {
           })}
         >
           {/* Barra de progresso do descanso */}
-          <View style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${(restTimer / REST_DEFAULT) * 100}%` as any, backgroundColor: "#007AFF22", borderRadius: 16 }} />
+          style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${(restTimer / restDefault) * 100}%` as any, backgroundColor: "#007AFF22", borderRadius: 16 }} />
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Ionicons name="timer-outline" size={18} color="#007AFF" />

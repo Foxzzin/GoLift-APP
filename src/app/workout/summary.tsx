@@ -225,7 +225,7 @@ export default function WorkoutSummary() {
       {/* ── Share bottom sheet ── */}
       {showShare && (
         <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" }}>
-          <View style={{ backgroundColor: theme.backgroundSecondary, borderTopLeftRadius: 28, borderTopRightRadius: 28 }}>
+          <View style={{ backgroundColor: theme.backgroundSecondary, borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: "70%" }}>
             <View style={{ width: 36, height: 4, backgroundColor: theme.border, borderRadius: 2, alignSelf: "center", marginTop: 12, marginBottom: 20 }} />
 
             <Text style={{ color: theme.text, fontSize: 22, fontWeight: "800", letterSpacing: -0.6, paddingHorizontal: 24, marginBottom: 6 }}>
