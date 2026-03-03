@@ -458,7 +458,7 @@ export default function WorkoutActive() {
           })}
         >
           {/* Barra de progresso do descanso */}
-          style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${(restTimer / restDefault) * 100}%` as any, backgroundColor: "#007AFF22", borderRadius: 16 }} />
+          <View style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${(restTimer / restDefault) * 100}%` as any, backgroundColor: "#007AFF22", borderRadius: 16 }} />
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Ionicons name="timer-outline" size={18} color="#007AFF" />

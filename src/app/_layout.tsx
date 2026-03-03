@@ -53,7 +53,7 @@ function RootLayoutContent() {
           <Stack.Screen name="account" />
           <Stack.Screen name="(tabs)" />
           <Stack.Screen
-            name="admin/_layout"
+            name="admin"
             options={{
               presentation: "modal",
               animation: "slide_from_right"
