@@ -266,43 +266,7 @@ export default function AIHub() {
           </View>
         </View>
 
-        {/* Upgrade banner */}
-        {!isAdmin && (
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.push("/upgrade");
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Upgrade para Pro"
-            style={({ pressed }) => ({
-              backgroundColor: theme.backgroundSecondary,
-              borderRadius: 20,
-              padding: 18,
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 14,
-              opacity: pressed ? 0.85 : 1,
-            })}
-          >
-            <View style={{
-              width: 40, height: 40, borderRadius: 14,
-              backgroundColor: theme.accent + "18",
-              justifyContent: "center", alignItems: "center",
-            }}>
-              <Ionicons name="star" size={18} color={theme.accent} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontWeight: "700", color: theme.text, fontSize: 15, letterSpacing: -0.3 }}>
-                GoLift Pro
-              </Text>
-              <Text style={{ color: theme.textSecondary, fontSize: 13, marginTop: 2 }}>
-                Desbloqueia todas as funcionalidades IA
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={theme.accent} />
-          </Pressable>
-        )}
+
       </Animated.ScrollView>
     </View>
   );

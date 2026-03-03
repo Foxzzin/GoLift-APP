@@ -68,7 +68,7 @@ export default function Upgrade() {
           try {
             await planoApi.verifySession(data.sessionId);
           } catch {
-            // ignora — webhook tratará
+            // ignora erros de verificação (pode falhar se o webhook ainda não tiver processado, por exemplo)
           }
         }
         loadPlan();

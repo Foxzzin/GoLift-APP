@@ -51,6 +51,11 @@ export const communitiesApi = {
   getCommunityMembers: (comunidadeId: number) =>
     request<any[]>(`/api/comunidades/${comunidadeId}/membros`),
 
+  deleteCommunity: (comunidadeId: number) =>
+    request<any>(`/api/comunidades/${comunidadeId}`, {
+      method: "DELETE",
+    }),
+
   // Admin
   getAllCommunitiesAdmin: () =>
     request<any[]>("/api/admin/comunidades"),

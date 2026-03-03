@@ -357,33 +357,7 @@ export default function Workouts() {
           </View>
         )}
 
-        {/* Banner IA - Plano Mensal */}
-        {planoTipo === "pago" && (
-          <View style={{ paddingHorizontal: 24, marginBottom: 16 }}>
-            <Pressable
-              onPress={() => router.push("/ai-hub")}
-              accessibilityLabel="Plano Mensal IA"
-              accessibilityRole="button"
-              style={({ pressed }) => ({
-                backgroundColor: theme.backgroundSecondary,
-                borderRadius: 18,
-                paddingHorizontal: 18,
-                paddingVertical: 16,
-                flexDirection: "row",
-                alignItems: "center",
-                overflow: "hidden",
-                opacity: pressed ? 0.8 : 1,
-              })}
-            >
-              <View style={{ width: 4, position: "absolute", left: 0, top: 0, bottom: 0, backgroundColor: theme.accent }} />
-              <View style={{ marginLeft: 14, flex: 1 }}>
-                <Text style={{ color: theme.text, fontWeight: "700", fontSize: 14, letterSpacing: -0.2 }}>Plano Mensal IA</Text>
-                <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>Ver o teu plano personalizado</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={theme.accent} />
-            </Pressable>
-          </View>
-        )}
+
 
         {/* Meus Treinos */}
         <View style={{ paddingHorizontal: 24 }}>

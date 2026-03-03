@@ -49,6 +49,7 @@ export default function CommunityDetail() {
     loadCommunityMessages,
     sendMessage,
     leaveCommunity,
+    deleteCommunity,
     getCommunityMembers,
     updateCommunity,
   } = useCommunities();
@@ -107,6 +108,15 @@ export default function CommunityDetail() {
     if (communityId) {
       loadInitialData();
     }
+  }, [communityId]);
+
+  // Auto-refresh chat messages every 15 seconds
+  useEffect(() => {
+    if (!communityId) return;
+    const interval = setInterval(() => {
+      loadCommunityMessages(communityId);
+    }, 15000);
+    return () => clearInterval(interval);
   }, [communityId]);
 
   // Redireciona automaticamente se a comunidade não existir após carregar
@@ -184,25 +194,60 @@ export default function CommunityDetail() {
   };
 
   const handleLeave = async () => {
-    Alert.alert(
-      "Sair da comunidade",
-      "Tem certeza que deseja sair?",
-      [
-        { text: "Cancelar", onPress: () => {}, style: "cancel" },
-        {
-          text: "Sair",
-          onPress: async () => {
-            try {
-              await leaveCommunity(communityId);
-              router.back();
-            } catch (error) {
-              alert("Erro ao sair da comunidade");
-            }
+    if (isOwner) {
+      Alert.alert(
+        "Apagar Comunidade",
+        "Esta ação é irreversível. A comunidade e todas as mensagens serão apagadas permanentemente.",
+        [
+          { text: "Cancelar", style: "cancel" },
+          {
+            text: "Apagar",
+            onPress: async () => {
+              Alert.alert(
+                "Tens a certeza?",
+                `Apagar "${community?.nome}" para sempre?`,
+                [
+                  { text: "Cancelar", style: "cancel" },
+                  {
+                    text: "Apagar definitivamente",
+                    onPress: async () => {
+                      try {
+                        await deleteCommunity(communityId);
+                        router.replace("/(tabs)/communities");
+                      } catch {
+                        Alert.alert("Erro", "Não foi possível apagar a comunidade.");
+                      }
+                    },
+                    style: "destructive",
+                  },
+                ]
+              );
+            },
+            style: "destructive",
           },
-          style: "destructive",
-        },
-      ]
-    );
+        ]
+      );
+    } else {
+      Alert.alert(
+        "Sair da comunidade",
+        "Tem certeza que deseja sair?",
+        [
+          { text: "Cancelar", style: "cancel" },
+          {
+            text: "Sair",
+            onPress: async () => {
+              try {
+                await leaveCommunity(communityId);
+                router.replace("/(tabs)/communities");
+              } catch {
+                Alert.alert("Erro", "Não foi possível sair da comunidade.");
+              }
+            },
+            style: "destructive",
+          },
+        ]
+      );
+    }
   };
 
   if (!community) {

@@ -12,6 +12,7 @@ interface CommunitiesContextData {
   updateCommunity: (comunidadeId: number, data: { nome?: string; descricao?: string; pais?: string; privada?: boolean }) => Promise<void>;
   joinCommunity: (comunidadeId: number) => Promise<void>;
   leaveCommunity: (comunidadeId: number) => Promise<void>;
+  deleteCommunity: (comunidadeId: number) => Promise<void>;
   sendMessage: (comunidadeId: number, mensagem: string) => Promise<void>;
   loadCommunities: () => Promise<void>;
   loadCommunityMessages: (comunidadeId: number) => Promise<void>;
@@ -101,6 +102,17 @@ export function CommunitiesProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function deleteCommunity(comunidadeId: number) {
+    try {
+      await communitiesApi.deleteCommunity(comunidadeId);
+      setCommunities((prev) => prev.filter((c) => c.id !== comunidadeId));
+      setUserCommunities((prev) => prev.filter((c) => c.id !== comunidadeId));
+    } catch (error) {
+      console.error("Erro ao apagar comunidade:", error);
+      throw error;
+    }
+  }
+
   async function sendMessage(comunidadeId: number, mensagem: string) {
     try {
       const response = await communitiesApi.sendMessage(comunidadeId, user?.id || 0, mensagem);
@@ -154,6 +166,7 @@ export function CommunitiesProvider({ children }: { children: ReactNode }) {
         updateCommunity,
         joinCommunity,
         leaveCommunity,
+        deleteCommunity,
         sendMessage,
         loadCommunities,
         loadCommunityMessages,
