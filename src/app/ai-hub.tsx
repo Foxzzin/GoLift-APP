@@ -25,6 +25,7 @@ export default function AIHub() {
 
   const [planStatus, setPlanStatus] = useState<string | null>(null);
   const [reportStatus, setReportStatus] = useState<string | null>(null);
+  const [planoTipo, setPlanoTipo] = useState<"free" | "pago">("free");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,6 +44,10 @@ export default function AIHub() {
         planoApi.getPlan(user!.id).catch(() => null),
         planoApi.getReport(user!.id).catch(() => null),
       ]);
+      const userPlan = await planoApi.getUserPlan(user!.id).catch(() => null);
+      if (userPlan?.plano) {
+        setPlanoTipo(userPlan.plano);
+      }
       if (planData?.plano) {
         setPlanStatus(planData.mes ? formatMes(planData.mes) : "Ativo");
       } else {
@@ -138,6 +143,10 @@ export default function AIHub() {
         <Pressable
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            if (!isAdmin && planoTipo !== "pago") {
+              router.push("/upgrade");
+              return;
+            }
             router.push("/ai-plan");
           }}
           accessibilityRole="button"
@@ -182,6 +191,10 @@ export default function AIHub() {
         <Pressable
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            if (!isAdmin && planoTipo !== "pago") {
+              router.push("/upgrade");
+              return;
+            }
             router.push("/ai-report");
           }}
           accessibilityRole="button"

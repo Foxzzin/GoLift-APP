@@ -246,7 +246,6 @@ export default function AdminDashboard() {
         <View style={{ gap: 12 }}>
           <NavCard title="Utilizadores"          subtitle="Gerir contas e permissões"       icon="people-outline"   color="#0A84FF" route="/admin/users" />
           <NavCard title="Exercícios"             subtitle="Biblioteca de movimentos"         icon="barbell-outline"  color="#10B981" route="/admin/exercises" />
-          <NavCard title="Treinos Recomendados"   subtitle="Planos para todos os utilizadores" icon="star-outline"   color="#8B5CF6" route="/admin/workouts" />
           <NavCard title="Comunidades"            subtitle="Verificar e gerir grupos"        icon="people-circle-outline" color="#F97316" route="/admin/communities" />
         </View>
       </View>

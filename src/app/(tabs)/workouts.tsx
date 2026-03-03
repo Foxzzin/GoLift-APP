@@ -17,7 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "../../contexts/AuthContext";
 import { useCommunities } from "../../contexts/CommunitiesContext";
-import { workoutApi, exerciseApi, planoApi } from "../../services/api";
+import { workoutApi, exerciseApi } from "../../services/api";
 import { useTheme } from "../../styles/theme";
 import { useAndroidInsets } from "../../hooks/useAndroidInsets";
 import { WorkoutsScreenSkeleton } from "../../components/ui/SkeletonLoader";
@@ -29,10 +29,8 @@ export default function Workouts() {
   const { userCommunities, sendMessage } = useCommunities();
   const [refreshing, setRefreshing] = useState(false);
   const [myWorkouts, setMyWorkouts] = useState<any[]>([]);
-  const [adminWorkouts, setAdminWorkouts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [bodyPartFilter, setBodyPartFilter] = useState<string | null>(null);
-  const [planoTipo, setPlanoTipo] = useState<"free" | "pago">("free");
 
   // Partilha de treino
   const [showShareModal, setShowShareModal] = useState(false);
@@ -58,7 +56,6 @@ export default function Workouts() {
   async function loadData() {
     setLoading(true);
     try {
-      planoApi.getUserPlan(user!.id).then(d => setPlanoTipo(d.plano)).catch(() => {});
       const userWorkouts = await workoutApi.getUserWorkouts(user!.id).catch(() => []);
       
       // Remover duplicatas usando Set com nome do treino como chave
@@ -69,7 +66,6 @@ export default function Workouts() {
       );
       
       setMyWorkouts(uniqueWorkouts);
-      setAdminWorkouts([]);
     } catch (error) {
       console.error("Erro ao carregar treinos:", error);
     } finally {
@@ -239,12 +235,22 @@ export default function Workouts() {
     );
   }
 
-  function handleShareTemplate(workout: any) {
+  async function handleShareTemplate(workout: any) {
     if (userCommunities.length === 0) {
       Alert.alert("Sem comunidades", "Entra numa comunidade para poderes partilhar treinos.");
       return;
     }
-    setShareWorkoutData(workout);
+    try {
+      const resp = await workoutApi.getWorkoutExercises(workout.id_treino).catch(() => ({ exercicios: [] }));
+      const exercicios = (resp?.exercicios || []).map((ex: any) => ({
+        id: ex.id_exercicio,
+        nome: ex.nome,
+        grupo_tipo: ex.grupo_tipo || null,
+      }));
+      setShareWorkoutData({ ...workout, exercicios });
+    } catch {
+      setShareWorkoutData(workout);
+    }
     setShowShareModal(true);
   }
 
@@ -270,71 +276,7 @@ export default function Workouts() {
     } catch {
       Alert.alert("Erro", "Não foi possível partilhar o treino");
     } finally {
-      setSharingToComm(false);
-    }
-  }
 
-  if (loading) {
-    return <WorkoutsScreenSkeleton />;
-  }
-
-  return (
-    <View style={{ flex: 1, backgroundColor: theme.background }}>
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: 120 }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        {/* Header */}
-        <View style={{ paddingHorizontal: 24, paddingTop: safeTop + 12, paddingBottom: 16 }}>
-          <Text style={{ fontSize: 32, fontWeight: "800", color: theme.text, letterSpacing: -1 }}>
-            Treinos
-          </Text>
-        </View>
-
-        {/* Treinos Recomendados */}
-        {adminWorkouts.length > 0 && (
-          <View style={{ marginBottom: 24 }}>
-            <View style={{ paddingHorizontal: 24, marginBottom: 16 }}>
-              <Text style={{ fontSize: 18, fontWeight: "600", color: theme.text }}>
-                Treinos Recomendados
-              </Text>
-            </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 24, gap: 12 }}
-            >
-              {adminWorkouts.map((workout: any, index: number) => (
-                <TouchableOpacity
-                  key={workout.id_treino_admin || index}
-                  onPress={() => handleStartWorkout(workout)}
-                  style={{
-                    backgroundColor: theme.backgroundSecondary,
-                    borderColor: theme.accent,
-                    borderWidth: 1,
-                    borderRadius: 16,
-                    padding: 16,
-                    width: 280,
-                  }}
-                >
-                  <View
-                    style={{
-                      backgroundColor: theme.backgroundTertiary,
-                      width: 40,
-                      height: 40,
-                      borderRadius: 10,
-                      justifyContent: "center",
-                      alignItems: "center",
-                      marginBottom: 12,
-                    }}
-                  >
-                    <Ionicons name="star" size={22} color={theme.accent} />
-                  </View>
-                    <Text style={{ fontSize: 16, fontWeight: "bold", color: theme.text, marginBottom: 4 }}>
-                      {workout.nome.charAt(0).toUpperCase() + workout.nome.slice(1)}
-                  </Text>
                   <Text style={{ fontSize: 13, color: theme.textSecondary, marginBottom: 16 }}>
                     {workout.exercicios?.length || 0} exercícios
                   </Text>
@@ -818,7 +760,7 @@ export default function Workouts() {
         onRequestClose={() => setShowShareModal(false)}
       >
         <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.55)" }}>
-          <View style={{ backgroundColor: theme.backgroundSecondary, borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: "70%" }}>
+          <View style={{ backgroundColor: theme.backgroundSecondary, borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: "82%" }}>
             <View style={{ width: 36, height: 4, backgroundColor: theme.border, borderRadius: 2, alignSelf: "center", marginTop: 12, marginBottom: 20 }} />
 
             <View style={{ flexDirection: "row", alignItems: "flex-start", paddingHorizontal: 24, marginBottom: 20 }}>
@@ -841,6 +783,24 @@ export default function Workouts() {
             <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginHorizontal: 24, marginBottom: 10 }}>
               Escolhe uma comunidade
             </Text>
+
+            {Array.isArray(shareWorkoutData?.exercicios) && shareWorkoutData.exercicios.length > 0 && (
+              <View style={{ marginHorizontal: 24, marginBottom: 12, backgroundColor: theme.backgroundTertiary, borderRadius: 14, padding: 12 }}>
+                <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 8 }}>
+                  Exercícios incluídos
+                </Text>
+                {shareWorkoutData.exercicios.slice(0, 6).map((ex: any, idx: number) => (
+                  <Text key={`${ex.id || idx}`} style={{ color: theme.text, fontSize: 13, lineHeight: 19, marginBottom: 2 }} numberOfLines={2}>
+                    • {ex.nome || ex.name || `Exercício ${idx + 1}`}
+                  </Text>
+                ))}
+                {shareWorkoutData.exercicios.length > 6 && (
+                  <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 4 }}>
+                    +{shareWorkoutData.exercicios.length - 6} exercícios
+                  </Text>
+                )}
+              </View>
+            )}
 
             <FlatList
               data={userCommunities}

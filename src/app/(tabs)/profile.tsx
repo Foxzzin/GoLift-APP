@@ -610,7 +610,14 @@ export default function Profile() {
                     key={i}
                     accessibilityRole="button"
                     accessibilityLabel={`Recorde de ${record.nome_exercicio || record.exercicio}`}
-                    onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      const exercicioId = record.id_exercicio || record.exercicio_id;
+                      const nome = record.nome_exercicio || record.exercicio || record.exercise || "";
+                      if (exercicioId) {
+                        router.push({ pathname: "/exercise-progress/[id]", params: { id: String(exercicioId), nome } });
+                      }
+                    }}
                     style={({ pressed }) => ({
                       flexDirection: "row",
                       alignItems: "center",
@@ -745,7 +752,15 @@ export default function Profile() {
                   return (
                     <Pressable
                       key={i}
-                      onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        const exercicioId = record.id_exercicio || record.exercicio_id;
+                        const nome = record.nome_exercicio || record.exercicio || record.exercise || "";
+                        if (exercicioId) {
+                          router.push({ pathname: "/exercise-progress/[id]", params: { id: String(exercicioId), nome } });
+                          setShowAllRecords(false);
+                        }
+                      }}
                       style={({ pressed }) => ({
                         flexDirection: "row",
                         alignItems: "center",

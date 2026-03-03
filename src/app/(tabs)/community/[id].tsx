@@ -125,7 +125,7 @@ export default function CommunityDetail() {
       Alert.alert(
         "Comunidade não encontrada",
         "Esta comunidade já não existe ou foi removida.",
-        [{ text: "OK", onPress: () => router.back() }]
+        [{ text: "OK", onPress: () => router.replace("/(tabs)/communities") }]
       );
     }
   }, [loading, community]);
@@ -295,7 +295,7 @@ export default function CommunityDetail() {
       >
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <Pressable
-            onPress={() => router.back()}
+            onPress={() => router.replace("/(tabs)/communities")}
             accessibilityRole="button"
             accessibilityLabel="Voltar"
             style={({ pressed }) => ({

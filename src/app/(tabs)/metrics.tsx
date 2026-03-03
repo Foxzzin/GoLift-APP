@@ -62,6 +62,7 @@ export default function Metrics() {
   const [goalDraft, setGoalDraft] = useState(4);
   const [goalModeDraft, setGoalModeDraft] = useState<'permanent' | 'weekly'>('permanent');
   const [goalModalIsNew, setGoalModalIsNew] = useState(false); // true = prompted auto on new week
+  const [weightHistory, setWeightHistory] = useState<Array<{ week: string; weight: number }>>([]);
   
   // Draggable modal state
   const panResponder = useRef(
@@ -126,6 +127,39 @@ export default function Metrics() {
     setGoalModalIsNew(false);
   }
 
+  async function loadWeightHistory(currentWeight?: number) {
+    try {
+      const stored = await AsyncStorage.getItem('@golift:weight_history');
+      const parsed = stored ? JSON.parse(stored) : [];
+      let list = Array.isArray(parsed) ? parsed : [];
+      if (list.length === 0 && currentWeight) {
+        list = [{ week: getCurrentWeekKey(), weight: Number(currentWeight) }];
+        await AsyncStorage.setItem('@golift:weight_history', JSON.stringify(list));
+      }
+      setWeightHistory(list);
+    } catch {
+      setWeightHistory([]);
+    }
+  }
+
+  async function saveCurrentWeekWeight() {
+    if (!profile?.peso) return;
+    const currentWeek = getCurrentWeekKey();
+    const next = [...weightHistory];
+    const index = next.findIndex((item) => item.week === currentWeek);
+    if (index >= 0) {
+      next[index] = { week: currentWeek, weight: Number(profile.peso) };
+    } else {
+      next.push({ week: currentWeek, weight: Number(profile.peso) });
+    }
+    const normalized = next
+      .filter((item) => !!item.week && Number(item.weight) > 0)
+      .sort((a, b) => new Date(a.week).getTime() - new Date(b.week).getTime())
+      .slice(-8);
+    setWeightHistory(normalized);
+    await AsyncStorage.setItem('@golift:weight_history', JSON.stringify(normalized));
+  }
+
   function handleTabChange(tab: 'progresso' | 'calendario' | 'recordes' | 'ia') {
     if (tab === 'ia') {
       router.push('/ai-hub');
@@ -174,6 +208,7 @@ export default function Metrics() {
           pesoAlvo: profileData.user.pesoAlvo,
           objetivo: profileData.user.objetivo,
         });
+        await loadWeightHistory(profileData.user.weight);
       }
       
       // Processar histórico e datas para calendário
@@ -625,6 +660,61 @@ export default function Metrics() {
               <View style={{ height: 4, width: `${Math.min(weightProg.percentage, 100)}%` as any, backgroundColor: theme.accentGreen, borderRadius: 2 }} />
             </View>
             <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 10 }}>{weightProg.message}</Text>
+
+            <View style={{ marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: theme.backgroundTertiary }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                <Text style={{ color: theme.textSecondary, fontSize: 12, fontWeight: "700", letterSpacing: 0.5, textTransform: "uppercase" }}>
+                  Atualização Semanal
+                </Text>
+                <Pressable
+                  onPress={saveCurrentWeekWeight}
+                  accessibilityRole="button"
+                  accessibilityLabel="Atualizar peso desta semana"
+                  style={({ pressed }) => ({
+                    backgroundColor: theme.accent + "18",
+                    borderRadius: 10,
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    opacity: pressed ? 0.7 : 1,
+                  })}
+                >
+                  <Text style={{ color: theme.accent, fontSize: 11, fontWeight: "700" }}>Atualizar semana</Text>
+                </Pressable>
+              </View>
+
+              {weightHistory.length >= 2 ? (
+                <View>
+                  <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 6, height: 72 }}>
+                    {(() => {
+                      const maxWeight = Math.max(...weightHistory.map((w) => w.weight));
+                      const minWeight = Math.min(...weightHistory.map((w) => w.weight));
+                      const range = Math.max(maxWeight - minWeight, 1);
+                      return weightHistory.map((item, idx) => {
+                        const h = Math.max(10, ((item.weight - minWeight) / range) * 56 + 10);
+                        const isLast = idx === weightHistory.length - 1;
+                        return (
+                          <View key={item.week} style={{ flex: 1, alignItems: "center" }}>
+                            <View style={{ width: "100%", height: h, borderRadius: 6, backgroundColor: isLast ? theme.accent : theme.accent + "55" }} />
+                          </View>
+                        );
+                      });
+                    })()}
+                  </View>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 8 }}>
+                    <Text style={{ color: theme.textTertiary, fontSize: 11 }}>
+                      {new Date(weightHistory[0].week).toLocaleDateString("pt-PT", { day: "2-digit", month: "short" })}
+                    </Text>
+                    <Text style={{ color: theme.textSecondary, fontSize: 11 }}>
+                      Atual: {weightHistory[weightHistory.length - 1].weight}kg
+                    </Text>
+                  </View>
+                </View>
+              ) : (
+                <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
+                  Regista o peso semanal para acompanhar a evolução visual.
+                </Text>
+              )}
+            </View>
           </View>
         )}
       </View>
