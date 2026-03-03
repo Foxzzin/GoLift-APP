@@ -377,6 +377,12 @@ export default function WorkoutActive() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
+      {/* TESTE DE CARACTER LATINO */}
+      <View style={{ padding: 12, alignItems: "center" }}>
+        <Text style={{ color: theme.accent, fontSize: 18, fontWeight: "bold" }}>
+          Teste: ç Ç á é í ó ú
+        </Text>
+      </View>
 
       {/* ── Header ── */}
       <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 24, paddingTop: safeTop + 16, paddingBottom: 8 }}>

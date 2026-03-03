@@ -781,50 +781,42 @@ export default function Metrics() {
               </Text>
             </View>
           ) : (
-            <View>
+            <View style={{ gap: 12 }}>
               {records.slice(0, 3).map((record, index) => {
                 const medalColors = ["#f59e0b", "#94a3b8", "#cd7f32"];
                 const color = medalColors[index] ?? "#94a3b8";
+                const nome = record.nome_exercicio || record.exercicio || record.exercise || "";
+                const exercicioId = record.id_exercicio || record.exercicio_id;
 
                 return (
                   <Pressable
                     key={index}
                     onPress={() => {
-                      const exercicioId = record.id_exercicio || record.exercicio_id;
-                      const nome = record.nome_exercicio || record.exercicio || record.exercise || "";
                       if (exercicioId) {
                         router.push({ pathname: "/exercise-progress/[id]", params: { id: String(exercicioId), nome } });
                       }
                     }}
-                    accessibilityLabel={`Ver progressão de ${record.nome_exercicio || record.exercicio || ""}`}
+                    accessibilityLabel={`Ver progressão de ${nome}`}
                     accessibilityRole="button"
                     style={({ pressed }) => ({
                       flexDirection: "row",
                       alignItems: "center",
-                      paddingHorizontal: 18,
-                      paddingVertical: 16,
                       backgroundColor: theme.backgroundSecondary,
-                      borderRadius: 20,
-                      marginBottom: 10,
-                      borderWidth: 1,
-                      borderColor: color + "30",
-                      opacity: pressed ? 0.7 : 1,
+                      borderRadius: 14,
+                      paddingHorizontal: 18,
+                      paddingVertical: 17,
+                      opacity: pressed ? 0.6 : 1,
                     })}
                   >
-                    <View style={{
-                      width: 44, height: 44, borderRadius: 14,
-                      backgroundColor: color + "18",
-                      justifyContent: "center", alignItems: "center",
-                      marginRight: 14,
-                      borderWidth: 1,
-                      borderColor: color + "35",
-                    }}>
+                    {/* Medal Icon */}
+                    <View style={{ width: 26, alignItems: "center", marginRight: 16 }}>
                       <Ionicons name="medal" size={22} color={color} />
                     </View>
 
+                    {/* Exercise Name + Date */}
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: theme.text, fontWeight: "700", fontSize: 15, letterSpacing: -0.2 }}>
-                        {record.nome_exercicio || record.exercicio || record.exercise}
+                      <Text style={{ color: theme.text, fontSize: 17, fontWeight: "500", letterSpacing: -0.3 }} numberOfLines={1}>
+                        {nome}
                       </Text>
                       {(record.data_serie || record.data) && (
                         <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>
@@ -833,14 +825,12 @@ export default function Metrics() {
                       )}
                     </View>
 
-                    <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 8 }}>
-                      <View style={{ alignItems: "flex-end" }}>
-                        <Text style={{ color: color, fontSize: 26, fontWeight: "800", letterSpacing: -0.8 }}>
-                          {record.peso || record.weight}
-                        </Text>
-                        <Text style={{ color: theme.textSecondary, fontSize: 12, fontWeight: "600" }}>kg</Text>
-                      </View>
-                      <Ionicons name="chevron-forward" size={16} color={color + "80"} style={{ marginTop: 4 }} />
+                    {/* Weight */}
+                    <View style={{ alignItems: "flex-end" }}>
+                      <Text style={{ color: color, fontSize: 22, fontWeight: "800", letterSpacing: -0.5 }}>
+                        {record.peso || record.weight}
+                      </Text>
+                      <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "600", marginTop: -2 }}>kg</Text>
                     </View>
                   </Pressable>
                 );

@@ -607,7 +607,7 @@ export default function Profile() {
                 </Pressable>
               </View>
             ) : (
-              <View style={{ gap: 10 }}>
+              <View style={{ gap: 12 }}>
                 {records.slice(0, 3).map((record, i) => {
                   const medalColors = ["#f59e0b", "#94a3b8", "#cd7f32"];
                   const color = medalColors[i];
@@ -630,50 +630,34 @@ export default function Profile() {
                         flexDirection: "row",
                         alignItems: "center",
                         backgroundColor: theme.backgroundSecondary,
-                        borderRadius: 18,
+                        borderRadius: 14,
                         paddingHorizontal: 18,
-                        paddingVertical: 16,
-                        borderWidth: 1,
-                        borderColor: color + "30",
-                        opacity: pressed ? 0.75 : 1,
+                        paddingVertical: 17,
+                        opacity: pressed ? 0.6 : 1,
                       })}
                     >
-                      {/* Medal Icon Badge */}
-                      <View
-                        style={{
-                          width: 44,
-                          height: 44,
-                          borderRadius: 14,
-                          backgroundColor: color + "18",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          marginRight: 14,
-                          borderWidth: 1,
-                          borderColor: color + "35",
-                        }}
-                      >
+                      {/* Medal Icon */}
+                      <View style={{ width: 26, alignItems: "center", marginRight: 16 }}>
                         <Ionicons name="medal" size={22} color={color} />
                       </View>
 
                       {/* Exercise Name + Date */}
                       <View style={{ flex: 1 }}>
-                        <Text style={{ color: theme.text, fontSize: 14, fontWeight: "700", marginBottom: 3 }} numberOfLines={1}>
+                        <Text style={{ color: theme.text, fontSize: 17, fontWeight: "500", letterSpacing: -0.3 }} numberOfLines={1}>
                           {nome}
                         </Text>
                         {dateStr && (
-                          <Text style={{ color: theme.textTertiary, fontSize: 12, fontWeight: "500" }}>{dateStr}</Text>
+                          <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>{dateStr}</Text>
                         )}
                       </View>
 
                       {/* Weight */}
-                      <View style={{ alignItems: "flex-end", marginRight: 10 }}>
+                      <View style={{ alignItems: "flex-end" }}>
                         <Text style={{ color: color, fontSize: 22, fontWeight: "800", letterSpacing: -0.5 }}>
                           {record.peso || record.weight}
                         </Text>
                         <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: "600", marginTop: -2 }}>kg</Text>
                       </View>
-
-                      <Ionicons name="chevron-forward" size={16} color={color + "80"} />
                     </Pressable>
                   );
                 })}

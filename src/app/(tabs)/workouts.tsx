@@ -366,9 +366,9 @@ export default function Workouts() {
                           {workout.nome}
                         </Text>
                         <Text style={{ fontSize: 13, color: theme.textSecondary, marginTop: 3 }}>
-                          {workout.num_exercicios ?? 0} exerc├¡cios
+                          {workout.num_exercicios ?? 0} exercícios
                           {workout.is_ia && (
-                            <Text style={{ color: "#f59e0b" }}> ┬╖ IA</Text>
+                            <Text style={{ color: "#f59e0b" }}> IA </Text>
                           )}
                         </Text>
                       </View>
@@ -399,7 +399,7 @@ export default function Workouts() {
                           <Ionicons name="trash-outline" size={19} color={theme.textSecondary} />
                         </TouchableOpacity>
 
-                        {/* Bot├úo play */}
+                        {/* Botão play */}
                         <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: workout.is_ia ? "#f59e0b" : theme.accent, justifyContent: "center", alignItems: "center", marginLeft: 4 }}>
                           <Ionicons name="play" size={18} color="#fff" />
                         </View>
