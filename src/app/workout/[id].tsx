@@ -652,43 +652,25 @@ export default function WorkoutActive() {
 
       {/* ── Footer fixo ── */}
       <View style={{
-        flexDirection: "row",
         paddingHorizontal: 24,
         paddingTop: 12,
         paddingBottom: 28,
-        gap: 12,
         backgroundColor: theme.background,
         borderTopWidth: 1,
         borderTopColor: theme.backgroundTertiary,
       }}>
         <Pressable
-          onPress={cancelarTreino}
-          accessibilityLabel="Cancelar treino"
-          accessibilityRole="button"
-          style={({ pressed }) => ({
-            flex: 1,
-            backgroundColor: theme.backgroundSecondary,
-            paddingVertical: 16,
-            borderRadius: 16,
-            alignItems: "center",
-            opacity: pressed ? 0.7 : 1,
-          })}
-        >
-          <Text style={{ color: theme.text, fontWeight: "700", fontSize: 16 }}>Cancelar</Text>
-        </Pressable>
-        <Pressable
           onPress={concluirTreino}
           accessibilityLabel="Concluir treino"
           accessibilityRole="button"
           style={({ pressed }) => ({
-            flex: 2,
             backgroundColor: theme.accent,
-            paddingVertical: 16,
-            borderRadius: 16,
+            paddingVertical: 18,
+            borderRadius: 18,
             alignItems: "center",
             flexDirection: "row",
             justifyContent: "center",
-            gap: 8,
+            gap: 10,
             opacity: pressed ? 0.88 : 1,
             shadowColor: theme.accent,
             shadowOffset: { width: 0, height: 4 },
@@ -697,8 +679,8 @@ export default function WorkoutActive() {
             elevation: 6,
           })}
         >
-          <Ionicons name="checkmark-circle" size={20} color="#fff" />
-          <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>
+          <Ionicons name="checkmark-circle" size={22} color="#fff" />
+          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 17, letterSpacing: -0.3 }}>
             Concluir Treino
           </Text>
           {totalSeries > 0 && (
