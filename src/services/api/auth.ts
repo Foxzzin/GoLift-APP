@@ -4,7 +4,7 @@ import storage from "../storage";
 
 export const authApi = {
   login: async (email: string, password: string) => {
-    const response = await request<{ sucesso: boolean; token: string; user: { id: number; nome: string; email: string; tipo: number } }>("/api/login", {
+    const response = await request<{ sucesso: boolean; token: string; erro?: string; user: { id: number; nome: string; email: string; tipo: number } }>("/api/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
     });

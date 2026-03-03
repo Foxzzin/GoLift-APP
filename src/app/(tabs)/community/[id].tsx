@@ -82,7 +82,7 @@ export default function CommunityDetail() {
     }
     setCopyingWorkout(workoutShare.nome);
     try {
-      await workoutApi.copyWorkout(user!.id, workoutShare.nome, exerciseIds);
+      await workoutApi.createWorkout(user!.id, workoutShare.nome, exerciseIds);
       Alert.alert("Treino copiado! 💪", `"${workoutShare.nome}" foi adicionado aos teus treinos com todos os exercícios.`);
     } catch {
       Alert.alert("Erro", "Não foi possível copiar o treino.");
