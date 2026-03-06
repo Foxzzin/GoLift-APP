@@ -115,7 +115,7 @@ export default function CommunityDetail() {
     if (!communityId) return;
     const interval = setInterval(() => {
       loadCommunityMessages(communityId);
-    }, 15000);
+    }, 10000);
     return () => clearInterval(interval);
   }, [communityId]);
 

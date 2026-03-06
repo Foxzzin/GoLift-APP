@@ -21,6 +21,7 @@ const GRUPO_COLORS: Record<string, string> = {};
 export default function AdminUsers() {
   const theme = useTheme();
   const { safeTop } = useAndroidInsets();
+  const { user: currentUser } = require("../../contexts/AuthContext").useAuth();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -235,7 +236,7 @@ export default function AdminUsers() {
                       <Text style={{ color: "#8B5CF6", fontWeight: "700", fontSize: 13 }}>Plano IA</Text>
                     </Pressable>
                   )}
-                  {/* Botão para alterar cargo, visível apenas para Owner/Admin Leader (id_tipoUser === 3) */}
+                  {/* Botão para alterar cargo, visível apenas para Owner/Admin Manager (id_tipoUser === 3) */}
                   {user.id !== undefined && currentUser?.id_tipoUser === 3 && user.id !== currentUser.id && (
                     <Pressable
                       onPress={() => handleChangeRole(user)}
