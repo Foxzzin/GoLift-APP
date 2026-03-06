@@ -235,6 +235,26 @@ export default function AdminUsers() {
                       <Text style={{ color: "#8B5CF6", fontWeight: "700", fontSize: 13 }}>Plano IA</Text>
                     </Pressable>
                   )}
+                  {/* Botão para alterar cargo, visível apenas para Owner/Admin Leader (id_tipoUser === 3) */}
+                  {user.id !== undefined && currentUser?.id_tipoUser === 3 && user.id !== currentUser.id && (
+                    <Pressable
+                      onPress={() => handleChangeRole(user)}
+                      accessibilityLabel="Alterar cargo"
+                      accessibilityRole="button"
+                      style={({ pressed }) => ({
+                        paddingVertical: 10, paddingHorizontal: 18,
+                        borderRadius: 12,
+                        backgroundColor: "#2563EB20",
+                        flexDirection: "row", alignItems: "center", gap: 6,
+                        opacity: pressed ? 0.7 : 1,
+                      })}
+                    >
+                      <Ionicons name="swap-horizontal" size={14} color="#2563EB" />
+                      <Text style={{ color: "#2563EB", fontWeight: "700", fontSize: 13 }}>
+                        {user.id_tipoUser === 1 ? "Rebaixar para Normal" : "Promover para Admin"}
+                      </Text>
+                    </Pressable>
+                  )}
                   <Pressable
                     onPress={() => deleteUser(user)}
                     accessibilityLabel="Apagar utilizador"

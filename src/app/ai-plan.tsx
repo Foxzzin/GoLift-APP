@@ -244,8 +244,8 @@ export default function AIPlan() {
     "Segundos de pausa entre séries",
   ];
 
-  // Wizard is active when user can generate and hasn't started generating
-  const showWizard = podeGerar && !generating;
+  // Wizard is active only if user can generate, hasn't started generating, and has no plan
+  const showWizard = podeGerar && !generating && !plano;
 
   // ─── Rendering ───────────────────────────────────────────────
   if (loading) {

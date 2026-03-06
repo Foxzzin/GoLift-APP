@@ -377,12 +377,6 @@ export default function WorkoutActive() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
-      {/* TESTE DE CARACTER LATINO */}
-      <View style={{ padding: 12, alignItems: "center" }}>
-        <Text style={{ color: theme.accent, fontSize: 18, fontWeight: "bold" }}>
-          Teste: ç Ç á é í ó ú
-        </Text>
-      </View>
 
       {/* ── Header ── */}
       <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 24, paddingTop: safeTop + 16, paddingBottom: 8 }}>
@@ -470,31 +464,81 @@ export default function WorkoutActive() {
               <Ionicons name="timer-outline" size={18} color="#007AFF" />
               <Text style={{ color: "#fff", fontSize: 13, fontWeight: "700", marginLeft: 8, letterSpacing: 0.2 }}>
                 Descanso
-              </Text>
-            </View>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-              <Text style={{ color: "#007AFF", fontSize: 20, fontWeight: "800", letterSpacing: -0.5 }}>
-                {`${Math.floor(restTimer / 60).toString().padStart(2, "0")}:${(restTimer % 60).toString().padStart(2, "0")}`}
-              </Text>
-              <View style={{ backgroundColor: "#ffffff15", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
-                <Text style={{ color: "#ffffffaa", fontSize: 11, fontWeight: "600" }}>Saltar</Text>
-              </View>
-            </View>
-          </View>
-        </Pressable>
-      )}
-
-      {/* ── Lista de exercícios (sempre aberta) ── */}
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 24 }}
-        keyboardShouldPersistTaps="handled"
-      >
-        {exercicios.map((exercicio: any, index: number) => {
-          const concluidas = exercicio.series.filter((s: any) => s.concluida).length;
-          const todasConcluidas = concluidas === exercicio.series.length && exercicio.series.length > 0;
-
-          return (
+              <Pressable
+                onPress={skipRestTimer}
+                accessibilityLabel={`Descanso: ${restTimer} segundos restantes. Toca para saltar.`}
+                accessibilityRole="button"
+                style={({ pressed }) => ({
+                  marginHorizontal: 24,
+                  marginTop: 10,
+                  marginBottom: 8,
+                  borderRadius: 24,
+                  backgroundColor: '#173A5F',
+                  padding: 18,
+                  opacity: pressed ? 0.85 : 1,
+                  shadowColor: '#007AFF',
+                  shadowOffset: { width: 0, height: 8 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 18,
+                  elevation: 10,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                })}
+              >
+                {/* Circular Progress Indicator */}
+                <View style={{ alignItems: 'center', justifyContent: 'center', marginBottom: 6 }}>
+                  <View style={{ position: 'relative', width: 64, height: 64 }}>
+                    {/* Outer circle */}
+                    <View style={{
+                      position: 'absolute',
+                      top: 0, left: 0,
+                      width: 64, height: 64,
+                      borderRadius: 32,
+                      borderWidth: 4,
+                      borderColor: '#007AFF33',
+                    }} />
+                    {/* Progress arc (simulate with inner circle proportional to time) */}
+                    <View style={{
+                      position: 'absolute',
+                      top: 4, left: 4,
+                      width: 56, height: 56,
+                      borderRadius: 28,
+                      backgroundColor: '#007AFF',
+                      opacity: 0.18 + 0.82 * (restTimer / restDefault),
+                    }} />
+                    {/* Timer value */}
+                    <View style={{
+                      position: 'absolute',
+                      top: 0, left: 0,
+                      width: 64, height: 64,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      <Text style={{ color: '#fff', fontSize: 28, fontWeight: 'bold', letterSpacing: -0.5 }}>
+                        {restTimer}
+                      </Text>
+                      <Text style={{ color: '#007AFF', fontSize: 13, fontWeight: '700', marginTop: -2 }}>
+                        seg
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+                {/* Info and skip */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="timer-outline" size={20} color="#007AFF" style={{ marginRight: 6 }} />
+                    <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700', letterSpacing: 0.2 }}>
+                      Descanso
+                    </Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600', marginRight: 8 }}>
+                      Toca para saltar
+                    </Text>
+                    <Ionicons name="arrow-forward-circle" size={22} color="#fff" />
+                  </View>
+                </View>
+              </Pressable>
             <View
               key={exercicio.id}
               style={{
@@ -594,11 +638,11 @@ export default function WorkoutActive() {
                           fontSize: 15,
                           fontWeight: "600",
                         }}
-                        placeholder={getPlaceholder(exercicio.id, serieIndex, "repeticoes")}
+                        placeholder={getPlaceholder(exercicio.id, serieIndex, "repetições")}
                         placeholderTextColor={theme.accent + "55"}
                         keyboardType="number-pad"
                         value={serie.repeticoes}
-                        onChangeText={(v: string) => atualizarSerie(exercicio.id, serieIndex, "repeticoes", v)}
+                        onChangeText={(v: string) => atualizarSerie(exercicio.id, serieIndex, "repetições", v)}
                         onFocus={() => setFocusedField(`reps-${exercicio.id}-${serieIndex}`)}
                         onBlur={() => setFocusedField(null)}
                         editable={!serie.concluida}
@@ -665,36 +709,55 @@ export default function WorkoutActive() {
         borderTopWidth: 1,
         borderTopColor: theme.backgroundTertiary,
       }}>
+        {/* ── Concluir Treino Button ── */}
         <Pressable
           onPress={concluirTreino}
           accessibilityLabel="Concluir treino"
           accessibilityRole="button"
-          style={({ pressed }) => ({
-            backgroundColor: theme.accent,
-            paddingVertical: 18,
-            borderRadius: 18,
-            alignItems: "center",
-            flexDirection: "row",
-            justifyContent: "center",
-            gap: 10,
-            opacity: pressed ? 0.88 : 1,
-            shadowColor: theme.accent,
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.3,
-            shadowRadius: 10,
-            elevation: 6,
-          })}
+          style={({ pressed }) => ([
+            {
+              // Gradient background (simulate with two colors if not using LinearGradient)
+              backgroundColor: theme.accent,
+              paddingVertical: 20,
+              borderRadius: 24,
+              alignItems: "center",
+              flexDirection: "row",
+              justifyContent: "center",
+              gap: 12,
+              opacity: pressed ? 0.92 : 1,
+              shadowColor: theme.accent,
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.35,
+              shadowRadius: 16,
+              elevation: 8,
+              transform: [{ scale: pressed ? 0.97 : 1 }],
+            },
+          ])}
         >
-          <Ionicons name="checkmark-circle" size={22} color="#fff" />
-          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 17, letterSpacing: -0.3 }}>
+          <Ionicons name="checkmark-circle" size={26} color="#fff" style={{ marginRight: 2 }} />
+          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 18, letterSpacing: -0.3 }}>
             Concluir Treino
           </Text>
           {totalSeries > 0 && (
-            <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: "600" }}>
-              {seriesConcluidas}/{totalSeries}
-            </Text>
+            <View style={{
+              backgroundColor: "rgba(255,255,255,0.18)",
+              borderRadius: 12,
+              paddingHorizontal: 10,
+              paddingVertical: 2,
+              marginLeft: 6,
+            }}>
+              <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 14, fontWeight: "700" }}>
+                {seriesConcluidas}/{totalSeries}
+              </Text>
+            </View>
           )}
         </Pressable>
+        {/* Optional: Progress bar below button */}
+        {totalSeries > 0 && (
+          <View style={{ height: 5, backgroundColor: theme.backgroundTertiary, borderRadius: 3, marginTop: 12 }}>
+            <View style={{ height: 5, width: `${progressoPct * 100}%`, backgroundColor: theme.accent, borderRadius: 3 }} />
+          </View>
+        )}
       </View>
 
     </View>

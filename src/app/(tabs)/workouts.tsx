@@ -36,6 +36,33 @@ export default function Workouts() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareWorkoutData, setShareWorkoutData] = useState<any>(null);
   const [sharingToComm, setSharingToComm] = useState(false);
+  const [copyingWorkout, setCopyingWorkout] = useState(false);
+  // Copiar treino para lista do usuário
+  async function copyWorkoutToUserList() {
+    if (!shareWorkoutData) return;
+    setCopyingWorkout(true);
+    try {
+      // Buscar exercícios do treino
+      const resp = await workoutApi.getWorkoutExercises(shareWorkoutData.id_treino).catch(() => ({ exercicios: [] }));
+      const exerciseIds = (resp?.exercicios || []).map((ex: any) => ex.id_exercicio);
+      // Verificar se já existe um treino com o mesmo nome
+      const exists = myWorkouts.some((w: any) => w.nome === shareWorkoutData.nome);
+      let newName = shareWorkoutData.nome;
+      if (exists) {
+        // Adicionar sufixo para evitar duplicatas
+        newName = `${shareWorkoutData.nome} (Cópia)`;
+      }
+      await workoutApi.createWorkout(user!.id, newName, exerciseIds);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert("Sucesso", "Treino copiado para sua lista!");
+      setShowShareModal(false);
+      loadData();
+    } catch (error: any) {
+      Alert.alert("Erro", error.message || "Erro ao copiar treino");
+    } finally {
+      setCopyingWorkout(false);
+    }
+  }
 
   // Modal criar / editar treino
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -90,7 +117,7 @@ export default function Workouts() {
       const exercises = await exerciseApi.getAll();
       setAvailableExercises(exercises || []);
     } catch (error) {
-      console.error("Erro ao carregar exerc├¡cios:", error);
+      console.error("Erro ao carregar exercícios:", error);
     } finally {
       setLoadingExercises(false);
     }
@@ -110,12 +137,12 @@ export default function Workouts() {
       ]);
       const allExs = exercises || [];
       setAvailableExercises(allExs);
-      // Pr├⌐-selecionar os exerc├¡cios atuais do treino
+      // Pré-selecionar os exercícios atuais do treino
       const currentIds = new Set((workoutExs?.exercicios || []).map((e: any) => e.id_exercicio));
       const preSelected = allExs.filter((e: any) => currentIds.has(e.id));
       setSelectedExercises(preSelected);
     } catch (error) {
-      console.error("Erro ao carregar exerc├¡cios:", error);
+      console.error("Erro ao carregar exercícios:", error);
     } finally {
       setLoadingExercises(false);
     }
@@ -135,16 +162,16 @@ export default function Workouts() {
       return;
     }
     if (selectedExercises.length === 0) {
-      Alert.alert("Erro", "Seleciona pelo menos um exerc├¡cio");
+      Alert.alert("Erro", "Seleciona pelo menos um exercício");
       return;
     }
 
-    // Verificar se treino com este nome j├í existe
+    // Verificar se treino com este nome já existe
     const treinoExistente = myWorkouts.find(
       (w: any) => w.nome.toLowerCase() === workoutName.trim().toLowerCase()
     );
     if (treinoExistente) {
-      Alert.alert("Treino Duplicado", `J├í existe um treino chamado "${workoutName}". Escolhe um nome diferente.`);
+      Alert.alert("Treino Duplicado", `Já existe um treino chamado "${workoutName}". Escolhe um nome diferente.`);
       return;
     }
 
@@ -170,7 +197,7 @@ export default function Workouts() {
       return;
     }
     if (selectedExercises.length === 0) {
-      Alert.alert("Erro", "Seleciona pelo menos um exerc├¡cio");
+      Alert.alert("Erro", "Seleciona pelo menos um exercício");
       return;
     }
     setSavingWorkout(true);
@@ -179,7 +206,7 @@ export default function Workouts() {
       const upperName = workoutName.charAt(0).toUpperCase() + workoutName.slice(1);
       await workoutApi.updateWorkout(user!.id, editingWorkout.id_treino, upperName, exerciseIds);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert("Guardado! Γ£à", "Treino atualizado com sucesso.");
+      Alert.alert("Guardado!", "Treino atualizado com sucesso.");
       setShowCreateModal(false);
       setEditingWorkout(null);
       loadData();
@@ -192,8 +219,8 @@ export default function Workouts() {
 
   async function handleStartWorkout(workout: any) {
     Alert.alert(
-      "Come├ºar Treino",
-      `Deseja come├ºar: ${workout.nome}?`,
+      "Começar Treino",
+      `Deseja começar: ${workout.nome}?`,
       [
         { text: "Cancelar", style: "cancel" },
         {
@@ -204,7 +231,7 @@ export default function Workouts() {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               router.push(`/workout/${workout.id_treino}`);
             } catch (error) {
-              Alert.alert("Erro", "N├úo foi poss├¡vel iniciar o treino");
+              Alert.alert("Erro", "Não foi possível iniciar o treino");
             }
           },
         },
@@ -215,7 +242,7 @@ export default function Workouts() {
   async function handleDeleteWorkout(workout: any) {
     Alert.alert(
       "Apagar Treino",
-      `Tens a certeza que queres apagar "${workout.nome}"? O hist├│rico de sess├╡es tamb├⌐m ser├í apagado.`,
+      `Tens a certeza que queres apagar "${workout.nome}"? O histórico de sessões também será apagado.`,
       [
         { text: "Cancelar", style: "cancel" },
         {
@@ -227,7 +254,7 @@ export default function Workouts() {
               await workoutApi.deleteWorkout(user!.id, workout.id_treino);
               loadData();
             } catch (error: any) {
-              Alert.alert("Erro", error.message || "N├úo foi poss├¡vel apagar o treino");
+              Alert.alert("Erro", error.message || "Não foi possível apagar o treino");
             }
           },
         },
@@ -259,12 +286,12 @@ export default function Workouts() {
         nome: shareWorkoutData.nome,
         exercicios,
       });
-      await sendMessage(community.id, `≡ƒÅï∩╕Å__SHARE__${payload}`);
+      await sendMessage(community.id, `__SHARE__${payload}`);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setShowShareModal(false);
-      Alert.alert("Partilhado! ≡ƒÆ¬", `Treino enviado para ${community.nome}`);
+      Alert.alert("Partilhado!", `Treino enviado para ${community.nome}`);
     } catch {
-      Alert.alert("Erro", "N├úo foi poss├¡vel partilhar o treino");
+      Alert.alert("Erro", "Não foi possível partilhar o treino");
     } finally {
       setSharingToComm(false);
     }
@@ -489,10 +516,10 @@ export default function Workouts() {
                 />
               </View>
 
-              {/* Exerc├¡cios selecionados */}
+              {/* Exercicios selecionados */}
               <View style={{ marginBottom: 20 }}>
                 <Text style={{ color: theme.text, marginBottom: 8, fontWeight: "500", fontSize: 14 }}>
-                  Exerc├¡cios Selecionados ({selectedExercises.length})
+                  Exercicios Selecionados ({selectedExercises.length})
                 </Text>
                 {selectedExercises.length > 0 && (
                   <View
@@ -530,9 +557,9 @@ export default function Workouts() {
                 )}
               </View>
 
-              {/* Lista de exerc├¡cios dispon├¡veis */}
+              {/* Lista de exercicios disponiveis */}
               <Text style={{ color: theme.text, marginBottom: 12, fontWeight: "500", fontSize: 14 }}>
-                Adicionar Exerc├¡cios
+                Adicionar Exercicios
               </Text>
 
               {/* Carrossel de Filtro de Body Parts */}
@@ -707,7 +734,7 @@ export default function Workouts() {
               )}
             </ScrollView>
 
-            {/* Bot├úo Criar */}
+            {/* Botão Criar */}
             <View
               style={{
                 paddingHorizontal: 24,
@@ -731,7 +758,7 @@ export default function Workouts() {
                   <ActivityIndicator color="white" />
                 ) : (
                   <Text style={{ color: "white", fontWeight: "bold", fontSize: 16 }}>
-                    {editingWorkout ? "Guardar Altera├º├╡es" : "Criar Treino"}
+                    {editingWorkout ? "Guardar Alterações" : "Criar Treino"}
                   </Text>
                 )}
               </TouchableOpacity>
@@ -757,6 +784,19 @@ export default function Workouts() {
                 <Text style={{ color: theme.textSecondary, fontSize: 13, marginTop: 4 }}>
                   {shareWorkoutData?.nome}
                 </Text>
+                {/* Show all exercise names */}
+                {shareWorkoutData?.exercicios && (
+                  <View style={{ marginTop: 8 }}>
+                    <Text style={{ color: theme.textSecondary, fontSize: 12, fontWeight: "600" }}>Exercícios:</Text>
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
+                      {shareWorkoutData.exercicios.map((ex: any, idx: number) => (
+                        <View key={ex.id || idx} style={{ backgroundColor: theme.backgroundTertiary, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, marginRight: 6, marginBottom: 6 }}>
+                          <Text style={{ color: theme.text, fontSize: 12 }}>{ex.nome}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                )}
               </View>
               <Pressable
                 onPress={() => setShowShareModal(false)}
@@ -808,6 +848,26 @@ export default function Workouts() {
                 </Pressable>
               )}
             />
+            {/* Copy workout to user's list if not IA */}
+            {shareWorkoutData && !shareWorkoutData.is_ia && (
+              <View style={{ paddingHorizontal: 24, paddingBottom: safeBottom + 20 }}>
+                <TouchableOpacity
+                  onPress={copyWorkoutToUserList}
+                  style={{ backgroundColor: theme.accent, borderRadius: 12, paddingVertical: 14, alignItems: "center", marginTop: 16 }}
+                  accessibilityLabel="Copiar treino para minha lista"
+                  accessibilityRole="button"
+                  disabled={copyingWorkout}
+                >
+                  {copyingWorkout ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <Text style={{ color: "white", fontWeight: "bold", fontSize: 15 }}>
+                      Copiar treino para minha lista
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </View>
       </Modal>
