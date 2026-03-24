@@ -41,7 +41,7 @@ function LineChart({
   textSecondary: string;
 }) {
   const screenWidth = Dimensions.get("window").width;
-  const chartW = screenWidth - 48;
+  const chartW = screenWidth - 80;
   const plotW = chartW - PAD.left - PAD.right;
   const plotH = CHART_H - PAD.top - PAD.bottom;
 
@@ -90,9 +90,9 @@ function LineChart({
           style={{
             position: "absolute",
             left: s.midX - s.length / 2,
-            top: s.midY - 1.25,
+            top: s.midY - 1.5,
             width: s.length,
-            height: 2.5,
+            height: 3,
             backgroundColor: accent,
             borderRadius: 2,
             transform: [{ rotate: `${s.angle}deg` }],

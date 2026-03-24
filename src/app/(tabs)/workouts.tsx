@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -29,15 +29,40 @@ export default function Workouts() {
   const { userCommunities, sendMessage } = useCommunities();
   const [refreshing, setRefreshing] = useState(false);
   const [myWorkouts, setMyWorkouts] = useState<any[]>([]);
-  const [adminWorkouts, setAdminWorkouts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [bodyPartFilter, setBodyPartFilter] = useState<string | null>(null);
-  const [planoTipo, setPlanoTipo] = useState<"free" | "pago">("free");
 
   // Partilha de treino
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareWorkoutData, setShareWorkoutData] = useState<any>(null);
   const [sharingToComm, setSharingToComm] = useState(false);
+  const [copyingWorkout, setCopyingWorkout] = useState(false);
+  // Copiar treino para lista do usuário
+  async function copyWorkoutToUserList() {
+    if (!shareWorkoutData) return;
+    setCopyingWorkout(true);
+    try {
+      // Buscar exercícios do treino
+      const resp = await workoutApi.getWorkoutExercises(shareWorkoutData.id_treino).catch(() => ({ exercicios: [] }));
+      const exerciseIds = (resp?.exercicios || []).map((ex: any) => ex.id_exercicio);
+      // Verificar se já existe um treino com o mesmo nome
+      const exists = myWorkouts.some((w: any) => w.nome === shareWorkoutData.nome);
+      let newName = shareWorkoutData.nome;
+      if (exists) {
+        // Adicionar sufixo para evitar duplicatas
+        newName = `${shareWorkoutData.nome} (Cópia)`;
+      }
+      await workoutApi.createWorkout(user!.id, newName, exerciseIds);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert("Sucesso", "Treino copiado para sua lista!");
+      setShowShareModal(false);
+      loadData();
+    } catch (error: any) {
+      Alert.alert("Erro", error.message || "Erro ao copiar treino");
+    } finally {
+      setCopyingWorkout(false);
+    }
+  }
 
   // Modal criar / editar treino
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -58,7 +83,6 @@ export default function Workouts() {
   async function loadData() {
     setLoading(true);
     try {
-      planoApi.getUserPlan(user!.id).then(d => setPlanoTipo(d.plano)).catch(() => {});
       const userWorkouts = await workoutApi.getUserWorkouts(user!.id).catch(() => []);
       
       // Remover duplicatas usando Set com nome do treino como chave
@@ -69,7 +93,6 @@ export default function Workouts() {
       );
       
       setMyWorkouts(uniqueWorkouts);
-      setAdminWorkouts([]);
     } catch (error) {
       console.error("Erro ao carregar treinos:", error);
     } finally {
@@ -183,7 +206,7 @@ export default function Workouts() {
       const upperName = workoutName.charAt(0).toUpperCase() + workoutName.slice(1);
       await workoutApi.updateWorkout(user!.id, editingWorkout.id_treino, upperName, exerciseIds);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert("Guardado! ✅", "Treino atualizado com sucesso.");
+      Alert.alert("Guardado!", "Treino atualizado com sucesso.");
       setShowCreateModal(false);
       setEditingWorkout(null);
       loadData();
@@ -263,10 +286,10 @@ export default function Workouts() {
         nome: shareWorkoutData.nome,
         exercicios,
       });
-      await sendMessage(community.id, `🏋️__SHARE__${payload}`);
+      await sendMessage(community.id, `__SHARE__${payload}`);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setShowShareModal(false);
-      Alert.alert("Partilhado! 💪", `Treino enviado para ${community.nome}`);
+      Alert.alert("Partilhado!", `Treino enviado para ${community.nome}`);
     } catch {
       Alert.alert("Erro", "Não foi possível partilhar o treino");
     } finally {
@@ -292,98 +315,6 @@ export default function Workouts() {
             Treinos
           </Text>
         </View>
-
-        {/* Treinos Recomendados */}
-        {adminWorkouts.length > 0 && (
-          <View style={{ marginBottom: 24 }}>
-            <View style={{ paddingHorizontal: 24, marginBottom: 16 }}>
-              <Text style={{ fontSize: 18, fontWeight: "600", color: theme.text }}>
-                Treinos Recomendados
-              </Text>
-            </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 24, gap: 12 }}
-            >
-              {adminWorkouts.map((workout: any, index: number) => (
-                <TouchableOpacity
-                  key={workout.id_treino_admin || index}
-                  onPress={() => handleStartWorkout(workout)}
-                  style={{
-                    backgroundColor: theme.backgroundSecondary,
-                    borderColor: theme.accent,
-                    borderWidth: 1,
-                    borderRadius: 16,
-                    padding: 16,
-                    width: 280,
-                  }}
-                >
-                  <View
-                    style={{
-                      backgroundColor: theme.backgroundTertiary,
-                      width: 40,
-                      height: 40,
-                      borderRadius: 10,
-                      justifyContent: "center",
-                      alignItems: "center",
-                      marginBottom: 12,
-                    }}
-                  >
-                    <Ionicons name="star" size={22} color={theme.accent} />
-                  </View>
-                    <Text style={{ fontSize: 16, fontWeight: "bold", color: theme.text, marginBottom: 4 }}>
-                      {workout.nome.charAt(0).toUpperCase() + workout.nome.slice(1)}
-                  </Text>
-                  <Text style={{ fontSize: 13, color: theme.textSecondary, marginBottom: 16 }}>
-                    {workout.exercicios?.length || 0} exercícios
-                  </Text>
-                  <TouchableOpacity
-                    style={{
-                      backgroundColor: theme.accent,
-                      paddingVertical: 12,
-                      borderRadius: 10,
-                      justifyContent: "center",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Text style={{ color: "white", fontWeight: "600", fontSize: 14 }}>
-                      Começar
-                    </Text>
-                  </TouchableOpacity>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
-        {/* Banner IA - Plano Mensal */}
-        {planoTipo === "pago" && (
-          <View style={{ paddingHorizontal: 24, marginBottom: 16 }}>
-            <Pressable
-              onPress={() => router.push("/ai-hub")}
-              accessibilityLabel="Plano Mensal IA"
-              accessibilityRole="button"
-              style={({ pressed }) => ({
-                backgroundColor: theme.backgroundSecondary,
-                borderRadius: 18,
-                paddingHorizontal: 18,
-                paddingVertical: 16,
-                flexDirection: "row",
-                alignItems: "center",
-                overflow: "hidden",
-                opacity: pressed ? 0.8 : 1,
-              })}
-            >
-              <View style={{ width: 4, position: "absolute", left: 0, top: 0, bottom: 0, backgroundColor: theme.accent }} />
-              <View style={{ marginLeft: 14, flex: 1 }}>
-                <Text style={{ color: theme.text, fontWeight: "700", fontSize: 14, letterSpacing: -0.2 }}>Plano Mensal IA</Text>
-                <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>Ver o teu plano personalizado</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={theme.accent} />
-            </Pressable>
-          </View>
-        )}
 
         {/* Meus Treinos */}
         <View style={{ paddingHorizontal: 24 }}>
@@ -411,7 +342,7 @@ export default function Workouts() {
 
           {myWorkouts.length === 0 ? (
             <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 20, paddingVertical: 44, paddingHorizontal: 24, alignItems: "center" }}>
-              <Text style={{ fontSize: 36, marginBottom: 12 }}>🏋️</Text>
+              <Text style={{ fontSize: 36, marginBottom: 12 }}>≡ƒÅï∩╕Å</Text>
               <Text style={{ color: theme.text, fontWeight: "700", fontSize: 16, letterSpacing: -0.3 }}>Sem treinos ainda</Text>
               <Text style={{ color: theme.textSecondary, fontSize: 14, marginTop: 6, textAlign: "center" }}>Cria o teu primeiro treino personalizado</Text>
               <Pressable
@@ -441,7 +372,7 @@ export default function Workouts() {
                 <Pressable
                   key={workout.id_treino || index}
                   onPress={() => handleStartWorkout(workout)}
-                  accessibilityLabel={`Começar treino ${workout.nome}`}
+                  accessibilityLabel={`Come├ºar treino ${workout.nome}`}
                   accessibilityRole="button"
                   style={({ pressed }) => ({
                     backgroundColor: theme.backgroundSecondary,
@@ -464,12 +395,12 @@ export default function Workouts() {
                         <Text style={{ fontSize: 13, color: theme.textSecondary, marginTop: 3 }}>
                           {workout.num_exercicios ?? 0} exercícios
                           {workout.is_ia && (
-                            <Text style={{ color: "#f59e0b" }}> · IA</Text>
+                            <Text style={{ color: "#f59e0b" }}> IA </Text>
                           )}
                         </Text>
                       </View>
 
-                      {/* Ações */}
+                      {/* A├º├╡es */}
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                         {!workout.is_ia && (
                           <TouchableOpacity
@@ -502,12 +433,12 @@ export default function Workouts() {
                       </View>
                     </View>
 
-                    {/* Exercícios preview */}
+                    {/* Exerc├¡cios preview */}
                     {workout.exercicios?.length > 0 && (
                       <View style={{ marginTop: 12, gap: 4 }}>
                         {workout.exercicios.slice(0, 3).map((ex: any, i: number) => (
                           <Text key={i} style={{ fontSize: 12, color: theme.textSecondary }}>
-                            · {ex.nome || ex.name}
+                            ┬╖ {ex.nome || ex.name}
                           </Text>
                         ))}
                         {workout.exercicios.length > 3 && (
@@ -585,10 +516,10 @@ export default function Workouts() {
                 />
               </View>
 
-              {/* Exercícios selecionados */}
+              {/* Exercicios selecionados */}
               <View style={{ marginBottom: 20 }}>
                 <Text style={{ color: theme.text, marginBottom: 8, fontWeight: "500", fontSize: 14 }}>
-                  Exercícios Selecionados ({selectedExercises.length})
+                  Exercicios Selecionados ({selectedExercises.length})
                 </Text>
                 {selectedExercises.length > 0 && (
                   <View
@@ -626,9 +557,9 @@ export default function Workouts() {
                 )}
               </View>
 
-              {/* Lista de exercícios disponíveis */}
+              {/* Lista de exercicios disponiveis */}
               <Text style={{ color: theme.text, marginBottom: 12, fontWeight: "500", fontSize: 14 }}>
-                Adicionar Exercícios
+                Adicionar Exercicios
               </Text>
 
               {/* Carrossel de Filtro de Body Parts */}
@@ -853,6 +784,19 @@ export default function Workouts() {
                 <Text style={{ color: theme.textSecondary, fontSize: 13, marginTop: 4 }}>
                   {shareWorkoutData?.nome}
                 </Text>
+                {/* Show all exercise names */}
+                {shareWorkoutData?.exercicios && (
+                  <View style={{ marginTop: 8 }}>
+                    <Text style={{ color: theme.textSecondary, fontSize: 12, fontWeight: "600" }}>Exercícios:</Text>
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
+                      {shareWorkoutData.exercicios.map((ex: any, idx: number) => (
+                        <View key={ex.id || idx} style={{ backgroundColor: theme.backgroundTertiary, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, marginRight: 6, marginBottom: 6 }}>
+                          <Text style={{ color: theme.text, fontSize: 12 }}>{ex.nome}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                )}
               </View>
               <Pressable
                 onPress={() => setShowShareModal(false)}
@@ -904,6 +848,26 @@ export default function Workouts() {
                 </Pressable>
               )}
             />
+            {/* Copy workout to user's list if not IA */}
+            {shareWorkoutData && !shareWorkoutData.is_ia && (
+              <View style={{ paddingHorizontal: 24, paddingBottom: safeBottom + 20 }}>
+                <TouchableOpacity
+                  onPress={copyWorkoutToUserList}
+                  style={{ backgroundColor: theme.accent, borderRadius: 12, paddingVertical: 14, alignItems: "center", marginTop: 16 }}
+                  accessibilityLabel="Copiar treino para minha lista"
+                  accessibilityRole="button"
+                  disabled={copyingWorkout}
+                >
+                  {copyingWorkout ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <Text style={{ color: "white", fontWeight: "bold", fontSize: 15 }}>
+                      Copiar treino para minha lista
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </View>
       </Modal>

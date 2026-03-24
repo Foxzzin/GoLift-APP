@@ -244,8 +244,8 @@ export default function AIPlan() {
     "Segundos de pausa entre séries",
   ];
 
-  // Wizard is active when user can generate and hasn't started generating
-  const showWizard = podeGerar && !generating;
+  // Wizard is active only if user can generate, hasn't started generating, and has no plan
+  const showWizard = podeGerar && !generating && !plano;
 
   // ─── Rendering ───────────────────────────────────────────────
   if (loading) {
@@ -723,8 +723,10 @@ export default function AIPlan() {
               <View key={idx} style={{
                 backgroundColor: aberto ? theme.backgroundTertiary : theme.backgroundSecondary,
                 borderRadius: 20,
-                marginBottom: 10,
+                marginBottom: 12,
                 overflow: "hidden",
+                borderWidth: 1,
+                borderColor: aberto ? cor + "35" : theme.backgroundTertiary,
               }}>
                 <Pressable
                   onPress={() => setDiaExpandido(aberto ? null : idx)}
@@ -732,13 +734,14 @@ export default function AIPlan() {
                     flexDirection: "row",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    padding: 16,
+                    paddingHorizontal: 16,
+                    paddingVertical: 14,
                     opacity: pressed ? 0.8 : 1,
                   })}
                 >
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                     <View style={{
-                      width: 40, height: 40, borderRadius: 12,
+                      width: 44, height: 44, borderRadius: 14,
                       backgroundColor: cor + "22",
                       justifyContent: "center", alignItems: "center",
                     }}>
@@ -746,11 +749,11 @@ export default function AIPlan() {
                     </View>
                     <View>
                       <Text style={{ fontWeight: "700", color: theme.text, fontSize: 15 }}>{dia.dia}</Text>
-                      <Text style={{ color: cor, fontSize: 12, marginTop: 1, fontWeight: "600" }}>{dia.foco}</Text>
+                      <Text style={{ color: cor, fontSize: 12, marginTop: 1, fontWeight: "700", letterSpacing: 0.2 }}>{dia.foco}</Text>
                     </View>
                   </View>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                    <Text style={{ color: theme.textTertiary, fontSize: 12 }}>
+                    <Text style={{ color: theme.textSecondary, fontSize: 12, fontWeight: "600" }}>
                       {dia.exercicios?.length || 0} exercícios
                     </Text>
                     <Ionicons name={aberto ? "chevron-up" : "chevron-down"} size={16} color={theme.textTertiary} />
@@ -766,13 +769,20 @@ export default function AIPlan() {
                         alignItems: "flex-start",
                         justifyContent: "space-between",
                         paddingHorizontal: 16,
-                        paddingVertical: 12,
+                        paddingVertical: 13,
                         borderBottomWidth: ei < dia.exercicios.length - 1 ? 1 : 0,
                         borderBottomColor: theme.backgroundTertiary,
                       }}>
-                        <Text style={{ fontWeight: "500", color: theme.text, fontSize: 14, flex: 1, marginRight: 12 }}>
-                          {ex.nome}
-                        </Text>
+                        <View style={{ flex: 1, marginRight: 12 }}>
+                          <Text style={{ fontWeight: "600", color: theme.text, fontSize: 14, lineHeight: 20 }}>
+                            {ex.nome}
+                          </Text>
+                          {!!ex.observacao && (
+                            <Text style={{ color: theme.textTertiary, fontSize: 11, marginTop: 4, lineHeight: 16 }} numberOfLines={2}>
+                              {ex.observacao}
+                            </Text>
+                          )}
+                        </View>
                         <View>
                           <View style={{
                             backgroundColor: cor + "22", borderRadius: 8,
@@ -782,11 +792,6 @@ export default function AIPlan() {
                               {ex.series}×{ex.repeticoes}
                             </Text>
                           </View>
-                          {ex.observacao ? (
-                            <Text style={{ color: theme.textTertiary, fontSize: 11, marginTop: 4, textAlign: "right" }}>
-                              {ex.observacao}
-                            </Text>
-                          ) : null}
                         </View>
                       </View>
                     ))}

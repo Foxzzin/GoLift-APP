@@ -21,6 +21,7 @@ const GRUPO_COLORS: Record<string, string> = {};
 export default function AdminUsers() {
   const theme = useTheme();
   const { safeTop } = useAndroidInsets();
+  const { user: currentUser } = require("../../contexts/AuthContext").useAuth();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -30,7 +31,14 @@ export default function AdminUsers() {
   async function handleGeneratePlan(user: any) {
     setGenerating((prev) => ({ ...prev, [user.id]: true }));
     try {
-      const resp = await planoApi.generatePlan(user.id, 4);
+      const resp = await planoApi.generatePlan(user.id, {
+        diasPorSemana: 4,
+        tempoTreino: 60,
+        objetivo: user.objetivo || "musculo",
+        targets: ["Peito", "Costas", "Pernas", "Braços"],
+        condicoes: "",
+        descansoEntreSeriesSegundos: 90,
+      });
       if (resp.sucesso) {
         Alert.alert("Plano gerado!", `Plano de ${resp.mes} criado para ${user.userName}.`);
       } else {
@@ -226,6 +234,26 @@ export default function AdminUsers() {
                         : <Ionicons name="sparkles-outline" size={14} color="#8B5CF6" />
                       }
                       <Text style={{ color: "#8B5CF6", fontWeight: "700", fontSize: 13 }}>Plano IA</Text>
+                    </Pressable>
+                  )}
+                  {/* Botão para alterar cargo, visível apenas para Owner/Admin Manager (id_tipoUser === 3) */}
+                  {user.id !== undefined && currentUser?.id_tipoUser === 3 && user.id !== currentUser.id && (
+                    <Pressable
+                      onPress={() => handleChangeRole(user)}
+                      accessibilityLabel="Alterar cargo"
+                      accessibilityRole="button"
+                      style={({ pressed }) => ({
+                        paddingVertical: 10, paddingHorizontal: 18,
+                        borderRadius: 12,
+                        backgroundColor: "#2563EB20",
+                        flexDirection: "row", alignItems: "center", gap: 6,
+                        opacity: pressed ? 0.7 : 1,
+                      })}
+                    >
+                      <Ionicons name="swap-horizontal" size={14} color="#2563EB" />
+                      <Text style={{ color: "#2563EB", fontWeight: "700", fontSize: 13 }}>
+                        {user.id_tipoUser === 1 ? "Rebaixar para Normal" : "Promover para Admin"}
+                      </Text>
                     </Pressable>
                   )}
                   <Pressable

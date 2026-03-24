@@ -43,6 +43,7 @@ function formatDate(dateStr: string) {
 export default function AdminCommunities() {
   const theme = useTheme();
   const { safeTop } = useAndroidInsets();
+  const { user: currentUser } = require("../../contexts/AuthContext").useAuth();
   const [communities, setCommunities] = useState<Community[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -276,12 +277,13 @@ export default function AdminCommunities() {
                     onValueChange={() => handleToggleVerificacao(community.id, community.verificada)}
                     trackColor={{ false: theme.border, true: theme.accent }}
                     thumbColor="white"
+                    disabled={currentUser?.id_tipoUser !== 3}
                   />
                 )}
               </View>
               <Pressable
                 onPress={() => handleDelete(community.id, community.nome)}
-                disabled={deleting === community.id}
+                disabled={deleting === community.id || currentUser?.id_tipoUser !== 3}
                 accessibilityLabel="Eliminar comunidade"
                 accessibilityRole="button"
                 style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#EF444422", borderRadius: 10, paddingHorizontal: 14, paddingVertical: 9, opacity: pressed ? 0.7 : 1 })}

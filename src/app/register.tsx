@@ -700,7 +700,7 @@ export default function Register() {
                 style={{
                   flex: 1,
                   backgroundColor: theme.backgroundSecondary,
-                  paddingVertical: 14,
+                  paddingVertical: 11,
                   borderRadius: 14,
                   alignItems: "center",
                   borderColor: theme.border,
@@ -718,7 +718,7 @@ export default function Register() {
                 flex: stepIndex > 0 ? 1 : undefined,
                 width: stepIndex === 0 ? "100%" : undefined,
                 backgroundColor: theme.accent,
-                paddingVertical: 14,
+                paddingVertical: 11,
                 borderRadius: 14,
                 alignItems: "center",
                 opacity: loading ? 0.7 : 1,

@@ -7,8 +7,8 @@ export default function AdminLayout() {
   const theme = useTheme();
   const { user } = useAuth();
 
-  // Verificar se o utilizador é admin (tipo 1)
-  if (!user || user.tipo !== 1) {
+  // Permitir acesso total para Owner/Admin Manager (tipo 3)
+  if (!user || (user.tipo !== 1 && user.tipo !== 3)) {
     return <Redirect href="/(tabs)" />;
   }
 
@@ -22,7 +22,6 @@ export default function AdminLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="users" />
       <Stack.Screen name="exercises" />
-      <Stack.Screen name="workouts" />
       <Stack.Screen name="communities" />
     </Stack>
   );

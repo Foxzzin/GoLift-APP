@@ -11,6 +11,7 @@ const DEV_PORT = "3000";
 let SERVER_IP = IS_PRODUCTION ? PRODUCTION_IP : "localhost";
 let SERVER_PORT = IS_PRODUCTION ? PRODUCTION_PORT : DEV_PORT;
 
+
 let IS_SERVER_CONFIGURED = IS_PRODUCTION; // Em produção já está configurado de imediato
 
 // ─── PRODUÇÃO: retorna imediatamente sem qualquer I/O ───────────────────────

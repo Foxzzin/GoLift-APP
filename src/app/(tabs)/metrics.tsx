@@ -62,6 +62,7 @@ export default function Metrics() {
   const [goalDraft, setGoalDraft] = useState(4);
   const [goalModeDraft, setGoalModeDraft] = useState<'permanent' | 'weekly'>('permanent');
   const [goalModalIsNew, setGoalModalIsNew] = useState(false); // true = prompted auto on new week
+  const [weightHistory, setWeightHistory] = useState<Array<{ week: string; weight: number }>>([]);
   
   // Draggable modal state
   const panResponder = useRef(
@@ -126,6 +127,39 @@ export default function Metrics() {
     setGoalModalIsNew(false);
   }
 
+  async function loadWeightHistory(currentWeight?: number) {
+    try {
+      const stored = await AsyncStorage.getItem('@golift:weight_history');
+      const parsed = stored ? JSON.parse(stored) : [];
+      let list = Array.isArray(parsed) ? parsed : [];
+      if (list.length === 0 && currentWeight) {
+        list = [{ week: getCurrentWeekKey(), weight: Number(currentWeight) }];
+        await AsyncStorage.setItem('@golift:weight_history', JSON.stringify(list));
+      }
+      setWeightHistory(list);
+    } catch {
+      setWeightHistory([]);
+    }
+  }
+
+  async function saveCurrentWeekWeight() {
+    if (!profile?.peso) return;
+    const currentWeek = getCurrentWeekKey();
+    const next = [...weightHistory];
+    const index = next.findIndex((item) => item.week === currentWeek);
+    if (index >= 0) {
+      next[index] = { week: currentWeek, weight: Number(profile.peso) };
+    } else {
+      next.push({ week: currentWeek, weight: Number(profile.peso) });
+    }
+    const normalized = next
+      .filter((item) => !!item.week && Number(item.weight) > 0)
+      .sort((a, b) => new Date(a.week).getTime() - new Date(b.week).getTime())
+      .slice(-8);
+    setWeightHistory(normalized);
+    await AsyncStorage.setItem('@golift:weight_history', JSON.stringify(normalized));
+  }
+
   function handleTabChange(tab: 'progresso' | 'calendario' | 'recordes' | 'ia') {
     if (tab === 'ia') {
       router.push('/ai-hub');
@@ -174,6 +208,7 @@ export default function Metrics() {
           pesoAlvo: profileData.user.pesoAlvo,
           objetivo: profileData.user.objetivo,
         });
+        await loadWeightHistory(profileData.user.weight);
       }
       
       // Processar histórico e datas para calendário
@@ -443,7 +478,7 @@ export default function Metrics() {
       <ScrollView
         ref={scrollViewRef}
         style={{ flex: 1, backgroundColor: theme.background }}
-        contentContainerStyle={{ paddingBottom: 120 }}
+        contentContainerStyle={{ paddingBottom: safeBottom + 100 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -625,6 +660,61 @@ export default function Metrics() {
               <View style={{ height: 4, width: `${Math.min(weightProg.percentage, 100)}%` as any, backgroundColor: theme.accentGreen, borderRadius: 2 }} />
             </View>
             <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 10 }}>{weightProg.message}</Text>
+
+            <View style={{ marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: theme.backgroundTertiary }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                <Text style={{ color: theme.textSecondary, fontSize: 12, fontWeight: "700", letterSpacing: 0.5, textTransform: "uppercase" }}>
+                  Atualização Semanal
+                </Text>
+                <Pressable
+                  onPress={saveCurrentWeekWeight}
+                  accessibilityRole="button"
+                  accessibilityLabel="Atualizar peso desta semana"
+                  style={({ pressed }) => ({
+                    backgroundColor: theme.accent + "18",
+                    borderRadius: 10,
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    opacity: pressed ? 0.7 : 1,
+                  })}
+                >
+                  <Text style={{ color: theme.accent, fontSize: 11, fontWeight: "700" }}>Atualizar semana</Text>
+                </Pressable>
+              </View>
+
+              {weightHistory.length >= 2 ? (
+                <View>
+                  <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 6, height: 72 }}>
+                    {(() => {
+                      const maxWeight = Math.max(...weightHistory.map((w) => w.weight));
+                      const minWeight = Math.min(...weightHistory.map((w) => w.weight));
+                      const range = Math.max(maxWeight - minWeight, 1);
+                      return weightHistory.map((item, idx) => {
+                        const h = Math.max(10, ((item.weight - minWeight) / range) * 56 + 10);
+                        const isLast = idx === weightHistory.length - 1;
+                        return (
+                          <View key={item.week} style={{ flex: 1, alignItems: "center" }}>
+                            <View style={{ width: "100%", height: h, borderRadius: 6, backgroundColor: isLast ? theme.accent : theme.accent + "55" }} />
+                          </View>
+                        );
+                      });
+                    })()}
+                  </View>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 8 }}>
+                    <Text style={{ color: theme.textTertiary, fontSize: 11 }}>
+                      {new Date(weightHistory[0].week).toLocaleDateString("pt-PT", { day: "2-digit", month: "short" })}
+                    </Text>
+                    <Text style={{ color: theme.textSecondary, fontSize: 11 }}>
+                      Atual: {weightHistory[weightHistory.length - 1].weight}kg
+                    </Text>
+                  </View>
+                </View>
+              ) : (
+                <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
+                  Regista o peso semanal para acompanhar a evolução visual.
+                </Text>
+              )}
+            </View>
           </View>
         )}
       </View>
@@ -685,65 +775,76 @@ export default function Metrics() {
 
         {records.length === 0 ? (
           <View style={{ backgroundColor: theme.backgroundSecondary, borderRadius: 20, paddingVertical: 36, alignItems: "center" }}>
-            <Text style={{ fontSize: 36 }}>🏆</Text>
+            <Ionicons name="medal" size={40} color={theme.textSecondary} />
             <Text style={{ color: theme.textSecondary, marginTop: 12, fontSize: 14 }}>
               Ainda não tens recordes registados
             </Text>
           </View>
         ) : (
-          <View>
-            {records.slice(0, 3).map((record, index) => (
-              <Pressable
-                key={index}
-                onPress={() => {
-                  const exercicioId = record.id_exercicio || record.exercicio_id;
-                  const nome = record.nome_exercicio || record.exercicio || record.exercise || "";
-                  if (exercicioId) {
-                    router.push({ pathname: "/exercise-progress/[id]", params: { id: String(exercicioId), nome } });
-                  }
-                }}
-                accessibilityLabel={`Ver progressão de ${record.nome_exercicio || record.exercicio || ""}`}
-                accessibilityRole="button"
-                style={({ pressed }) => ({
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingHorizontal: 18,
-                  paddingVertical: 16,
-                  backgroundColor: theme.backgroundSecondary,
-                  borderRadius: 20,
-                  marginBottom: 10,
-                  opacity: pressed ? 0.7 : 1,
-                })}
-              >
-                <View style={{
-                  width: 44, height: 44, borderRadius: 14,
-                  backgroundColor: (MEDAL_COLORS[index] ?? "#94a3b8") + "18",
-                  justifyContent: "center", alignItems: "center",
-                  marginRight: 14,
-                }}>
-                  <Ionicons name="trophy" size={20} color={MEDAL_COLORS[index] ?? "#94a3b8"} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: theme.text, fontWeight: "700", fontSize: 15, letterSpacing: -0.2 }}>
-                    {record.nome_exercicio || record.exercicio || record.exercise}
-                  </Text>
-                  {(record.data_serie || record.data) && (
-                    <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>
-                      {formatDate(record.data_serie || record.data)}
-                    </Text>
-                  )}
-                </View>
-                <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 8 }}>
-                  <View style={{ alignItems: "flex-end" }}>
-                    <Text style={{ color: theme.accent, fontSize: 26, fontWeight: "800", letterSpacing: -0.8 }}>
-                      {record.peso || record.weight}
-                    </Text>
-                    <Text style={{ color: theme.textSecondary, fontSize: 12, fontWeight: "600" }}>kg</Text>
+          <View style={{ gap: 24 }}>
+            {/* Agrupar recordes por exercício */}
+            {Object.entries(
+              records.reduce((acc: any, rec: any) => {
+                const nome = rec.nome_exercicio || rec.exercicio || rec.exercise || "";
+                if (!acc[nome]) acc[nome] = [];
+                acc[nome].push(rec);
+                return acc;
+              }, {})
+            ).map(([nome, recs]) => {
+              const sorted = [...(recs as any[])].sort((a, b) => (b.peso || b.weight) - (a.peso || a.weight));
+              return (
+                <View key={nome} style={{ marginBottom: 8 }}>
+                  <Text style={{ color: theme.text, fontWeight: "700", fontSize: 15, marginBottom: 8 }}>{nome}</Text>
+                  {/* Ranking dos recordes */}
+                  <View style={{ gap: 12 }}>
+                    {sorted.map((record, idx) => {
+                      const medalColors = ["#f59e0b", "#94a3b8", "#cd7f32"];
+                      const color = idx < 3 ? medalColors[idx] : theme.textSecondary;
+                      const exercicioId = record.id_exercicio || record.exercicio_id;
+                      return (
+                        <Pressable
+                          key={record.id_serie || record.id || idx}
+                          onPress={() => {
+                            if (exercicioId) {
+                              router.push({ pathname: "/exercise-progress/[id]", params: { id: String(exercicioId), nome } });
+                            }
+                          }}
+                          accessibilityLabel={`Ver progressão de ${nome}`}
+                          accessibilityRole="button"
+                          style={({ pressed }) => ({
+                            flexDirection: "row",
+                            alignItems: "center",
+                            backgroundColor: theme.backgroundSecondary,
+                            borderRadius: 14,
+                            paddingHorizontal: 18,
+                            paddingVertical: 17,
+                            opacity: pressed ? 0.6 : 1,
+                          })}
+                        >
+                          {/* Medal Icon for top 3 */}
+                          <View style={{ width: 26, alignItems: "center", marginRight: 16 }}>
+                            {idx < 3 ? (
+                              <Ionicons name="medal" size={22} color={color} />
+                            ) : null}
+                          </View>
+                          {/* Date */}
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ color: theme.text, fontSize: 17, fontWeight: "500", letterSpacing: -0.3 }} numberOfLines={1}>
+                              {record.peso || record.weight} kg
+                            </Text>
+                            {(record.data_serie || record.data) && (
+                              <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>
+                                {formatDate(record.data_serie || record.data)}
+                              </Text>
+                            )}
+                          </View>
+                        </Pressable>
+                      );
+                    })}
                   </View>
-                  <Ionicons name="chevron-forward" size={16} color={theme.textTertiary} style={{ marginTop: 4 }} />
                 </View>
-              </Pressable>
-            ))}
+              );
+            })}
           </View>
         )}
       </View>

@@ -12,6 +12,7 @@ interface CommunitiesContextData {
   updateCommunity: (comunidadeId: number, data: { nome?: string; descricao?: string; pais?: string; privada?: boolean }) => Promise<void>;
   joinCommunity: (comunidadeId: number) => Promise<void>;
   leaveCommunity: (comunidadeId: number) => Promise<void>;
+  deleteCommunity: (comunidadeId: number) => Promise<void>;
   sendMessage: (comunidadeId: number, mensagem: string) => Promise<void>;
   loadCommunities: () => Promise<void>;
   loadCommunityMessages: (comunidadeId: number) => Promise<void>;
@@ -53,7 +54,6 @@ export function CommunitiesProvider({ children }: { children: ReactNode }) {
       const newCommunity = await communitiesApi.createCommunity({
         nome,
         descricao,
-        criador_id: user?.id || 0,
         pais,
         privada,
       });
@@ -67,7 +67,7 @@ export function CommunitiesProvider({ children }: { children: ReactNode }) {
 
   async function updateCommunity(comunidadeId: number, data: { nome?: string; descricao?: string; pais?: string; privada?: boolean }) {
     try {
-      await communitiesApi.updateCommunity(comunidadeId, { criador_id: user?.id || 0, ...data });
+      await communitiesApi.updateCommunity(comunidadeId, data);
       const update = (list: Community[]) =>
         list.map((c) => c.id === comunidadeId ? { ...c, ...data } : c);
       setCommunities((prev) => update(prev));
@@ -97,6 +97,17 @@ export function CommunitiesProvider({ children }: { children: ReactNode }) {
       setUserCommunities(userCommunities.filter((c) => c.id !== comunidadeId));
     } catch (error) {
       console.error("Erro ao sair da comunidade:", error);
+      throw error;
+    }
+  }
+
+  async function deleteCommunity(comunidadeId: number) {
+    try {
+      await communitiesApi.deleteCommunity(comunidadeId);
+      setCommunities((prev) => prev.filter((c) => c.id !== comunidadeId));
+      setUserCommunities((prev) => prev.filter((c) => c.id !== comunidadeId));
+    } catch (error) {
+      console.error("Erro ao apagar comunidade:", error);
       throw error;
     }
   }
@@ -154,6 +165,7 @@ export function CommunitiesProvider({ children }: { children: ReactNode }) {
         updateCommunity,
         joinCommunity,
         leaveCommunity,
+        deleteCommunity,
         sendMessage,
         loadCommunities,
         loadCommunityMessages,

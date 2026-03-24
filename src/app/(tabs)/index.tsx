@@ -232,7 +232,7 @@ export default function Home() {
     <>
       <ScrollView
         style={{ backgroundColor: theme.background }}
-        contentContainerStyle={{ paddingBottom: 120 }}
+        contentContainerStyle={{ paddingBottom: safeBottom + 100 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }

@@ -7,7 +7,6 @@
     "icon": "./assets/images/faviconGoLift.png",
     "scheme": "golift",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
     },
@@ -16,11 +15,9 @@
         "backgroundColor": "#0066FF",
         "foregroundImage": "./assets/images/faviconGoLift.png"
       },
-      "edgeToEdgeEnabled": true,
       "softwareKeyboardLayoutMode": "pan",
       "predictiveBackGestureEnabled": false,
-      "package": "com.golift.app",
-      "usesCleartextTraffic": true
+      "package": "com.golift.app"
     },
     "web": {
       "output": "static",
